@@ -1,0 +1,8 @@
+/vendor
+.env
+.env.*
+.git
+.github
+tests
+.agent
+*.zip
