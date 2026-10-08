@@ -11,6 +11,7 @@ class Sale extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'customer_id',
         'sale_number',
         'customer_name',
         'customer_phone',
@@ -53,6 +54,11 @@ class Sale extends Model
         'is_archived' => 'boolean',
     ];
 
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function promotion()
     {
         return $this->belongsTo(Promotion::class);
@@ -81,6 +87,11 @@ class Sale extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 
     public function getComputedInitialsAttribute(): string

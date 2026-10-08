@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@wellametal.test'],
             [
-                'name' => 'Test Admin',
+                'name' => 'Admin',
                 'password' => Hash::make('password123'),
             ]
         );
@@ -22,7 +22,7 @@ class UserSeeder extends Seeder
         $manager = User::firstOrCreate(
             ['email' => 'manager@wellametal.test'],
             [
-                'name' => 'Test Manager',
+                'name' => 'Manager',
                 'password' => Hash::make('password123'),
             ]
         );
@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
         $secretary = User::firstOrCreate(
             ['email' => 'secretary@wellametal.test'],
             [
-                'name' => 'Test Secretary',
+                'name' => 'Secretary',
                 'password' => Hash::make('password123'),
             ]
         );

@@ -17,7 +17,7 @@ class ProductForm extends Component
     {
         return [
             'name' => 'required|string|max:255',
-            'category' => 'required|in:chair,table,bed,cabinet,outdoor,other',
+            'category' => 'required|string|max:100',
             'description' => 'nullable|string',
             'tagged_price' => 'required|numeric|min:0',
             'quantity_in_stock' => 'required|integer|min:0',

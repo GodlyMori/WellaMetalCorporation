@@ -8,7 +8,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
+    public const CATEGORIES = [
+        'Sala Set',
+        'Wardrobe',
+        'Dining Set',
+        'Bed Frame',
+        'Mattresses',
+        'Closet',
+        'Garden Set',
+        'Office Furniture',
+    ];
 
     protected $fillable = [
         'name',
@@ -16,6 +25,7 @@ class Product extends Model
         'description',
         'tagged_price',
         'quantity_in_stock',
+        'low_stock_threshold',
         'status', // 'active', 'archived'
         'archived_by',
         'archive_approved_by',
@@ -35,6 +45,7 @@ class Product extends Model
     protected $casts = [
         'tagged_price' => 'decimal:2',
         'quantity_in_stock' => 'integer',
+        'low_stock_threshold' => 'integer',
     ];
 
     public function getFormattedIdAttribute(): string
@@ -50,7 +61,8 @@ class Product extends Model
         if ($this->quantity_in_stock <= 0) {
             return 'Out of Stock';
         }
-        if ($this->quantity_in_stock <= 4) {
+        $threshold = $this->low_stock_threshold ?? 5;
+        if ($this->quantity_in_stock <= $threshold) {
             return 'Low Stock';
         }
         return 'In Stock';
@@ -64,5 +76,10 @@ class Product extends Model
     public function saleItems()
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    public function inventoryAdjustments()
+    {
+        return $this->hasMany(InventoryAdjustment::class);
     }
 }

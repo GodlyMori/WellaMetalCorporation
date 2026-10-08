@@ -1,4 +1,4 @@
-@section('title', 'DASHBOARD')
+@section('title', 'Dashboard')
 
 <x-app-layout>
     <livewire:dashboard />

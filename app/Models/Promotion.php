@@ -16,7 +16,7 @@ class Promotion extends Model
         'description',
         'discount_type', // 'percentage', 'fixed'
         'discount_value',
-        'applicable_category', // 'ALL', 'Sofa', 'Dining Table', 'Closet'
+        'applicable_category', // 'ALL', or specific furniture category (e.g. 'Sala Set', 'Wardrobe', etc.)
         'min_order_amount',
         'starts_at',
         'ends_at',

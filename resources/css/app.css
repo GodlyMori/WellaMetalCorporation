@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Caret color */
+* {
+    caret-color: #142259;
+}
+
+/* Text selection */
+::selection {
+    background: #142259;
+    color: #ffffff;
+}
+
+/* Pagination link resets */
+[aria-label="Pagination"] a,
+.pagination a,
+nav[aria-label="Pagination"] span {
+    @apply rounded text-xs;
+}

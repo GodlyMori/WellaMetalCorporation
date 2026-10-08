@@ -1,4 +1,4 @@
-@section('title', 'INVENTORY')
+@section('title', 'Inventory Yard')
 
 <x-app-layout>
     <livewire:inventory-manager />

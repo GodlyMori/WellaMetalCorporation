@@ -1,204 +1,262 @@
-<div class="space-y-7">
+<div class="space-y-5">
 
-    <!-- TOP HEADER: REPORT NAVIGATION TABS + EXPORT ACTIONS -->
-    <div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-5 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        
-        <!-- Report Type Tabs -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-1 xl:pb-0 scrollbar-none">
-            <!-- 1. Sales Report Tab -->
-            <button
-                type="button"
-                wire:click="setTab('sales')"
-                class="px-5 py-3 rounded-2xl text-xs font-black tracking-wider transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 {{ $activeTab === 'sales' ? 'bg-[#142259] text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold' }}"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v2m0-10c-1.11 0-2.08.402-2.599 1M12 18c1.657 0 3-.895 3-2s-1.343-2-3-2"/></svg>
-                <span>SALES & REVENUE</span>
-            </button>
-
-            <!-- 2. Inventory Report Tab -->
-            <button
-                type="button"
-                wire:click="setTab('inventory')"
-                class="px-5 py-3 rounded-2xl text-xs font-black tracking-wider transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 {{ $activeTab === 'inventory' ? 'bg-[#142259] text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold' }}"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                <span>INVENTORY & VALUATION</span>
-            </button>
-
-            <!-- 3. Transfers Report Tab -->
-            <button
-                type="button"
-                wire:click="setTab('transfers')"
-                class="px-5 py-3 rounded-2xl text-xs font-black tracking-wider transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 {{ $activeTab === 'transfers' ? 'bg-[#142259] text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold' }}"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span>BRANCH TRANSFERS</span>
+    <!-- Success Message Alert -->
+    @if($successMessage)
+        <div class="rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 p-3.5 text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span>{{ $successMessage }}</span>
+            </div>
+            <button type="button" wire:click="$set('successMessage', '')" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
+    @endif
 
-        <!-- Export Buttons (PDF, CSV, Print) -->
-        <div class="flex items-center gap-2.5">
+    <!-- TOP HEADER: REPORT NAVIGATION TABS + EXPORT ACTIONS -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 pb-2 border-b border-slate-200 dark:border-[#1a2858]">
+        <div class="inline-flex items-center gap-6 overflow-x-auto">
+            <button type="button" wire:click="setTab('sales')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'sales' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Sales & orders</button>
+            <button type="button" wire:click="setTab('inventory')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'inventory' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Inventory & valuation</button>
+            <button type="button" wire:click="setTab('transfers')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'transfers' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Branch transfers</button>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
             @if($activeTab === 'sales')
-                <!-- Export Sales CSV -->
-                <a href="{{ route('reports.export.sales-csv', ['start_date' => $startDate, 'end_date' => $endDate, 'status' => $salesStatus]) }}"
-                   class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span>EXPORT CSV</span>
-                </a>
+                <button type="button" wire:click="processExpiredLayaways" title="Scan & restore cancelled/expired layaway reserves"
+                   class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Check expired reserves</span>
+                </button>
 
                 <!-- Export Sales PDF -->
                 <a href="{{ route('reports.export.sales-pdf', ['start_date' => $startDate, 'end_date' => $endDate, 'status' => $salesStatus]) }}"
                    target="_blank"
-                   class="bg-[#dc2626] hover:bg-[#b91c1c] text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    <span>EXPORT PDF</span>
+                   class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <span>Export PDF</span>
                 </a>
             @elseif($activeTab === 'inventory')
-                <!-- Export Inventory CSV -->
-                <a href="{{ route('reports.export.inventory-csv', ['category' => $inventoryCategory]) }}"
-                   class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span>EXPORT CSV</span>
-                </a>
-
                 <!-- Export Inventory PDF -->
                 <a href="{{ route('reports.export.inventory-pdf', ['category' => $inventoryCategory]) }}"
                    target="_blank"
-                   class="bg-[#dc2626] hover:bg-[#b91c1c] text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    <span>EXPORT PDF</span>
+                   class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <span>Export PDF</span>
                 </a>
             @else
                 <button type="button" onclick="window.print()"
-                        class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    <span>PRINT REPORT</span>
+                        class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    <span>Print report</span>
                 </button>
             @endif
         </div>
-
     </div>
 
     <!-- ========================================== -->
     <!-- TAB 1: SALES & REVENUE AUDIT REPORT        -->
     <!-- ========================================== -->
     @if($activeTab === 'sales')
-        <div class="space-y-6">
+        <div class="space-y-4">
 
-            <!-- Summary KPI Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                <!-- Total Sales Volume -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#dc2626]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">TOTAL REVENUE (PHP)</p>
-                    <h3 class="text-[#dc2626] text-3xl font-black mt-2">₱{{ number_format($totalSalesRevenue, 2) }}</h3>
-                    <p class="text-slate-400 text-xs mt-1">From completed orders</p>
+            <!-- Summary KPI Strip (Responsive Grid) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] mb-4">
+                <div class="px-4 py-3 min-w-0">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Realized cash revenue</div>
+                    <div class="text-lg font-bold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">₱{{ number_format($totalSalesRevenue, 2) }}</div>
                 </div>
-
-                <!-- Completed Transactions -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#10b981]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">COMPLETED ORDERS</p>
-                    <h3 class="text-[#10b981] text-3xl font-black mt-2">{{ $completedTransactionsCount }} / {{ $totalTransactionsCount }}</h3>
-                    <p class="text-slate-400 text-xs mt-1">Successful customer settlements</p>
+                <div class="px-4 py-3 min-w-0">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Completed orders</div>
+                    <div class="text-lg font-bold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">{{ $completedTransactionsCount }} <span class="text-xs text-slate-400 font-normal">/ {{ $totalTransactionsCount }}</span></div>
                 </div>
-
-                <!-- Average Order Value -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#2563eb]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">AVERAGE TICKET</p>
-                    <h3 class="text-[#2563eb] text-3xl font-black mt-2">₱{{ number_format($averageOrderValue, 2) }}</h3>
-                    <p class="text-slate-400 text-xs mt-1">Average per completed sale</p>
+                <div class="px-4 py-3 min-w-0">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Average ticket</div>
+                    <div class="text-lg font-bold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">₱{{ number_format($averageOrderValue, 2) }}</div>
                 </div>
-
-                <!-- Fulfillment Rate -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#142366]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">FULFILLMENT RATE</p>
-                    <h3 class="text-[#142259] text-3xl font-black mt-2">
-                        {{ $totalTransactionsCount > 0 ? round(($completedTransactionsCount / $totalTransactionsCount) * 100) : 0 }}%
-                    </h3>
-                    <p class="text-slate-400 text-xs mt-1">Conversion completion ratio</p>
+                <div class="px-4 py-3 min-w-0">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Active lay-aways</div>
+                    <div class="text-lg font-bold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">{{ $counts['layaway'] }} <span class="text-xs text-slate-400 font-normal font-sans">(₱{{ number_format($totalLayawayBalance, 2) }} bal)</span></div>
                 </div>
             </div>
 
-            <!-- Filters Bar -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-semibold">
-                <!-- Date Presets -->
-                <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
-                    <button type="button" wire:click="$set('datePreset', 'this_month')" class="px-3.5 py-2 rounded-xl {{ $datePreset === 'this_month' ? 'bg-blue-600 text-white font-bold' : 'bg-slate-100 text-slate-600' }}">This Month</button>
-                    <button type="button" wire:click="$set('datePreset', 'this_week')" class="px-3.5 py-2 rounded-xl {{ $datePreset === 'this_week' ? 'bg-blue-600 text-white font-bold' : 'bg-slate-100 text-slate-600' }}">This Week</button>
-                    <button type="button" wire:click="$set('datePreset', 'today')" class="px-3.5 py-2 rounded-xl {{ $datePreset === 'today' ? 'bg-blue-600 text-white font-bold' : 'bg-slate-100 text-slate-600' }}">Today</button>
-                    <button type="button" wire:click="$set('datePreset', 'all')" class="px-3.5 py-2 rounded-xl {{ $datePreset === 'all' ? 'bg-blue-600 text-white font-bold' : 'bg-slate-100 text-slate-600' }}">All Time</button>
+            <!-- Integrated Sales Table Workbench -->
+            <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
+                <!-- Integrated Filters Header Bar -->
+                <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] space-y-3">
+                    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 text-xs">
+                        <!-- Search Box -->
+                        <div class="relative w-full lg:w-72">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <input type="text"
+                                   wire:model.live.debounce.300ms="salesSearch"
+                                   placeholder="Search customer, phone, order #..."
+                                   class="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                        </div>
+
+                        <!-- Status Navigation Buttons -->
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button type="button" wire:click="setSalesStatus('ALL')" class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $salesStatus === 'ALL' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                All ({{ $counts['all'] }})
+                            </button>
+                            <button type="button" wire:click="setSalesStatus('completed')" class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $salesStatus === 'completed' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                Completed ({{ $counts['completed'] }})
+                            </button>
+                            <button type="button" wire:click="setSalesStatus('layaway')" class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $salesStatus === 'layaway' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                Lay-away ({{ $counts['layaway'] }})
+                            </button>
+                            <button type="button" wire:click="setSalesStatus('pending')" class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $salesStatus === 'pending' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                Pending ({{ $counts['pending'] }})
+                            </button>
+                            <button type="button" wire:click="setSalesStatus('cancelled')" class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $salesStatus === 'cancelled' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                Cancelled ({{ $counts['cancelled'] }})
+                            </button>
+                            <button type="button" wire:click="setSalesStatus('ARCHIVED')" class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $salesStatus === 'ARCHIVED' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                Archived ({{ $counts['archived'] }})
+                            </button>
+                        </div>
+
+                        <!-- Date Presets + Custom Range -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <div class="inline-flex items-center gap-1">
+                                <button type="button" wire:click="$set('datePreset', 'this_month')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $datePreset === 'this_month' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Month</button>
+                                <button type="button" wire:click="$set('datePreset', 'this_week')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $datePreset === 'this_week' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Week</button>
+                                <button type="button" wire:click="$set('datePreset', 'today')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $datePreset === 'today' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Today</button>
+                                <button type="button" wire:click="$set('datePreset', 'all')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $datePreset === 'all' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">All</button>
+                            </div>
+
+                            <div class="flex items-center gap-1">
+                                <input type="date" wire:model.live="startDate" class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259]">
+                                <span class="text-slate-400 text-xs">to</span>
+                                <input type="date" wire:model.live="endDate" class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259]">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Custom Range + Status Select -->
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <input type="date" wire:model.live="startDate" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700">
-                    <span class="text-slate-400">to</span>
-                    <input type="date" wire:model.live="endDate" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700">
-                    <select wire:model.live="salesStatus" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700">
-                        <option value="ALL">All Statuses</option>
-                        <option value="completed">Completed</option>
-                        <option value="layaway">Lay-Away / Reserve</option>
-                        <option value="pending">Pending</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Detailed Sales Table -->
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden w-full min-w-0">
-                <div class="overflow-x-auto w-full">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-[#1558bf] text-white text-[11px] font-black tracking-wider uppercase">
-                                <th class="py-4 px-6">ORDER #</th>
-                                <th class="py-4 px-6">CUSTOMER</th>
-                                <th class="py-4 px-6">PRODUCT</th>
-                                <th class="py-4 px-6">AMOUNT</th>
-                                <th class="py-4 px-6">DATE</th>
-                                <th class="py-4 px-6 text-right">STATUS</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 text-[13px]">
-                            @forelse($sales as $sale)
-                                <tr class="hover:bg-blue-50/20">
-                                    <td class="py-4 px-6 font-bold text-blue-600">{{ $sale->sale_number }}</td>
-                                    <td class="py-4 px-6 font-bold text-slate-800">{{ $sale->customer_name }}</td>
-                                    <td class="py-4 px-6 text-slate-600">{{ $sale->product_name }}</td>
-                                    <td class="py-4 px-6 font-black text-[#142259]">₱{{ number_format($sale->amount, 2) }}</td>
-                                    <td class="py-4 px-6 text-slate-400 text-xs">{{ $sale->sale_date->format('Y-m-d') }}</td>
-                                    <td class="py-4 px-6 text-right">
-                                        @if($sale->status === 'completed')
-                                            <span class="inline-flex items-center gap-1.5 bg-[#ecfdf5] text-[#059669] text-xs font-bold px-3 py-1 rounded-full">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
-                                                Completed
-                                            </span>
-                                        @elseif($sale->status === 'layaway')
-                                            <span class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200/80 text-xs font-extrabold px-3 py-1 rounded-full">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                                                Lay-Away
-                                            </span>
-                                        @elseif($sale->status === 'pending')
-                                            <span class="inline-flex items-center gap-1.5 bg-[#fffbeb] text-[#d97706] text-xs font-bold px-3 py-1 rounded-full">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
-                                                Pending
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center gap-1.5 bg-[#fef2f2] text-[#dc2626] text-xs font-bold px-3 py-1 rounded-full">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#ef4444]"></span>
-                                                Cancelled
-                                            </span>
+                <!-- Detailed Sales Table -->
+                <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
+                            <th class="py-3 px-4 w-32 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Order #</th>
+                            <th class="py-3 px-4 min-w-[180px] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Customer</th>
+                            <th class="py-3 px-4 min-w-[200px] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product / Items</th>
+                            <th class="py-3 px-4 w-36 whitespace-nowrap text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Order Breakdown</th>
+                            <th class="py-3 px-4 w-28 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date / Expiry</th>
+                            <th class="py-3 px-4 w-28 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+                            <th class="py-3 px-4 w-32 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($sales as $sale)
+                            <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
+                                <td class="py-2.5 px-4 font-mono font-medium text-slate-700 dark:text-slate-300">
+                                    {{ $sale->sale_number }}
+                                </td>
+                                <td class="py-2.5 px-4">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] text-white flex-shrink-0" style="background-color: {{ $sale->avatar_color }}">
+                                            {{ $sale->computed_initials }}
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-slate-900 dark:text-white">{{ $sale->customer_name }}</div>
+                                            <div class="text-[11px] text-slate-500 dark:text-slate-400">{{ $sale->customer_phone ?: 'No phone' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2.5 px-4">
+                                    <div class="font-medium text-slate-800 dark:text-slate-200">{{ $sale->product_name }}</div>
+                                    @if($sale->items && $sale->items->count() > 1)
+                                        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{{ $sale->items->count() }} items in order</span>
+                                    @endif
+                                    @if($sale->promotion)
+                                        <div class="text-[10px] text-slate-500 dark:text-slate-400">Promo: {{ $sale->promotion->name }}</div>
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-4 text-right">
+                                    <div class="font-bold text-slate-900 dark:text-white tabular-nums">₱{{ number_format($sale->amount, 2) }}</div>
+                                    @if($sale->payment_type === 'layaway')
+                                        <div class="text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">Paid: ₱{{ number_format($sale->amount_paid, 2) }}</div>
+                                        @if($sale->remaining_balance > 0)
+                                            <div class="text-[10px] font-bold text-rose-600 dark:text-rose-400 tabular-nums">Bal: ₱{{ number_format($sale->remaining_balance, 2) }}</div>
                                         @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="py-10 text-center text-slate-400">No sales transactions found for this period.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-4 text-slate-500 dark:text-slate-400 tabular-nums text-[11px]">
+                                    <div>{{ $sale->sale_date->format('M d, Y') }}</div>
+                                    @if($sale->payment_type === 'layaway' && $sale->layaway_expires_at)
+                                        <div class="text-[10px] {{ $sale->layaway_expires_at->isPast() ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-amber-700 dark:text-amber-400' }}">
+                                            Exp: {{ $sale->layaway_expires_at->format('M d, Y') }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-4 text-center">
+                                    @if($sale->is_archived)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                            Archived
+                                        </span>
+                                    @elseif($sale->status === 'completed')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
+                                            Completed
+                                        </span>
+                                    @elseif($sale->status === 'layaway')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">
+                                            Lay-away
+                                        </span>
+                                    @elseif($sale->status === 'pending')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">
+                                            Pending
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900">
+                                            Cancelled
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        @if($sale->status === 'layaway' && $sale->remaining_balance > 0 && !$sale->is_archived)
+                                            <a href="{{ route('layaways') }}"
+                                               class="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+                                               title="Manage lay-away in Lay-Aways module">
+                                                Manage
+                                            </a>
+                                        @endif
+
+                                        @if($sale->is_archived)
+                                            <button type="button"
+                                                    wire:click="restoreSale({{ $sale->id }})"
+                                                    class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer p-1"
+                                                    title="Restore sale">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            </button>
+                                        @else
+                                            <button type="button"
+                                                    wire:click="archiveSale({{ $sale->id }})"
+                                                    wire:confirm="Archive this sales transaction record?"
+                                                    class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer p-1"
+                                                    title="Archive order">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                                    No sales transactions found for this period.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
                 @if($sales->hasPages())
-                    <div class="p-4 border-t border-slate-100">
+                    <div class="p-3.5 border-t border-slate-200 dark:border-[#1a2858] bg-slate-50 dark:bg-[#0f1b40]">
                         {{ $sales->links() }}
                     </div>
                 @endif
@@ -211,184 +269,164 @@
     <!-- TAB 2: INVENTORY & VALUATION REPORT        -->
     <!-- ========================================== -->
     @if($activeTab === 'inventory')
-        <div class="space-y-6">
+        <div class="space-y-4">
 
-            <!-- Summary KPI Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                <!-- Total Valuation -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#2563eb]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">INVENTORY VALUATION</p>
-                    <h3 class="text-[#2563eb] text-3xl font-black mt-2">₱{{ number_format($totalInventoryValuation, 2) }}</h3>
-                    <p class="text-slate-400 text-xs mt-1">Total physical inventory worth</p>
+            <!-- Summary KPI Strip -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-[#1a2858] border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b]">
+                <div class="min-w-0 px-4 py-3">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Inventory valuation</div>
+                    <div class="text-lg font-bold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">₱{{ number_format($totalInventoryValuation, 2) }}</div>
                 </div>
-
-                <!-- Total Stock In Hand -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#142366]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">PHYSICAL STOCK UNITS</p>
-                    <h3 class="text-[#142259] text-3xl font-black mt-2">{{ $totalStockUnits }} units</h3>
-                    <p class="text-slate-400 text-xs mt-1">On-hand across all categories</p>
+                <div class="min-w-0 px-4 py-3">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Physical stock units</div>
+                    <div class="text-lg font-bold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">{{ number_format($totalStockUnits) }} <span class="text-xs text-slate-400 font-normal">units</span></div>
                 </div>
-
-                <!-- Low Stock Items -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#ea580c]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">LOW STOCK ALERTS</p>
-                    <h3 class="text-[#ea580c] text-3xl font-black mt-2">{{ $totalLowStockItems }} items</h3>
-                    <p class="text-slate-400 text-xs mt-1">Items with &le; 4 units remaining</p>
+                <div class="min-w-0 px-4 py-3">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Low stock alerts</div>
+                    <div class="text-lg font-bold {{ $totalLowStockItems > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white' }} font-mono tabular-nums mt-0.5">{{ $totalLowStockItems }} <span class="text-xs text-slate-400 font-normal">items</span></div>
                 </div>
-
-                <!-- Active Products -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-t-4 border-t-[#10b981]">
-                    <p class="text-[#8a9bbd] text-xs font-extrabold tracking-wider uppercase">ACTIVE PRODUCT SKUS</p>
-                    <h3 class="text-[#10b981] text-3xl font-black mt-2">{{ $products->total() }}</h3>
-                    <p class="text-slate-400 text-xs mt-1">Unique catalog references</p>
+                <div class="min-w-0 px-4 py-3">
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Active product SKUs</div>
+                    <div class="text-lg font-bold text-slate-900 dark:text-white font-mono tabular-nums mt-0.5">{{ $products->total() }}</div>
                 </div>
             </div>
 
-            <!-- Filters Bar -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-semibold">
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <span class="text-slate-500 uppercase font-bold">Category:</span>
-                    <select wire:model.live="inventoryCategory" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700">
-                        <option value="ALL">All Categories</option>
-                        <option value="Sofa">Sofa</option>
-                        <option value="Dining Table">Dining Table</option>
-                        <option value="Closet">Closet</option>
-                    </select>
+            <!-- Table Workbench Container -->
+            <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
+                <!-- Integrated Workbench Header -->
+                <div class="p-3 border-b border-slate-200 dark:border-[#1a2858] bg-slate-50/50 dark:bg-[#0f1b40]/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
+                    <!-- Search Box -->
+                    <div class="relative w-full md:w-80">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <input type="text"
+                               wire:model.live.debounce.300ms="inventorySearch"
+                               placeholder="Search product name, description..."
+                               class="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                    </div>
 
-                    <span class="text-slate-500 uppercase font-bold ml-2">Stock Level:</span>
-                    <select wire:model.live="stockFilter" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700">
-                        <option value="all">All Levels</option>
-                        <option value="in_stock">Healthy (&gt; 4)</option>
-                        <option value="low_stock">Low Stock (&le; 4)</option>
-                        <option value="out_of_stock">Out of Stock (0)</option>
-                    </select>
+                    <!-- Category & Stock Filter Controls -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select wire:model.live="inventoryCategory" class="bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 font-medium">
+                            <option value="ALL">All Categories</option>
+                            @foreach($existingCategories as $cat)
+                                <option value="{{ $cat }}">{{ $cat }}</option>
+                            @endforeach
+                        </select>
+
+                        <div class="inline-flex items-center rounded border border-slate-300 dark:border-slate-700 overflow-hidden">
+                            <button type="button" wire:click="$set('stockFilter', 'all')" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors {{ $stockFilter === 'all' ? 'bg-[#142259] text-white' : 'bg-white dark:bg-[#0c163b] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800' }}">All</button>
+                            <button type="button" wire:click="$set('stockFilter', 'low_stock')" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 {{ $stockFilter === 'low_stock' ? 'bg-[#142259] text-white' : 'bg-white dark:bg-[#0c163b] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800' }}">Low stock</button>
+                            <button type="button" wire:click="$set('stockFilter', 'out_of_stock')" class="px-2.5 py-1 text-xs font-semibold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 {{ $stockFilter === 'out_of_stock' ? 'bg-[#142259] text-white' : 'bg-white dark:bg-[#0c163b] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800' }}">Out of stock</button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="w-full md:w-64">
-                    <input type="text" wire:model.live.debounce.300ms="inventorySearch" placeholder="Search item or material..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700">
-                </div>
-            </div>
-
-            <!-- Inventory Valuation Table -->
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden w-full min-w-0">
-                <div class="overflow-x-auto w-full">
-                    <table class="w-full text-left border-collapse">
+                <!-- Detailed Inventory Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr class="bg-[#1558bf] text-white text-[11px] font-black tracking-wider uppercase">
-                                <th class="py-4 px-6">ID</th>
-                                <th class="py-4 px-6">PRODUCT</th>
-                                <th class="py-4 px-6">CATEGORY</th>
-                                <th class="py-4 px-6">PRICE</th>
-                                <th class="py-4 px-6">UNITS</th>
-                                <th class="py-4 px-6 font-black">ASSET VALUE</th>
-                                <th class="py-4 px-6 text-right">STATUS</th>
+                            <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
+                                <th class="py-2.5 px-3.5 w-28 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product Code</th>
+                                <th class="py-2.5 px-3.5 min-w-[200px] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product Name & Spec</th>
+                                <th class="py-2.5 px-3.5 w-32 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</th>
+                                <th class="py-2.5 px-3.5 w-28 whitespace-nowrap text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Unit Price</th>
+                                <th class="py-2.5 px-3.5 w-28 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Stock Level</th>
+                                <th class="py-2.5 px-3.5 w-36 whitespace-nowrap text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Valuation</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 text-[13px]">
-                            @forelse($products as $p)
-                                <tr class="hover:bg-blue-50/20">
-                                    <td class="py-4 px-6 font-black text-blue-600">{{ $p->formatted_id }}</td>
-                                    <td class="py-4 px-6">
-                                        <p class="font-bold text-slate-800">{{ $p->name }}</p>
-                                        <p class="text-xs text-slate-400">{{ $p->description }}</p>
+                        <tbody>
+                            @forelse($products as $product)
+                                <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
+                                    <td class="py-2.5 px-3.5 font-mono font-medium text-slate-600 dark:text-slate-400">#{{ str_pad($product->id, 4, '0', STR_PAD_LEFT) }}</td>
+                                    <td class="py-2.5 px-3.5">
+                                        <div class="font-semibold text-slate-900 dark:text-white">{{ $product->name }}</div>
+                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-sm">{{ $product->description ?: 'No material specs recorded' }}</div>
                                     </td>
-                                    <td class="py-4 px-6">
-                                        <span class="inline-block px-3 py-1 rounded-full text-xs font-bold {{ $p->category === 'Sofa' ? 'bg-blue-50 text-blue-600 border border-blue-100' : ($p->category === 'Dining Table' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100') }}">
-                                            {{ $p->category }}
+                                    <td class="py-2.5 px-3.5">
+                                        <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                            {{ $product->category }}
                                         </span>
                                     </td>
-                                    <td class="py-4 px-6 font-bold text-slate-700">₱{{ number_format($p->tagged_price, 2) }}</td>
-                                    <td class="py-4 px-6 font-black text-slate-900">{{ $p->quantity_in_stock }}</td>
-                                    <td class="py-4 px-6 font-black text-[#142259]">₱{{ number_format($p->tagged_price * $p->quantity_in_stock, 2) }}</td>
-                                    <td class="py-4 px-6 text-right">
-                                        @if($p->quantity_in_stock <= 0)
-                                            <span class="inline-flex items-center gap-1.5 bg-[#fef2f2] text-[#dc2626] text-xs font-bold px-3 py-1 rounded-full">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#ef4444]"></span>
-                                                Out of Stock
-                                            </span>
-                                        @elseif($p->quantity_in_stock <= 4)
-                                            <span class="inline-flex items-center gap-1.5 bg-[#fffbeb] text-[#d97706] text-xs font-bold px-3 py-1 rounded-full">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
-                                                Low Stock
-                                            </span>
+                                    <td class="py-2.5 px-3.5 text-right font-medium text-slate-900 dark:text-white font-mono tabular-nums">₱{{ number_format($product->tagged_price, 2) }}</td>
+                                    <td class="py-2.5 px-3.5 text-center">
+                                        @if($product->quantity_in_stock <= 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900">0 units</span>
+                                        @elseif($product->quantity_in_stock <= 4)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">{{ $product->quantity_in_stock }} units</span>
                                         @else
-                                            <span class="inline-flex items-center gap-1.5 bg-[#ecfdf5] text-[#059669] text-xs font-bold px-3 py-1 rounded-full">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
-                                                In Stock
-                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">{{ $product->quantity_in_stock }} units</span>
                                         @endif
+                                    </td>
+                                    <td class="py-2.5 px-3.5 text-right font-bold text-slate-900 dark:text-white font-mono tabular-nums">
+                                        ₱{{ number_format($product->tagged_price * $product->quantity_in_stock, 2) }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-10 text-center text-slate-400">No products match this filter.</td>
+                                    <td colspan="6" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500">No inventory products found matching filters.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
+                    @if($products->hasPages())
+                        <div class="p-3 border-t border-slate-200 dark:border-[#1a2858] bg-slate-50 dark:bg-[#0f1b40]">
+                            {{ $products->links() }}
+                        </div>
+                    @endif
                 </div>
-                @if($products->hasPages())
-                    <div class="p-4 border-t border-slate-100">
-                        {{ $products->links() }}
-                    </div>
-                @endif
             </div>
 
         </div>
     @endif
 
     <!-- ========================================== -->
-    <!-- TAB 3: BRANCH TRANSFERS & RESTOCK LOG      -->
+    <!-- TAB 3: BRANCH STOCK TRANSFERS REPORT       -->
     <!-- ========================================== -->
     @if($activeTab === 'transfers')
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden w-full min-w-0">
-            <div class="p-6 border-b border-slate-100">
-                <h3 class="text-[#142259] font-black text-base uppercase tracking-wider">Inbound Branch Delivery History</h3>
-                <p class="text-slate-400 text-xs mt-1">Audit log of all physical stock movements received at this branch</p>
-            </div>
-
-            <div class="overflow-x-auto w-full">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-[#1558bf] text-white text-[11px] font-black tracking-wider uppercase">
-                            <th class="py-4 px-6">DELIVERY DATE</th>
-                            <th class="py-4 px-6">SOURCE BRANCH</th>
-                            <th class="py-4 px-6">ITEMS & QUANTITIES</th>
-                            <th class="py-4 px-6">RECEIVED BY</th>
-                            <th class="py-4 px-6">NOTES</th>
+        <div class="overflow-x-auto border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b]">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
+                        <th class="py-2.5 px-3.5 w-32 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Delivery Date</th>
+                        <th class="py-2.5 px-3.5 w-44 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Source Branch</th>
+                        <th class="py-2.5 px-3.5 min-w-[220px] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Items & Quantities</th>
+                        <th class="py-2.5 px-3.5 w-36 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Received By</th>
+                        <th class="py-2.5 px-3.5 min-w-[180px] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($transfers as $tf)
+                        <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
+                            <td class="py-2.5 px-3.5 font-medium text-slate-900 dark:text-white font-mono tabular-nums">{{ $tf->date_received->format('Y-m-d') }}</td>
+                            <td class="py-2.5 px-3.5 font-semibold text-slate-800 dark:text-slate-200">{{ $tf->source_branch }}</td>
+                            <td class="py-2.5 px-3.5">
+                                @foreach($tf->items as $it)
+                                    <div class="text-xs text-slate-700 dark:text-slate-300 py-0.5">
+                                        <span class="font-medium">{{ $it->product?->name ?? 'Product' }}:</span>
+                                        <span class="text-emerald-700 dark:text-emerald-400 font-semibold font-mono tabular-nums">+{{ $it->quantity_received }} units</span>
+                                    </div>
+                                @endforeach
+                            </td>
+                            <td class="py-2.5 px-3.5 text-slate-600 dark:text-slate-300 font-medium">{{ $tf->receiver?->name ?? 'Admin' }}</td>
+                            <td class="py-2.5 px-3.5 text-slate-400 dark:text-slate-400 text-xs">{{ $tf->notes ?: '—' }}</td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-[13px]">
-                        @forelse($transfers as $tf)
-                            <tr class="hover:bg-blue-50/20">
-                                <td class="py-4 px-6 font-bold text-slate-800">{{ $tf->date_received->format('Y-m-d') }}</td>
-                                <td class="py-4 px-6 font-extrabold text-[#142259]">{{ $tf->source_branch }}</td>
-                                <td class="py-4 px-6">
-                                    @foreach($tf->items as $it)
-                                        <div class="text-xs text-slate-700 py-0.5">
-                                            <span class="font-bold">{{ $it->product?->name ?? 'Product' }}:</span>
-                                            <span class="text-emerald-600 font-extrabold">+{{ $it->quantity_received }} units</span>
-                                        </div>
-                                    @endforeach
-                                </td>
-                                <td class="py-4 px-6 text-slate-600 font-medium">{{ $tf->receiver?->name ?? 'Admin' }}</td>
-                                <td class="py-4 px-6 text-slate-400 text-xs">{{ $tf->notes ?: '—' }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="py-10 text-center text-slate-400">No branch transfers on record.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
+                    @empty
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500">No branch transfers on record.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
             @if($transfers->hasPages())
-                <div class="p-4 border-t border-slate-100">
+                <div class="p-3 border-t border-slate-200 dark:border-[#1a2858] bg-slate-50 dark:bg-[#0f1b40]">
                     {{ $transfers->links() }}
                 </div>
             @endif
         </div>
     @endif
+
+</div>
 
 </div>

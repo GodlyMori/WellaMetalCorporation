@@ -1,4 +1,4 @@
-@section('title', 'SALES')
+@section('title', 'Sales & POS')
 
 <x-app-layout>
     <livewire:sales-manager />

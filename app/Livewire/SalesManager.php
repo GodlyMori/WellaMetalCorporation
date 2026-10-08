@@ -2,127 +2,161 @@
 
 namespace App\Livewire;
 
+use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
-use Livewire\WithPagination;
 
 class SalesManager extends Component
 {
-    use WithPagination;
-
-    public string $search = '';
-    public string $statusFilter = 'ALL'; // ALL, completed, pending, cancelled, layaway, ARCHIVED
-
-    // New Sale Modal Form State
-    public bool $showNewSaleModal = false;
+    // 1. Quadrant 1: Customer Info
+    public ?int $selected_customer_id = null;
+    public string $customer_search = '';
     public string $customer_name = '';
     public string $customer_phone = '';
     public string $customer_address = '';
-    public string $payment_type = 'full'; // 'full', 'layaway'
-    public string $downpayment_amount = '';
     public string $sale_notes = '';
 
-    // Event Promotions / Discounts (Valentine's, Kadayawan, etc.)
+    // 2. Quadrant 2: Available Products Catalog
+    public string $catalogCategory = 'ALL';
+    public string $catalogSearch = '';
+
+    // 3. Quadrant 3: Selected Products (Cart)
+    public array $items = [];
+
+    // 4. Quadrant 4: Payment Section & Promotions
+    public string $payment_type = 'full'; // 'full', 'layaway'
+    public string $downpayment_amount = '';
+    public string $cash_tendered = '';
     public ?int $selected_promotion_id = null;
     public string $promo_code_input = '';
     public string $promoErrorMessage = '';
 
-    // Multiple Items list
-    public array $items = [];
+    // Receipt Modal (No print, pure display)
+    public bool $showReceiptModal = false;
+    public ?array $receiptData = null;
 
-    // Lay-Away Payment Modal
-    public bool $showPaymentModal = false;
-    public ?int $payingSaleId = null;
-    public ?Sale $payingSale = null;
-    public string $paymentAmount = '';
-
-    // Secretary Archive Authorization Modal
-    public bool $showAuthModal = false;
-    public ?int $pendingArchiveId = null;
-    public ?int $authApproverId = null;
-    public string $authPassword = '';
-    public string $authReason = '';
-    public string $authError = '';
-
+    // Feedback
     public string $successMessage = '';
 
-    public function openNewSaleModal()
+    public function mount()
     {
-        $this->reset([
-            'customer_name', 
-            'customer_phone', 
-            'customer_address', 
-            'sale_notes', 
-            'downpayment_amount',
-            'selected_promotion_id',
-            'promo_code_input',
-            'promoErrorMessage'
-        ]);
-        
-        $this->payment_type = 'full';
-
-        // Prepopulate with first available product
-        $firstProduct = Product::where('status', 'active')->where('quantity_in_stock', '>', 0)->first();
-        $this->items = [
-            [
-                'product_id' => $firstProduct?->id,
-                'quantity' => 1,
-                'unit_price' => (float)($firstProduct?->tagged_price ?? 0),
-                'subtotal' => (float)($firstProduct?->tagged_price ?? 0),
-            ]
-        ];
-
-        $this->showNewSaleModal = true;
+        $this->items = [];
     }
 
-    public function addItem()
+    // Customer Search & Selection Handling
+    public function selectCustomer(int $id)
     {
-        $firstProduct = Product::where('status', 'active')->where('quantity_in_stock', '>', 0)->first();
+        $customer = Customer::find($id);
+        if ($customer) {
+            $this->selected_customer_id = $customer->id;
+            $this->customer_name = $customer->name;
+            $this->customer_phone = $customer->phone ?? '';
+            $this->customer_address = $customer->address ?? '';
+            $this->customer_search = '';
+        }
+    }
+
+    public function clearSelectedCustomer()
+    {
+        $this->selected_customer_id = null;
+        $this->customer_name = '';
+        $this->customer_phone = '';
+        $this->customer_address = '';
+        $this->customer_search = '';
+    }
+
+    // Product Catalog & Cart Management
+    public function addProductToCart(int $productId)
+    {
+        $product = Product::find($productId);
+        if (!$product || $product->quantity_in_stock <= 0) {
+            return;
+        }
+
+        // Check if already in cart
+        foreach ($this->items as $index => $item) {
+            if ($item['product_id'] == $productId) {
+                $currentQty = (int)$item['quantity'];
+                if ($currentQty < $product->quantity_in_stock) {
+                    $this->items[$index]['quantity'] = $currentQty + 1;
+                    $this->items[$index]['subtotal'] = ($currentQty + 1) * (float)$item['unit_price'];
+                }
+                return;
+            }
+        }
+
+        // Add new item to cart
         $this->items[] = [
-            'product_id' => $firstProduct?->id,
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'unit_price' => (float)$product->tagged_price,
             'quantity' => 1,
-            'unit_price' => (float)($firstProduct?->tagged_price ?? 0),
-            'subtotal' => (float)($firstProduct?->tagged_price ?? 0),
+            'subtotal' => (float)$product->tagged_price,
+            'max_stock' => $product->quantity_in_stock,
         ];
+
+        // If layaway, auto-adjust min downpayment
+        if ($this->payment_type === 'layaway') {
+            $this->downpayment_amount = (string)$this->minDownpayment;
+        }
+    }
+
+    public function incrementQuantity(int $index)
+    {
+        if (isset($this->items[$index])) {
+            $product = Product::find($this->items[$index]['product_id']);
+            $maxStock = $product ? $product->quantity_in_stock : 1;
+            $currentQty = (int)$this->items[$index]['quantity'];
+
+            if ($currentQty < $maxStock) {
+                $this->items[$index]['quantity'] = $currentQty + 1;
+                $this->items[$index]['subtotal'] = ($currentQty + 1) * (float)$this->items[$index]['unit_price'];
+            }
+        }
+    }
+
+    public function decrementQuantity(int $index)
+    {
+        if (isset($this->items[$index])) {
+            $currentQty = (int)$this->items[$index]['quantity'];
+            if ($currentQty > 1) {
+                $this->items[$index]['quantity'] = $currentQty - 1;
+                $this->items[$index]['subtotal'] = ($currentQty - 1) * (float)$this->items[$index]['unit_price'];
+            } else {
+                $this->removeItem($index);
+            }
+        }
     }
 
     public function removeItem(int $index)
     {
-        if (count($this->items) > 1) {
+        if (isset($this->items[$index])) {
             unset($this->items[$index]);
             $this->items = array_values($this->items);
-        }
-    }
 
-    public function updatedItems($val, $key)
-    {
-        // $key format is e.g. "0.product_id" or "1.quantity"
-        $parts = explode('.', $key);
-        if (count($parts) === 2) {
-            $index = (int)$parts[0];
-            $field = $parts[1];
-
-            if ($field === 'product_id') {
-                $product = Product::find($val);
-                if ($product) {
-                    $this->items[$index]['unit_price'] = (float)$product->tagged_price;
-                }
+            if ($this->payment_type === 'layaway') {
+                $this->downpayment_amount = (string)$this->minDownpayment;
             }
-
-            $qty = max(1, (int)($this->items[$index]['quantity'] ?? 1));
-            $this->items[$index]['quantity'] = $qty;
-            $price = (float)($this->items[$index]['unit_price'] ?? 0);
-            $this->items[$index]['subtotal'] = $qty * $price;
         }
     }
 
+    public function clearCart()
+    {
+        $this->items = [];
+        $this->selected_promotion_id = null;
+        $this->promo_code_input = '';
+        $this->promoErrorMessage = '';
+        $this->cash_tendered = '';
+        $this->downpayment_amount = '';
+    }
+
+    // Calculations
     public function getTotalAmountProperty(): float
     {
         $total = 0.0;
@@ -197,11 +231,58 @@ class SalesManager extends Component
         return max(0.0, $this->netAmount - $dp);
     }
 
+    public function getMinDownpaymentProperty(): float
+    {
+        $min = round($this->netAmount * 0.20, 2);
+        return max(1.0, min($min, $this->netAmount));
+    }
+
+    public function setMinimumDownpayment(): void
+    {
+        $this->downpayment_amount = (string)$this->minDownpayment;
+    }
+
+    public function getPayableTodayProperty(): float
+    {
+        if ($this->payment_type === 'layaway') {
+            return (float)$this->downpayment_amount;
+        }
+        return (float)$this->netAmount;
+    }
+
+    public function getChangeDueProperty(): float
+    {
+        $tendered = (float)$this->cash_tendered;
+        $payable = $this->payableToday;
+        if ($tendered < $payable) {
+            return 0.0;
+        }
+        return max(0.0, $tendered - $payable);
+    }
+
+    public function setExactCashTendered(): void
+    {
+        $this->cash_tendered = (string)$this->payableToday;
+    }
+
+    public function updatedPaymentType($val)
+    {
+        if ($val === 'layaway') {
+            $this->downpayment_amount = (string)$this->minDownpayment;
+            $this->cash_tendered = '';
+        } else {
+            $this->downpayment_amount = '';
+            $this->cash_tendered = '';
+        }
+    }
+
+    // Checkout & Transaction Execution
     public function recordSale()
     {
-        // 1. Strict Validation
-        // Customer name must not contain numbers
-        // Customer contact and address must be complete
+        $this->successMessage = '';
+
+        $payableToday = ($this->payment_type === 'layaway') ? (float)$this->downpayment_amount : (float)$this->netAmount;
+
         $rules = [
             'customer_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
             'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9\+\-\s\(\)]+$/'],
@@ -213,22 +294,31 @@ class SalesManager extends Component
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ];
 
-        if ($this->payment_type === 'layaway') {
-            $rules['downpayment_amount'] = ['required', 'numeric', 'min:1', 'max:' . $this->netAmount];
+        // Cash validation only applies when payment_type is 'full'
+        if ($this->payment_type === 'full') {
+            $rules['cash_tendered'] = ['required', 'numeric', 'min:' . max(0.01, $payableToday)];
+        } else {
+            $rules['downpayment_amount'] = ['required', 'numeric', 'min:' . $this->minDownpayment, 'max:' . $this->netAmount];
         }
 
         $this->validate($rules, [
             'customer_name.regex' => 'Customer name must contain letters only (numbers are not permitted).',
+            'customer_name.required' => 'Customer name is required.',
             'customer_phone.regex' => 'Please enter a valid contact number (digits, spaces, +).',
             'customer_phone.required' => 'Customer contact number is required.',
-            'customer_address.required' => 'Customer delivery/complete address is required.',
+            'customer_address.required' => 'Customer complete address is required.',
+            'items.min' => 'Please add at least one product to the order.',
             'downpayment_amount.required' => 'Please enter the initial downpayment for lay-away.',
+            'downpayment_amount.min' => 'A minimum 20% downpayment of ₱' . number_format($this->minDownpayment, 2) . ' is required for lay-away reservations.',
             'downpayment_amount.max' => 'Downpayment cannot exceed the total order amount.',
+            'cash_tendered.required' => 'Please enter the cash amount tendered by the customer.',
+            'cash_tendered.numeric' => 'Cash tendered must be a valid numeric amount.',
+            'cash_tendered.min' => 'Cash tendered cannot be less than the payable amount of ₱' . number_format($payableToday, 2) . '.',
         ]);
 
-        // 2. Stock Verification across all items
+        // Preliminary stock check
         $groupedQuantities = [];
-        foreach ($this->items as $idx => $it) {
+        foreach ($this->items as $it) {
             $pId = (int)$it['product_id'];
             $groupedQuantities[$pId] = ($groupedQuantities[$pId] ?? 0) + (int)$it['quantity'];
         }
@@ -243,245 +333,287 @@ class SalesManager extends Component
             }
         }
 
-        // 3. Execution in Transaction
-        DB::transaction(function () {
-            $totalAmount = $this->totalAmount;
-            $discountAmount = $this->discountAmount;
-            $netAmount = $this->netAmount;
-            $saleNumber = 'ORD-' . date('Y') . '-' . str_pad(Sale::count() + 1, 3, '0', STR_PAD_LEFT);
+        $createdSale = null;
 
-            $promo = $this->selected_promotion_id ? Promotion::find($this->selected_promotion_id) : null;
-            $promoName = $promo ? $promo->name : null;
+        try {
+            DB::transaction(function () use ($groupedQuantities, &$createdSale) {
+                $productIds = array_keys($groupedQuantities);
+                sort($productIds, SORT_NUMERIC);
 
-            $colors = ['#2563eb', '#ea580c', '#7c3aed', '#16a34a', '#e11d48', '#0284c7'];
-            $color = $colors[array_rand($colors)];
+                $lockedProducts = [];
+                foreach ($productIds as $pId) {
+                    $lockedProduct = Product::where('id', $pId)->lockForUpdate()->first();
+                    $requiredQty = $groupedQuantities[$pId];
 
-            // Summary product name
-            $firstProduct = Product::find($this->items[0]['product_id']);
-            $productCount = count($this->items);
-            $productSummary = $firstProduct?->name ?? 'Items';
-            if ($productCount > 1) {
-                $productSummary .= ' + ' . ($productCount - 1) . ' other item' . ($productCount > 2 ? 's' : '');
-            }
+                    if (!$lockedProduct || $lockedProduct->status !== 'active') {
+                        $pName = $lockedProduct ? $lockedProduct->name : "Product #{$pId}";
+                        throw new \RuntimeException("Product '{$pName}' is currently inactive or unavailable.");
+                    }
 
-            $isLayaway = ($this->payment_type === 'layaway');
-            $downpayment = $isLayaway ? (float)$this->downpayment_amount : $netAmount;
-            $remainingBal = $isLayaway ? max(0, $netAmount - $downpayment) : 0;
-            $status = $isLayaway ? 'layaway' : 'completed';
-            $expiryDate = $isLayaway ? now()->addMonths(3)->toDateString() : null;
+                    if ($lockedProduct->quantity_in_stock < $requiredQty) {
+                        throw new \RuntimeException("Insufficient stock for '{$lockedProduct->name}'. Requested: {$requiredQty}, Available: {$lockedProduct->quantity_in_stock}.");
+                    }
 
-            $sale = Sale::create([
-                'sale_number' => $saleNumber,
-                'customer_name' => $this->customer_name,
-                'customer_phone' => $this->customer_phone,
-                'customer_address' => $this->customer_address,
-                'avatar_color' => $color,
-                'product_id' => $firstProduct?->id,
-                'product_name' => $productSummary,
-                'promotion_id' => $promo?->id,
-                'promo_name' => $promoName,
-                'amount' => $netAmount,
-                'original_amount' => $totalAmount,
-                'discount_amount' => $discountAmount,
-                'payment_type' => $this->payment_type,
-                'downpayment_amount' => $isLayaway ? $downpayment : 0,
-                'amount_paid' => $downpayment,
-                'remaining_balance' => $remainingBal,
-                'layaway_expires_at' => $expiryDate,
-                'last_payment_date' => now()->toDateString(),
-                'sale_date' => now()->toDateString(),
-                'status' => $status,
-                'is_archived' => false,
-                'notes' => $this->sale_notes ?: ($isLayaway ? 'Lay-Away Order (3-month expiry from payment date)' : null),
-                'created_by' => Auth::id() ?? 1,
-            ]);
+                    $lockedProducts[$pId] = $lockedProduct;
+                }
 
-            // Save individual items and reserve stock
-            foreach ($this->items as $it) {
-                $p = Product::find($it['product_id']);
-                SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $it['product_id'],
-                    'quantity' => $it['quantity'],
-                    'unit_price' => $it['unit_price'],
-                    'subtotal' => $it['subtotal'],
+                $totalAmount = $this->totalAmount;
+                $discountAmount = $this->discountAmount;
+                $netAmount = $this->netAmount;
+
+                $promo = $this->selected_promotion_id ? Promotion::find($this->selected_promotion_id) : null;
+                $promoName = $promo ? $promo->name : null;
+
+                $colors = ['#2563eb', '#ea580c', '#7c3aed', '#16a34a', '#e11d48', '#0284c7'];
+                $color = $colors[array_rand($colors)];
+
+                $firstProductId = (int)$this->items[0]['product_id'];
+                $firstProduct = $lockedProducts[$firstProductId] ?? Product::find($firstProductId);
+                $productCount = count($this->items);
+                $productSummary = $firstProduct?->name ?? 'Items';
+                if ($productCount > 1) {
+                    $productSummary .= ' + ' . ($productCount - 1) . ' other item' . ($productCount > 2 ? 's' : '');
+                }
+
+                $isLayaway = ($this->payment_type === 'layaway');
+                $downpayment = $isLayaway ? (float)$this->downpayment_amount : $netAmount;
+                $remainingBal = $isLayaway ? max(0.0, $netAmount - $downpayment) : 0.0;
+                $isCompleted = (!$isLayaway || $remainingBal <= 0);
+                $status = $isCompleted ? 'completed' : 'layaway';
+                $expiryDate = $isCompleted ? null : now()->addMonths(3)->toDateString();
+
+                // 1. Sync or Create Customer Record
+                $customer = null;
+                if ($this->selected_customer_id) {
+                    $customer = Customer::find($this->selected_customer_id);
+                }
+
+                if (!$customer) {
+                    $customer = Customer::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($this->customer_name))])->first();
+                }
+
+                if (!$customer) {
+                    $maxCustId = (Customer::withTrashed()->max('id') ?? 0) + 1;
+                    $customer = Customer::create([
+                        'customer_number' => 'CUST-' . date('Y') . '-' . str_pad($maxCustId, 4, '0', STR_PAD_LEFT),
+                        'name' => trim($this->customer_name),
+                        'phone' => trim($this->customer_phone) ?: null,
+                        'address' => trim($this->customer_address) ?: null,
+                        'created_by' => Auth::id() ?? 1,
+                    ]);
+                }
+
+                if ($customer) {
+                    $customer->phone = trim($this->customer_phone) ?: $customer->phone;
+                    $customer->address = trim($this->customer_address) ?: $customer->address;
+                    $customer->increment('total_orders_count', 1);
+                    $customer->increment('total_spent', $downpayment);
+                    $customer->save();
+                }
+
+                // 2. Create Sale Record
+                $sale = Sale::create([
+                    'customer_id' => $customer->id,
+                    'sale_number' => null,
+                    'customer_name' => trim($this->customer_name),
+                    'customer_phone' => trim($this->customer_phone),
+                    'customer_address' => trim($this->customer_address),
+                    'customer_initials' => $customer->initials,
+                    'avatar_color' => $color,
+                    'product_id' => $firstProduct?->id,
+                    'product_name' => $productSummary,
+                    'promotion_id' => $promo?->id,
+                    'promo_name' => $promoName,
+                    'amount' => $netAmount,
+                    'original_amount' => $totalAmount,
+                    'discount_amount' => $discountAmount,
+                    'payment_type' => $this->payment_type,
+                    'downpayment_amount' => $isLayaway ? $downpayment : 0,
+                    'amount_paid' => $downpayment,
+                    'remaining_balance' => $remainingBal,
+                    'layaway_expires_at' => $expiryDate,
+                    'last_payment_date' => now()->toDateString(),
+                    'sale_date' => now()->toDateString(),
+                    'status' => $status,
+                    'is_archived' => false,
+                    'notes' => $this->sale_notes ?: ($isLayaway ? 'Lay-Away Reservation (Store Pickup, 3-month expiry)' : 'Store Pickup (Cash Basis)'),
+                    'created_by' => Auth::id() ?? 1,
                 ]);
 
-                // Deduct/reserve physical stock
-                $p->decrement('quantity_in_stock', $it['quantity']);
-            }
-        });
+                // 3. Collision-Safe Monotonic Order Number
+                $candidateNumber = sprintf('ORD-%s-%03d', date('Y'), $sale->id);
+                $collisionOffset = 0;
+                while (Sale::withTrashed()->where('sale_number', $candidateNumber)->where('id', '!=', $sale->id)->exists()) {
+                    $collisionOffset++;
+                    $candidateNumber = sprintf('ORD-%s-%03d', date('Y'), $sale->id + $collisionOffset);
+                }
+                $sale->update(['sale_number' => $candidateNumber]);
 
-        $this->showNewSaleModal = false;
+                // 4. Save Line Items & Deduct Physical Stock with Audit Trail
+                foreach ($this->items as $it) {
+                    $pId = (int)$it['product_id'];
+                    $qty = (int)$it['quantity'];
+
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $pId,
+                        'quantity' => $qty,
+                        'unit_price' => $it['unit_price'],
+                        'subtotal' => $it['subtotal'],
+                    ]);
+
+                    $lockedProduct = $lockedProducts[$pId];
+                    $oldStock = (int)$lockedProduct->quantity_in_stock;
+                    $lockedProduct->decrement('quantity_in_stock', $qty);
+                    $newStock = $oldStock - $qty;
+
+                    \App\Models\InventoryAdjustment::create([
+                        'product_id' => $pId,
+                        'user_id' => Auth::id() ?? 1,
+                        'old_quantity' => $oldStock,
+                        'new_quantity' => $newStock,
+                        'quantity_change' => -$qty,
+                        'reason' => 'Customer Sale Stock Deduction',
+                        'notes' => "Deducted {$qty} unit(s) for Sale Order {$candidateNumber} (Customer: {$customer->name})",
+                    ]);
+                }
+
+                // 5. Financial Ledger Entry
+                if ($downpayment > 0) {
+                    $tendered = $this->payment_type === 'full' ? (float)$this->cash_tendered : $downpayment;
+                    $change = max(0.0, $tendered - $downpayment);
+
+                    Payment::create([
+                        'sale_id' => $sale->id,
+                        'amount' => $downpayment,
+                        'payment_date' => now(),
+                        'payment_method' => 'cash',
+                        'reference_number' => null,
+                        'notes' => $isLayaway
+                            ? "Initial Lay-Away Downpayment (20% Min Deposit, Store Pickup)"
+                            : "Full Cash Settlement (Tendered: ₱" . number_format($tendered, 2) . ", Change: ₱" . number_format($change, 2) . ")",
+                        'recorded_by' => Auth::id() ?? 1,
+                    ]);
+                }
+
+                $createdSale = $sale;
+            });
+        } catch (\RuntimeException $e) {
+            $this->addError('items', $e->getMessage());
+            return;
+        } catch (\Throwable $e) {
+            $this->addError('items', 'Transaction failed: ' . $e->getMessage());
+            return;
+        }
+
+        $tendered = $this->payment_type === 'full' ? (float)$this->cash_tendered : (float)$this->downpayment_amount;
+        $payable = ($this->payment_type === 'layaway') ? (float)$this->downpayment_amount : (float)$this->netAmount;
+        $change = max(0.0, $tendered - $payable);
+
+        // Prepare Receipt Data (pure display, no print buttons)
+        $receiptItems = [];
+        foreach ($this->items as $it) {
+            $receiptItems[] = [
+                'name' => $it['name'],
+                'quantity' => (int)$it['quantity'],
+                'unit_price' => (float)$it['unit_price'],
+                'subtotal' => (float)$it['subtotal'],
+            ];
+        }
+
+        $this->receiptData = [
+            'order_number' => $createdSale->sale_number,
+            'sale_date' => now()->format('M d, Y h:i A'),
+            'cashier' => Auth::user()?->name ?? 'Staff',
+            'customer_name' => $this->customer_name,
+            'customer_phone' => $this->customer_phone,
+            'customer_address' => $this->customer_address,
+            'items' => $receiptItems,
+            'total_amount' => $this->totalAmount,
+            'discount_amount' => $this->discountAmount,
+            'promo_name' => $createdSale->promo_name,
+            'net_amount' => $this->netAmount,
+            'payment_type' => $this->payment_type,
+            'cash_tendered' => $tendered,
+            'change_due' => $change,
+            'downpayment_amount' => ($this->payment_type === 'layaway') ? (float)$this->downpayment_amount : 0,
+            'remaining_balance' => ($this->payment_type === 'layaway') ? max(0.0, $this->netAmount - (float)$this->downpayment_amount) : 0,
+            'expiry_date' => ($this->payment_type === 'layaway') ? now()->addMonths(3)->format('M d, Y') : null,
+            'notes' => $this->sale_notes,
+        ];
+        $this->showReceiptModal = true;
+
         $this->successMessage = ($this->payment_type === 'layaway')
-            ? "Lay-away order created for '{$this->customer_name}'. Reserved for 3 months until " . now()->addMonths(3)->format('M d, Y') . "."
-            : "Sale for '{$this->customer_name}' recorded successfully.";
-    }
+            ? "Order {$createdSale->sale_number} recorded! Downpayment of ₱" . number_format($payable, 2) . " received. Items reserved until " . now()->addMonths(3)->format('M d, Y') . "."
+            : "Sale {$createdSale->sale_number} completed! Cash Tendered: ₱" . number_format($tendered, 2) . " (Change: ₱" . number_format($change, 2) . ").";
 
-    // Lay-Away Installment / Balance Settlement
-    public function openPaymentModal(int $id)
-    {
-        $this->payingSaleId = $id;
-        $this->payingSale = Sale::findOrFail($id);
-        $this->paymentAmount = (string)$this->payingSale->remaining_balance;
-        $this->showPaymentModal = true;
-    }
-
-    public function submitLayawayPayment()
-    {
-        $sale = Sale::findOrFail($this->payingSaleId);
-
-        $this->validate([
-            'paymentAmount' => ['required', 'numeric', 'min:1', 'max:' . $sale->remaining_balance],
-        ], [
-            'paymentAmount.max' => 'Payment cannot exceed the remaining balance of ₱' . number_format($sale->remaining_balance, 2),
+        // Reset inputs for next sale
+        $this->reset([
+            'customer_name',
+            'customer_phone',
+            'customer_address',
+            'sale_notes',
+            'selected_customer_id',
+            'customer_search',
+            'items',
+            'downpayment_amount',
+            'cash_tendered',
+            'selected_promotion_id',
+            'promo_code_input',
+            'promoErrorMessage'
         ]);
-
-        $payment = (float)$this->paymentAmount;
-        $newAmountPaid = $sale->amount_paid + $payment;
-        $newRemainingBalance = max(0, $sale->amount - $newAmountPaid);
-        $isFullyPaid = ($newRemainingBalance <= 0);
-
-        // Lay-away expiration extends 3 months after each installment payment
-        $newExpiry = $isFullyPaid ? null : now()->addMonths(3)->toDateString();
-        $newStatus = $isFullyPaid ? 'completed' : 'layaway';
-
-        $sale->update([
-            'amount_paid' => $newAmountPaid,
-            'remaining_balance' => $newRemainingBalance,
-            'layaway_expires_at' => $newExpiry,
-            'last_payment_date' => now()->toDateString(),
-            'status' => $newStatus,
-            'notes' => $sale->notes . "\n[" . now()->format('Y-m-d H:i') . "] Received ₱" . number_format($payment, 2) . ($isFullyPaid ? ' (Fully Settled)' : ' (Balance: ₱' . number_format($newRemainingBalance, 2) . ', Extended 3 months)'),
-        ]);
-
-        $this->showPaymentModal = false;
-        $this->successMessage = $isFullyPaid 
-            ? "Lay-away order {$sale->sale_number} has been fully settled and marked Completed!"
-            : "Payment of ₱" . number_format($payment, 2) . " recorded. Lay-away extended 3 months until " . now()->addMonths(3)->format('M d, Y') . ".";
+        $this->payment_type = 'full';
     }
 
-    // Archive Authorization Check
-    public function archiveSale(int $id)
+    public function closeReceiptModal()
     {
-        $user = Auth::user();
-        $isSecretary = $user && $user->hasRole('secretary') && !$user->hasRole('admin') && !$user->hasRole('manager');
-
-        if ($isSecretary) {
-            $this->pendingArchiveId = $id;
-            $this->authPassword = '';
-            $this->authReason = '';
-            $this->authError = '';
-
-            $firstApprover = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['admin', 'manager']);
-            })->first();
-            $this->authApproverId = $firstApprover?->id;
-            $this->showAuthModal = true;
-            return;
-        }
-
-        $sale = Sale::findOrFail($id);
-        $sale->update([
-            'is_archived' => true,
-            'archived_by' => $user?->id,
-            'archive_approved_by' => $user?->id,
-            'archive_reason' => 'Direct archive by ' . ($user?->name ?? 'Administrator'),
-        ]);
-        $this->successMessage = "Sale record {$sale->sale_number} has been archived.";
-    }
-
-    public function confirmAuthorizedArchive()
-    {
-        $this->authError = '';
-
-        $this->validate([
-            'authApproverId' => 'required|exists:users,id',
-            'authPassword' => 'required|string',
-            'authReason' => 'required|string|min:3',
-        ]);
-
-        $approver = User::findOrFail($this->authApproverId);
-        if (!$approver->hasRole('admin') && !$approver->hasRole('manager')) {
-            $this->authError = "Selected user is not an Admin or Manager.";
-            return;
-        }
-
-        if (!Hash::check($this->authPassword, $approver->password) && $this->authPassword !== 'password') {
-            $this->authError = "Invalid password for {$approver->name}. Authorization denied.";
-            return;
-        }
-
-        $sale = Sale::findOrFail($this->pendingArchiveId);
-        $sale->update([
-            'is_archived' => true,
-            'archived_by' => Auth::id(),
-            'archive_approved_by' => $approver->id,
-            'archive_reason' => $this->authReason,
-        ]);
-
-        $this->showAuthModal = false;
-        $this->reset(['pendingArchiveId', 'authPassword', 'authReason', 'authError']);
-        $this->successMessage = "Sale {$sale->sale_number} archived with authorization from {$approver->name}.";
-    }
-
-    public function restoreSale(int $id)
-    {
-        $sale = Sale::findOrFail($id);
-        $sale->update(['is_archived' => false]);
-        $this->successMessage = "Sale record {$sale->sale_number} has been restored.";
-    }
-
-    public function setStatusFilter(string $st)
-    {
-        $this->statusFilter = $st;
-        $this->resetPage();
+        $this->showReceiptModal = false;
+        $this->receiptData = null;
     }
 
     public function render()
     {
-        $activeProducts = Product::where('status', 'active')->where('quantity_in_stock', '>', 0)->orderBy('name')->get();
+        // 1. Available products for Quadrant 2
+        $catalogQuery = Product::where('status', 'active')->where('quantity_in_stock', '>', 0);
 
-        $query = Sale::query()->with('items.product');
-
-        if ($this->statusFilter === 'ARCHIVED') {
-            $query->where('is_archived', true);
-        } else {
-            $query->where('is_archived', false);
-            if ($this->statusFilter !== 'ALL') {
-                $query->where('status', $this->statusFilter);
-            }
+        if ($this->catalogCategory !== 'ALL') {
+            $catalogQuery->where('category', $this->catalogCategory);
         }
 
-        if (!empty($this->search)) {
-            $query->where(function ($q) {
-                $q->where('customer_name', 'like', '%' . $this->search . '%')
-                  ->orWhere('customer_phone', 'like', '%' . $this->search . '%')
-                  ->orWhere('product_name', 'like', '%' . $this->search . '%')
-                  ->orWhere('sale_number', 'like', '%' . $this->search . '%');
+        if (!empty($this->catalogSearch)) {
+            $s = '%' . trim($this->catalogSearch) . '%';
+            $catalogQuery->where(function ($q) use ($s) {
+                $q->where('name', 'like', $s)
+                  ->orWhere('description', 'like', $s);
             });
         }
 
-        $sales = $query->orderBy('sale_date', 'desc')->paginate(15);
+        $availableProducts = $catalogQuery->orderBy('name')->get();
 
-        $counts = [
-            'all' => Sale::where('is_archived', false)->count(),
-            'completed' => Sale::where('is_archived', false)->where('status', 'completed')->count(),
-            'layaway' => Sale::where('is_archived', false)->where('status', 'layaway')->count(),
-            'pending' => Sale::where('is_archived', false)->where('status', 'pending')->count(),
-            'cancelled' => Sale::where('is_archived', false)->where('status', 'cancelled')->count(),
-            'archived' => Sale::where('is_archived', true)->count(),
-        ];
+        // 2. Fetch distinct existing categories merged with standard furniture categories
+        $dbCategories = Product::whereNotNull('category')
+            ->where('category', '!=', '')
+            ->select('category')
+            ->distinct()
+            ->pluck('category')
+            ->toArray();
+        $existingCategories = array_values(array_unique(array_merge(Product::CATEGORIES, $dbCategories)));
 
-        $approvers = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['admin', 'manager']);
-        })->get();
+        // 3. Customer search query for Quadrant 1
+        $searchedCustomers = [];
+        if (strlen(trim($this->customer_search)) >= 1) {
+            $cs = '%' . trim($this->customer_search) . '%';
+            $searchedCustomers = Customer::where('name', 'like', $cs)
+                ->orWhere('phone', 'like', $cs)
+                ->orWhere('customer_number', 'like', $cs)
+                ->take(8)
+                ->get();
+        }
 
         return view('livewire.sales-manager', [
-            'sales' => $sales,
-            'activeProducts' => $activeProducts,
-            'counts' => $counts,
-            'approvers' => $approvers,
+            'availableProducts' => $availableProducts,
+            'existingCategories' => $existingCategories,
+            'searchedCustomers' => $searchedCustomers,
         ]);
     }
 }

@@ -209,6 +209,7 @@ class PromotionsManager extends Component
             'totalPromos' => $totalPromos,
             'isAdmin' => Auth::user()?->hasRole('admin') ?? false,
             'isManager' => Auth::user()?->hasRole('manager') ?? false,
+            'categories' => \App\Models\Product::CATEGORIES,
         ])->layout('layouts.app');
     }
 }
