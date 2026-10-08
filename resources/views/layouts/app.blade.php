@@ -67,6 +67,7 @@
                 <nav class="space-y-1">
                     <!-- Dashboard Link -->
                     <a href="{{ route('dashboard') }}"
+                       wire:navigate
                        class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('dashboard*') || request()->routeIs('admin.dashboard*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,6 +82,7 @@
 
                     <!-- Inventory Link -->
                     <a href="{{ route('inventory') }}"
+                       wire:navigate
                        class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('inventory*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,6 +94,7 @@
 
                     <!-- Sales Link -->
                     <a href="{{ route('sales') }}"
+                       wire:navigate
                        class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('sales*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,9 +106,10 @@
 
                     <!-- Lay-Aways Link -->
                     @php
-                        $activeLayawaysCount = \App\Models\Sale::where('is_archived', false)->where('status', 'layaway')->count();
+                        $activeLayawaysCount = cache()->remember('active_layaways_count', 30, fn() => \App\Models\Sale::where('is_archived', false)->where('status', 'layaway')->count());
                     @endphp
                     <a href="{{ route('layaways') }}"
+                       wire:navigate
                        class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('layaways*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,6 +126,7 @@
 
                     <!-- Customers Link -->
                     <a href="{{ route('customers') }}"
+                       wire:navigate
                        class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('customers*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,6 +147,7 @@
                 <nav class="space-y-1">
                     <!-- Promotions Link -->
                     <a href="{{ route('promotions') }}"
+                       wire:navigate
                        class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('promotions*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,6 +159,7 @@
 
                     <!-- Reports Link -->
                     <a href="{{ route('reports') }}"
+                       wire:navigate
                        class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('reports*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">

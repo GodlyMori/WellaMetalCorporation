@@ -31,22 +31,37 @@ class LoginForm extends Form
         $this->ensureIsNotRateLimited();
 
         $login = trim($this->username);
-        $email = filter_var($login, FILTER_VALIDATE_EMAIL)
-            ? $login
-            : ($login . '@wellametal.test');
+        $attempts = [];
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $attempts[] = $login;
+        } else {
+            $attempts[] = $login . '@wellametalcorp.com';
+            $attempts[] = $login . '@wellametal.test';
+        }
 
-        if (! Auth::attempt(['email' => $email, 'password' => $this->password], $this->remember)) {
+        $authenticated = false;
+        foreach ($attempts as $emailAttempt) {
+            if (Auth::attempt(['email' => $emailAttempt, 'password' => $this->password], $this->remember)) {
+                $authenticated = true;
+                break;
+            }
+        }
+
+        if (! $authenticated) {
             // Also attempt fallback match by name
             $user = \App\Models\User::where('name', $login)->first();
             if ($user && \Illuminate\Support\Facades\Hash::check($this->password, $user->password)) {
                 Auth::login($user, $this->remember);
-            } else {
-                RateLimiter::hit($this->throttleKey());
-
-                throw ValidationException::withMessages([
-                    'form.username' => trans('auth.failed'),
-                ]);
+                $authenticated = true;
             }
+        }
+
+        if (! $authenticated) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'form.username' => trans('auth.failed'),
+            ]);
         }
 
         RateLimiter::clear($this->throttleKey());

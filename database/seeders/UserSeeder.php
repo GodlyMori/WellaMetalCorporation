@@ -11,7 +11,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $admin = User::firstOrCreate(
-            ['email' => 'admin@wellametal.test'],
+            ['email' => 'admin@wellametalcorp.com'],
             [
                 'name' => 'Admin',
                 'password' => Hash::make('password123'),
@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
         $admin->assignRole('admin');
 
         $manager = User::firstOrCreate(
-            ['email' => 'manager@wellametal.test'],
+            ['email' => 'manager@wellametalcorp.com'],
             [
                 'name' => 'Manager',
                 'password' => Hash::make('password123'),
@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
         $manager->assignRole('manager');
 
         $secretary = User::firstOrCreate(
-            ['email' => 'secretary@wellametal.test'],
+            ['email' => 'secretary@wellametalcorp.com'],
             [
                 'name' => 'Secretary',
                 'password' => Hash::make('password123'),
