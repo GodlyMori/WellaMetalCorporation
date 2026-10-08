@@ -132,20 +132,48 @@
                                     @error("entryItems.{$index}.name") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Category (Dropdown / Datalist) -->
-                                <div class="md:col-span-2">
+                                <!-- Category (Custom In-DOM Dropdown Menu) -->
+                                <div class="md:col-span-2 relative" x-data="{ open: false }">
                                     <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Category <span class="text-rose-500">*</span>
                                     </label>
-                                    <input list="category-options-{{ $index }}"
-                                           wire:model="entryItems.{{ $index }}.category"
-                                           placeholder="Select or type..."
-                                           class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                                    <datalist id="category-options-{{ $index }}">
+                                    <div class="relative">
+                                        <input type="text"
+                                               wire:model="entryItems.{{ $index }}.category"
+                                               @focus="open = true"
+                                               @click="open = true"
+                                               @click.outside="open = false"
+                                               placeholder="Select or type..."
+                                               autocomplete="off"
+                                               class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded pl-3 pr-7 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
+                                        <button type="button" 
+                                                @click="open = !open" 
+                                                class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 pointer-events-auto">
+                                            <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- In-DOM Custom Dropdown Menu (Matches Search dropdown style & 100% visible on projectors) -->
+                                    <div x-show="open"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 scale-95"
+                                         x-transition:enter-end="opacity-100 scale-100"
+                                         x-transition:leave="transition ease-in duration-75"
+                                         x-transition:leave-start="opacity-100 scale-100"
+                                         x-transition:leave-end="opacity-0 scale-95"
+                                         class="absolute z-30 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-lg overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-52 overflow-y-auto"
+                                         style="display: none;">
                                         @foreach($existingCategories as $cat)
-                                            <option value="{{ $cat }}">{{ $cat }}</option>
+                                            <button type="button"
+                                                    @click="$wire.set('entryItems.{{ $index }}.category', '{{ addslashes($cat) }}'); open = false;"
+                                                    class="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors flex items-center justify-between group cursor-pointer">
+                                                <span class="font-medium text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#142259] dark:group-hover:text-white">{{ $cat }}</span>
+                                                <span class="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 font-sans">Select</span>
+                                            </button>
                                         @endforeach
-                                    </datalist>
+                                    </div>
                                     @error("entryItems.{$index}.category") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
                                 </div>
 
@@ -430,16 +458,47 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <div>
+                        <div class="relative" x-data="{ open: false }">
                             <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 Category <span class="text-rose-500">*</span>
                             </label>
-                            <input list="edit-category-options" wire:model="edit_category" placeholder="Select or type..." class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                            <datalist id="edit-category-options">
+                            <div class="relative">
+                                <input type="text"
+                                       wire:model="edit_category"
+                                       @focus="open = true"
+                                       @click="open = true"
+                                       @click.outside="open = false"
+                                       placeholder="Select or type..."
+                                       autocomplete="off"
+                                       class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded pl-3 pr-7 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
+                                <button type="button" 
+                                        @click="open = !open" 
+                                        class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 pointer-events-auto">
+                                    <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- In-DOM Custom Dropdown Menu (100% visible on projectors) -->
+                            <div x-show="open"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute z-30 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-lg overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-52 overflow-y-auto"
+                                 style="display: none;">
                                 @foreach($existingCategories as $cat)
-                                    <option value="{{ $cat }}">{{ $cat }}</option>
+                                    <button type="button"
+                                            @click="$wire.set('edit_category', '{{ addslashes($cat) }}'); open = false;"
+                                            class="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors flex items-center justify-between group cursor-pointer">
+                                        <span class="font-medium text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#142259] dark:group-hover:text-white">{{ $cat }}</span>
+                                        <span class="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 font-sans">Select</span>
+                                    </button>
                                 @endforeach
-                            </datalist>
+                            </div>
                             @error('edit_category') <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
                         </div>
 
