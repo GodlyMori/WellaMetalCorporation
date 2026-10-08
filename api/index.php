@@ -20,5 +20,8 @@ foreach ($directories as $dir) {
     }
 }
 
+// Ensure PHP and Laravel recognize incoming HTTPS from Vercel edge
+$_SERVER['HTTPS'] = 'on';
+
 // Forward execution to Laravel's public entrypoint
 require __DIR__ . '/../public/index.php';
