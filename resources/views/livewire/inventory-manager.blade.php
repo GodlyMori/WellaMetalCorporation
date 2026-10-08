@@ -34,7 +34,8 @@
     <!-- ============================================================== -->
     <!-- 1. TOP SECTION: SLIDING ADD INVENTORY CARD (EXPANDABLE/COLLAPSIBLE) -->
     <!-- ============================================================== -->
-    <div class="bg-white dark:bg-[#0c163b] rounded border border-slate-200 dark:border-[#1a2858] overflow-hidden transition-all duration-300">
+    <div class="bg-white dark:bg-[#0c163b] rounded border border-slate-200 dark:border-[#1a2858] transition-all duration-300"
+         :class="{ 'overflow-hidden': !isFormOpen }">
 
         <!-- Form Content (Visible when isFormOpen is true) -->
         <div x-show="isFormOpen" x-collapse>
@@ -133,7 +134,7 @@
                                 </div>
 
                                 <!-- Category (Custom In-DOM Dropdown Menu) -->
-                                <div class="md:col-span-2 relative" x-data="{ open: false }">
+                                <div class="md:col-span-2 relative" x-data="{ open: false }" :class="{ 'z-40': open }">
                                     <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Category <span class="text-rose-500">*</span>
                                     </label>
@@ -163,7 +164,7 @@
                                          x-transition:leave="transition ease-in duration-75"
                                          x-transition:leave-start="opacity-100 scale-100"
                                          x-transition:leave-end="opacity-0 scale-95"
-                                         class="absolute z-30 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-lg overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-52 overflow-y-auto"
+                                         class="absolute z-50 mt-1 w-full min-w-[200px] bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-56 overflow-y-auto ring-1 ring-black/10 dark:ring-white/10"
                                          style="display: none;">
                                         @foreach($existingCategories as $cat)
                                             <button type="button"
@@ -458,7 +459,7 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="relative" x-data="{ open: false }">
+                        <div class="relative" x-data="{ open: false }" :class="{ 'z-40': open }">
                             <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                 Category <span class="text-rose-500">*</span>
                             </label>
@@ -488,7 +489,7 @@
                                  x-transition:leave="transition ease-in duration-75"
                                  x-transition:leave-start="opacity-100 scale-100"
                                  x-transition:leave-end="opacity-0 scale-95"
-                                 class="absolute z-30 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-lg overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-52 overflow-y-auto"
+                                 class="absolute z-50 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-56 overflow-y-auto ring-1 ring-black/10 dark:ring-white/10"
                                  style="display: none;">
                                 @foreach($existingCategories as $cat)
                                     <button type="button"
