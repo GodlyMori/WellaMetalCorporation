@@ -131,4 +131,68 @@ class ReportController extends Controller
 
         return $pdf->download('wella-metal-layaway-report-' . now()->format('Y-m-d') . '.pdf');
     }
+
+    /**
+     * Export Master Comprehensive Audit Report (Sales, Inventory, Layaways)
+     */
+    public function exportAllPdf(Request $request)
+    {
+        // 1. Sales & Orders Data
+        $sales = Sale::with(['items.product', 'customer', 'creator'])
+            ->where('is_archived', false)
+            ->orderBy('sale_date', 'desc')
+            ->get();
+        $totalSalesRevenue = (float)$sales->where('status', 'completed')->sum('amount') 
+            + (float)$sales->where('status', 'layaway')->sum('amount_paid');
+        $completedSalesCount = $sales->where('status', 'completed')->count();
+        $totalDiscounts = (float)$sales->sum('discount_amount');
+        $revenueTransactionsCount = $sales->whereIn('status', ['completed', 'layaway'])->count();
+        $averageOrderValue = $revenueTransactionsCount > 0 ? ($totalSalesRevenue / $revenueTransactionsCount) : 0.0;
+
+        // 2. Inventory Valuation Data
+        $products = Product::where('status', 'active')
+            ->orderBy('id', 'asc')
+            ->get();
+        $totalStockUnits = (int)$products->sum('quantity_in_stock');
+        $totalValuation = (float)$products->sum(fn($p) => $p->tagged_price * $p->quantity_in_stock);
+        $lowStockCount = $products->where('quantity_in_stock', '<=', 4)->count();
+
+        // 3. Layaway Receivables Data
+        $layaways = Sale::with(['items.product', 'customer', 'creator'])
+            ->where('is_archived', false)
+            ->where('status', 'layaway')
+            ->orderBy('sale_date', 'desc')
+            ->get();
+        $totalLayawayReceivables = (float)$layaways->sum('remaining_balance');
+        $totalLayawayCollected = (float)$layaways->sum('amount_paid');
+        $activeLayawaysCount = $layaways->count();
+        $overdueLayawaysCount = $layaways->filter(fn($c) => $c->layaway_expires_at && $c->layaway_expires_at->isPast())->count();
+
+        $pdf = Pdf::loadView('reports.pdf.all', [
+            // Sales
+            'sales' => $sales,
+            'totalSalesRevenue' => $totalSalesRevenue,
+            'completedSalesCount' => $completedSalesCount,
+            'totalDiscounts' => $totalDiscounts,
+            'averageOrderValue' => $averageOrderValue,
+
+            // Inventory
+            'products' => $products,
+            'totalStockUnits' => $totalStockUnits,
+            'totalValuation' => $totalValuation,
+            'lowStockCount' => $lowStockCount,
+
+            // Layaways
+            'layaways' => $layaways,
+            'totalLayawayReceivables' => $totalLayawayReceivables,
+            'totalLayawayCollected' => $totalLayawayCollected,
+            'activeLayawaysCount' => $activeLayawaysCount,
+            'overdueLayawaysCount' => $overdueLayawaysCount,
+
+            // Metadata
+            'generatedAt' => now()->format('F j, Y - g:i A'),
+        ]);
+
+        return $pdf->download('wella-metal-master-audit-report-' . now()->format('Y-m-d') . '.pdf');
+    }
 }

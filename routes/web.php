@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/export/sales-pdf', [ReportController::class, 'exportSalesPdf'])->name('reports.export.sales-pdf');
     Route::get('reports/export/inventory-pdf', [ReportController::class, 'exportInventoryPdf'])->name('reports.export.inventory-pdf');
     Route::get('reports/export/layaways-pdf', [ReportController::class, 'exportLayawaysPdf'])->name('reports.export.layaways-pdf');
+    Route::get('reports/export/all-pdf', [ReportController::class, 'exportAllPdf'])->name('reports.export.all-pdf');
 
     Route::post('switch-role/{role}', function ($role) {
         // 1. Strictly disabled in production

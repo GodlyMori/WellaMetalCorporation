@@ -23,6 +23,17 @@
             <button type="button" wire:click="setTab('layaways')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'layaways' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Layaway receivables</button>
         </div>
         <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
+            <!-- Master Comprehensive Export (All 3 Reports) -->
+            <a href="{{ route('reports.export.all-pdf') }}"
+               target="_blank"
+               class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+               title="Download unified master audit PDF containing Sales & Orders, Inventory Valuation, and Layaway Receivables">
+                <svg class="w-3.5 h-3.5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span>Export All (Master Audit)</span>
+            </a>
+
             @if($activeTab === 'sales')
                 <button type="button" wire:click="processExpiredLayaways" title="Scan & restore cancelled/expired layaway reserves"
                    class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1.5">
