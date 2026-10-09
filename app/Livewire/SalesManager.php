@@ -17,6 +17,8 @@ class SalesManager extends Component
     // 1. Quadrant 1: Customer Info
     public ?int $selected_customer_id = null;
     public string $customer_search = '';
+    public string $customer_first_name = '';
+    public string $customer_last_name = '';
     public string $customer_name = '';
     public string $customer_phone = '';
     public string $customer_address = '';
@@ -55,6 +57,15 @@ class SalesManager extends Component
         $customer = Customer::find($id);
         if ($customer) {
             $this->selected_customer_id = $customer->id;
+            $this->customer_first_name = $customer->first_name ?? '';
+            $this->customer_last_name = $customer->last_name ?? '';
+
+            if (empty($this->customer_first_name) && !empty($customer->name)) {
+                $parts = explode(' ', trim($customer->name));
+                $this->customer_last_name = count($parts) > 1 ? array_pop($parts) : '';
+                $this->customer_first_name = implode(' ', $parts);
+            }
+
             $this->customer_name = $customer->name;
             $this->customer_phone = $customer->phone ?? '';
             $this->customer_address = $customer->address ?? '';
@@ -65,6 +76,8 @@ class SalesManager extends Component
     public function clearSelectedCustomer()
     {
         $this->selected_customer_id = null;
+        $this->customer_first_name = '';
+        $this->customer_last_name = '';
         $this->customer_name = '';
         $this->customer_phone = '';
         $this->customer_address = '';
@@ -104,6 +117,21 @@ class SalesManager extends Component
         // If layaway, auto-adjust min downpayment
         if ($this->payment_type === 'layaway') {
             $this->downpayment_amount = (string)$this->minDownpayment;
+        }
+    }
+
+    public function updateItemQuantity(int $index, $quantity)
+    {
+        if (isset($this->items[$index])) {
+            $product = Product::find($this->items[$index]['product_id']);
+            $maxStock = $product ? (int)$product->quantity_in_stock : 1;
+            $qty = max(1, min((int)$quantity, $maxStock));
+            $this->items[$index]['quantity'] = $qty;
+            $this->items[$index]['subtotal'] = $qty * (float)$this->items[$index]['unit_price'];
+
+            if ($this->payment_type === 'layaway') {
+                $this->downpayment_amount = (string)$this->minDownpayment;
+            }
         }
     }
 
@@ -394,8 +422,18 @@ class SalesManager extends Component
 
                 if (!$customer) {
                     $maxCustId = (Customer::withTrashed()->max('id') ?? 0) + 1;
+                    $fName = trim($this->customer_first_name);
+                    $lName = trim($this->customer_last_name);
+                    if (empty($fName) && !empty($this->customer_name)) {
+                        $parts = explode(' ', trim($this->customer_name));
+                        $lName = count($parts) > 1 ? array_pop($parts) : '';
+                        $fName = implode(' ', $parts);
+                    }
+
                     $customer = Customer::create([
                         'customer_number' => 'CUST-' . date('Y') . '-' . str_pad($maxCustId, 4, '0', STR_PAD_LEFT),
+                        'first_name' => $fName,
+                        'last_name' => $lName,
                         'name' => trim($this->customer_name),
                         'phone' => trim($this->customer_phone) ?: null,
                         'address' => trim($this->customer_address) ?: null,
@@ -590,14 +628,9 @@ class SalesManager extends Component
 
         $availableProducts = $catalogQuery->orderBy('name')->get();
 
-        // 2. Fetch distinct existing categories merged with standard furniture categories
-        $dbCategories = Product::whereNotNull('category')
-            ->where('category', '!=', '')
-            ->select('category')
-            ->distinct()
-            ->pluck('category')
-            ->toArray();
-        $existingCategories = array_values(array_unique(array_merge(Product::CATEGORIES, $dbCategories)));
+        // 2. Fetch active categories from Category model
+        $activeCategoryNames = \App\Models\Category::whereNull('deleted_at')->where('is_active', true)->orderBy('name')->pluck('name')->toArray();
+        $existingCategories = !empty($activeCategoryNames) ? $activeCategoryNames : Product::CATEGORIES;
 
         // 3. Customer search query for Quadrant 1
         $searchedCustomers = [];

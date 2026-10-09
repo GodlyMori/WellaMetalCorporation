@@ -11,12 +11,18 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'first_name', 'last_name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasRoles, HasFactory, Notifiable;
+
+    public function getNameAttribute(): string
+    {
+        $fullName = trim("{$this->first_name} {$this->last_name}");
+        return !empty($fullName) ? $fullName : ($this->attributes['name'] ?? '');
+    }
 
     /**
      * Get the attributes that should be cast.

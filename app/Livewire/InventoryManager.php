@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Category;
 use App\Models\InventoryAdjustment;
 use App\Models\Product;
 use App\Models\StockTransfer;
@@ -215,6 +216,7 @@ class InventoryManager extends Component
 
                     if (!empty($item['category'])) {
                         $updateData['category'] = $item['category'];
+                        $updateData['category_id'] = Category::where('name', $item['category'])->value('id');
                     }
 
                     if (!empty(trim($item['description'] ?? ''))) {
@@ -236,9 +238,11 @@ class InventoryManager extends Component
                     $restockedCount++;
                     $updatedSummaries[] = "{$existingProduct->name} (+{$addedStock} units)";
                 } else {
+                    $catId = Category::where('name', $item['category'])->value('id');
                     $newProduct = Product::create([
                         'name' => $trimmedName,
                         'category' => $item['category'],
+                        'category_id' => $catId,
                         'description' => $item['description'] ?? '',
                         'tagged_price' => (float)$item['tagged_price'],
                         'quantity_in_stock' => (int)$item['quantity_in_stock'],
@@ -313,9 +317,11 @@ class InventoryManager extends Component
         $user = Auth::user();
 
         DB::transaction(function () use ($product, $oldStock, $newStock, $user) {
+            $catId = Category::where('name', $this->edit_category)->value('id');
             $product->update([
                 'name' => trim($this->edit_name),
                 'category' => $this->edit_category,
+                'category_id' => $catId,
                 'description' => $this->edit_description ?? '',
                 'tagged_price' => (float)$this->edit_price,
                 'quantity_in_stock' => $newStock,
@@ -418,14 +424,9 @@ class InventoryManager extends Component
 
     public function render()
     {
-        // 1. Dynamic categories: standard furniture categories + any custom database categories
-        $dbCategories = Product::whereNotNull('category')
-            ->where('category', '!=', '')
-            ->select('category')
-            ->distinct()
-            ->pluck('category')
-            ->toArray();
-        $existingCategories = array_values(array_unique(array_merge(Product::CATEGORIES, $dbCategories)));
+        // 1. Dynamic categories: active categories from Category management
+        $activeCategoryNames = Category::whereNull('deleted_at')->where('is_active', true)->orderBy('name')->pluck('name')->toArray();
+        $existingCategories = !empty($activeCategoryNames) ? $activeCategoryNames : Product::CATEGORIES;
 
         // 2. Category counts
         $allCount = Product::where('status', 'active')->count();

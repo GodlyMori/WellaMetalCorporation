@@ -22,6 +22,7 @@ class Product extends Model
     protected $fillable = [
         'name',
         'category',
+        'category_id',
         'description',
         'tagged_price',
         'quantity_in_stock',
@@ -31,6 +32,11 @@ class Product extends Model
         'archive_approved_by',
         'archive_reason',
     ];
+
+    public function categoryRef()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
 
     public function archiver()
     {

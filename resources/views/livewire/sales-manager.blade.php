@@ -88,17 +88,28 @@
                 @endif
             </div>
 
-            <!-- Customer Details Inline Form -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <!-- Customer Details Inline Form (3NF Normalization) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Full name <span class="text-rose-500">*</span>
+                        First name <span class="text-rose-500">*</span>
                     </label>
                     <input type="text"
-                           wire:model="customer_name"
-                           placeholder="e.g. Maria Santos"
+                           wire:model="customer_first_name"
+                           placeholder="e.g. Maria"
                            class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                    @error('customer_name') <span class="text-rose-500 text-[11px] mt-0.5 block">{{ $message }}</span> @enderror
+                    @error('customer_first_name') <span class="text-rose-500 text-[11px] mt-0.5 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        Last name <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text"
+                           wire:model="customer_last_name"
+                           placeholder="e.g. Santos"
+                           class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                    @error('customer_last_name') <span class="text-rose-500 text-[11px] mt-0.5 block">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
@@ -163,8 +174,9 @@
                 </div>
             </div>
 
-            <!-- Category Filter Tabs -->
-            <div class="flex items-center gap-4 border-b border-slate-200 dark:border-[#1a2858] mt-3 overflow-x-auto scrollbar-none pb-1">
+            <!-- Category Filter Tabs (with Explicit Label) -->
+            <div class="flex items-center gap-3 border-b border-slate-200 dark:border-[#1a2858] mt-3 overflow-x-auto scrollbar-none pb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 whitespace-nowrap">Category:</span>
                 <button type="button"
                         wire:click="$set('catalogCategory', 'ALL')"
                         class="{{ $catalogCategory === 'ALL' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors' }} text-xs pb-1.5 cursor-pointer whitespace-nowrap">
@@ -254,15 +266,19 @@
                                 </div>
                             </div>
 
-                            <!-- Stepper -->
-                            <div class="rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40] flex items-center">
-                                <button type="button" wire:click="decrementQuantity({{ $idx }})" class="w-6 h-6 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
+                            <!-- Stepper with Direct Keyboard Input (Peer Review #6) -->
+                            <div class="rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40] flex items-center flex-shrink-0">
+                                <button type="button" wire:click="decrementQuantity({{ $idx }})" class="w-6 h-6 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-l transition-colors">
                                     -
                                 </button>
-                                <span class="w-7 text-center font-bold font-mono text-slate-900 dark:text-white text-xs">
-                                    {{ $item['quantity'] }}
-                                </span>
-                                <button type="button" wire:click="incrementQuantity({{ $idx }})" class="w-6 h-6 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
+                                <input type="number"
+                                       min="1"
+                                       max="{{ $item['max_stock'] ?? 999 }}"
+                                       wire:change="updateItemQuantity({{ $idx }}, $event.target.value)"
+                                       value="{{ $item['quantity'] }}"
+                                       class="w-10 h-6 text-center font-bold font-mono text-slate-900 dark:text-white text-xs bg-transparent border-x border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#142259] p-0"
+                                       title="Type quantity directly or use +/-">
+                                <button type="button" wire:click="incrementQuantity({{ $idx }})" class="w-6 h-6 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-r transition-colors">
                                     +
                                 </button>
                             </div>
@@ -332,7 +348,7 @@
                             @endif
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="space-y-2">
                             <select wire:model.live="selected_promotion_id" class="w-full bg-white dark:bg-[#0c163b] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500">
                                 <option value="">No promo applied</option>
                                 @foreach($this->availablePromotions as $promo)
@@ -349,7 +365,7 @@
                                        class="flex-1 uppercase font-mono bg-white dark:bg-[#0c163b] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259]">
                                 <button type="button"
                                         wire:click="applyPromoCode"
-                                        class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-2.5 py-1.5 rounded transition-colors cursor-pointer">
+                                        class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-2.5 py-1.5 rounded transition-colors cursor-pointer whitespace-nowrap">
                                     Apply
                                 </button>
                             </div>

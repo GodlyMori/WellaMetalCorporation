@@ -179,6 +179,26 @@ class PromotionsManager extends Component
         $this->successMessage = "Promotion '{$promo->name}' has been rejected.";
     }
 
+    public function generatePromoCode(): void
+    {
+        $prefix = 'WM-';
+        $random = strtoupper(\Illuminate\Support\Str::random(6));
+        $this->code = $prefix . $random;
+    }
+
+    public function archivePromotion(int $promoId): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->hasRole('admin')) {
+            $this->errorMessage = 'Unauthorized: Only System Administrators can archive promotions.';
+            return;
+        }
+
+        $promo = Promotion::findOrFail($promoId);
+        $promo->delete(); // Soft delete
+        $this->successMessage = "Promotion '{$promo->name}' has been archived.";
+    }
+
     public function render()
     {
         $query = Promotion::with(['creator', 'approver', 'sales']);
@@ -202,6 +222,9 @@ class PromotionsManager extends Component
         $totalPending = Promotion::where('status', 'pending_approval')->count();
         $totalPromos = Promotion::count();
 
+        $activeCategories = \App\Models\Category::whereNull('deleted_at')->where('is_active', true)->orderBy('name')->pluck('name')->toArray();
+        $categories = !empty($activeCategories) ? $activeCategories : \App\Models\Product::CATEGORIES;
+
         return view('livewire.promotions-manager', [
             'promotions' => $promotions,
             'totalActive' => $totalActive,
@@ -209,7 +232,7 @@ class PromotionsManager extends Component
             'totalPromos' => $totalPromos,
             'isAdmin' => Auth::user()?->hasRole('admin') ?? false,
             'isManager' => Auth::user()?->hasRole('manager') ?? false,
-            'categories' => \App\Models\Product::CATEGORIES,
+            'categories' => $categories,
         ])->layout('layouts.app');
     }
 }

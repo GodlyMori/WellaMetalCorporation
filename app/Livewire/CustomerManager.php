@@ -13,13 +13,15 @@ class CustomerManager extends Component
     use WithPagination;
 
     public string $search = '';
+    public string $statusFilter = 'active'; // 'active', 'archived', 'all'
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';
 
     // Modal state: Add/Edit
     public bool $showCustomerModal = false;
     public ?int $editingCustomerId = null;
-    public string $name = '';
+    public string $first_name = '';
+    public string $last_name = '';
     public string $phone = '';
     public string $address = '';
     public string $email = '';
@@ -29,11 +31,18 @@ class CustomerManager extends Component
     public bool $showHistoryModal = false;
     public ?Customer $selectedCustomer = null;
 
+    public string $successMessage = '';
+
     protected $queryString = [
         'search' => ['except' => ''],
     ];
 
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter()
     {
         $this->resetPage();
     }
@@ -52,7 +61,8 @@ class CustomerManager extends Component
     {
         $this->resetValidation();
         $this->editingCustomerId = null;
-        $this->name = '';
+        $this->first_name = '';
+        $this->last_name = '';
         $this->phone = '';
         $this->address = '';
         $this->email = '';
@@ -63,9 +73,18 @@ class CustomerManager extends Component
     public function openEditModal(int $id)
     {
         $this->resetValidation();
-        $customer = Customer::findOrFail($id);
+        $customer = Customer::withTrashed()->findOrFail($id);
         $this->editingCustomerId = $customer->id;
-        $this->name = $customer->name;
+        $this->first_name = $customer->first_name ?? '';
+        $this->last_name = $customer->last_name ?? '';
+        
+        // Fallback if first_name was empty but name was present
+        if (empty($this->first_name) && !empty($customer->name)) {
+            $parts = explode(' ', trim($customer->name));
+            $this->last_name = count($parts) > 1 ? array_pop($parts) : '';
+            $this->first_name = implode(' ', $parts);
+        }
+
         $this->phone = $customer->phone ?? '';
         $this->address = $customer->address ?? '';
         $this->email = $customer->email ?? '';
@@ -76,44 +95,58 @@ class CustomerManager extends Component
     public function saveCustomer()
     {
         $this->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
             'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'email' => 'nullable|email|max:255',
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        $fullName = trim("{$this->first_name} {$this->last_name}");
+
+        $data = [
+            'first_name' => trim($this->first_name),
+            'last_name' => trim($this->last_name),
+            'name' => $fullName,
+            'phone' => trim($this->phone) ?: null,
+            'address' => trim($this->address) ?: null,
+            'email' => trim($this->email) ?: null,
+            'notes' => trim($this->notes) ?: null,
+        ];
+
         if ($this->editingCustomerId) {
-            $customer = Customer::findOrFail($this->editingCustomerId);
-            $customer->update([
-                'name' => trim($this->name),
-                'phone' => trim($this->phone) ?: null,
-                'address' => trim($this->address) ?: null,
-                'email' => trim($this->email) ?: null,
-                'notes' => trim($this->notes) ?: null,
-            ]);
-            session()->flash('success', 'Customer record updated successfully.');
+            $customer = Customer::withTrashed()->findOrFail($this->editingCustomerId);
+            $customer->update($data);
+            $this->successMessage = "Customer '{$fullName}' updated successfully.";
         } else {
             $maxId = (Customer::withTrashed()->max('id') ?? 0) + 1;
-            $customerNumber = 'CUST-' . date('Y') . '-' . str_pad($maxId, 4, '0', STR_PAD_LEFT);
-            Customer::create([
-                'customer_number' => $customerNumber,
-                'name' => trim($this->name),
-                'phone' => trim($this->phone) ?: null,
-                'address' => trim($this->address) ?: null,
-                'email' => trim($this->email) ?: null,
-                'notes' => trim($this->notes) ?: null,
-                'created_by' => Auth::id(),
-            ]);
-            session()->flash('success', 'New customer created successfully.');
+            $data['customer_number'] = 'CUST-' . date('Y') . '-' . str_pad($maxId, 4, '0', STR_PAD_LEFT);
+            $data['created_by'] = Auth::id();
+            Customer::create($data);
+            $this->successMessage = "New customer '{$fullName}' registered successfully.";
         }
 
         $this->showCustomerModal = false;
     }
 
+    public function archiveCustomer(int $id)
+    {
+        $customer = Customer::findOrFail($id);
+        $customer->delete(); // Soft delete
+        $this->successMessage = "Customer '{$customer->name}' has been archived.";
+    }
+
+    public function restoreCustomer(int $id)
+    {
+        $customer = Customer::withTrashed()->findOrFail($id);
+        $customer->restore();
+        $this->successMessage = "Customer '{$customer->name}' has been restored.";
+    }
+
     public function viewHistory(int $id)
     {
-        $this->selectedCustomer = Customer::with(['sales.items.product', 'sales.payments'])->findOrFail($id);
+        $this->selectedCustomer = Customer::withTrashed()->with(['sales.items.product', 'sales.payments'])->findOrFail($id);
         $this->showHistoryModal = true;
     }
 
@@ -127,27 +160,40 @@ class CustomerManager extends Component
     {
         $query = Customer::query();
 
+        if ($this->statusFilter === 'active') {
+            $query->whereNull('deleted_at');
+        } elseif ($this->statusFilter === 'archived') {
+            $query->onlyTrashed();
+        } else {
+            $query->withTrashed();
+        }
+
         if ($this->search) {
             $s = '%' . trim($this->search) . '%';
             $query->where(function ($q) use ($s) {
                 $q->where('name', 'like', $s)
+                  ->orWhere('first_name', 'like', $s)
+                  ->orWhere('last_name', 'like', $s)
                   ->orWhere('customer_number', 'like', $s)
                   ->orWhere('phone', 'like', $s)
                   ->orWhere('address', 'like', $s);
             });
         }
 
-        $totalCustomers = Customer::count();
-        $activeCustomers = Customer::where('total_orders_count', '>', 0)->count();
+        $totalCustomers = Customer::withTrashed()->count();
+        $activeCount = Customer::whereNull('deleted_at')->count();
+        $archivedCount = Customer::onlyTrashed()->count();
         $totalCustomerRevenue = Customer::sum('total_spent');
-        $avgSpent = $activeCustomers > 0 ? ($totalCustomerRevenue / $activeCustomers) : 0;
+        $activeCustomersWithOrders = Customer::where('total_orders_count', '>', 0)->count();
+        $avgSpent = $activeCustomersWithOrders > 0 ? ($totalCustomerRevenue / $activeCustomersWithOrders) : 0;
 
         $customers = $query->orderBy($this->sortField, $this->sortDirection)->paginate(15);
 
         return view('livewire.customer-manager', [
             'customers' => $customers,
             'totalCustomers' => $totalCustomers,
-            'activeCustomers' => $activeCustomers,
+            'activeCount' => $activeCount,
+            'archivedCount' => $archivedCount,
             'totalCustomerRevenue' => $totalCustomerRevenue,
             'avgSpent' => $avgSpent,
         ]);

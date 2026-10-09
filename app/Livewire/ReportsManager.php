@@ -2,10 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Models\Category;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\LayawayService;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +18,7 @@ class ReportsManager extends Component
 {
     use WithPagination;
 
-    public string $activeTab = 'sales'; // 'sales', 'inventory', 'transfers'
+    public string $activeTab = 'sales'; // 'sales', 'inventory', 'layaways'
 
     // Sales filters
     public string $datePreset = 'this_month'; // 'all', 'this_month', 'this_week', 'today', 'custom'
@@ -27,6 +27,9 @@ class ReportsManager extends Component
     public string $salesStatus = 'ALL'; // ALL, completed, layaway, pending, cancelled, ARCHIVED
     public string $salesSearch = '';
 
+    // Layaway filters
+    public string $layawayStatus = 'active'; // 'active', 'near_due', 'overdue', 'settled', 'cancelled', 'all'
+    public string $layawaySearch = '';
 
     // Secretary Archive Authorization Modal
     public bool $showAuthModal = false;
@@ -48,7 +51,13 @@ class ReportsManager extends Component
         $this->activeTab = $tab;
         $this->resetPage('salesPage');
         $this->resetPage('invPage');
-        $this->resetPage('transferPage');
+        $this->resetPage('layawayPage');
+    }
+
+    public function setLayawayStatus(string $status)
+    {
+        $this->layawayStatus = $status;
+        $this->resetPage('layawayPage');
     }
 
     public function updatedDatePreset($preset)
@@ -193,24 +202,63 @@ class ReportsManager extends Component
 
         $paginatedProducts = $invQuery->orderBy('id', 'asc')->paginate(10, ['*'], 'invPage');
 
-        // 3. Transfers / Restock Report Query
-        $transfers = StockTransfer::with(['items.product', 'receiver'])
-            ->orderBy('date_received', 'desc')
-            ->paginate(10, ['*'], 'transferPage');
+        // 3. Layaway Report Query & Metrics
+        $layawayQuery = Sale::query()->with(['items.product', 'customer', 'creator'])->where('is_archived', false);
+
+        if ($this->layawayStatus === 'active') {
+            $layawayQuery->where('status', 'layaway');
+        } elseif ($this->layawayStatus === 'near_due') {
+            $layawayQuery->where('status', 'layaway')
+                ->whereNotNull('layaway_expires_at')
+                ->whereDate('layaway_expires_at', '<=', now()->addDays(14))
+                ->whereDate('layaway_expires_at', '>=', now());
+        } elseif ($this->layawayStatus === 'overdue') {
+            $layawayQuery->where('status', 'layaway')
+                ->whereNotNull('layaway_expires_at')
+                ->whereDate('layaway_expires_at', '<', now());
+        } elseif ($this->layawayStatus === 'settled') {
+            $layawayQuery->where('status', 'completed')
+                ->where('initial_deposit', '>', 0);
+        } elseif ($this->layawayStatus === 'cancelled') {
+            $layawayQuery->where('status', 'cancelled')
+                ->where('initial_deposit', '>', 0);
+        } elseif ($this->layawayStatus !== 'all') {
+            $layawayQuery->where('status', $this->layawayStatus);
+        }
+
+        if (!empty($this->layawaySearch)) {
+            $layawayQuery->where(function ($q) {
+                $q->where('customer_name', 'like', '%' . $this->layawaySearch . '%')
+                  ->orWhere('customer_phone', 'like', '%' . $this->layawaySearch . '%')
+                  ->orWhere('sale_number', 'like', '%' . $this->layawaySearch . '%');
+            });
+        }
+
+        $paginatedLayaways = $layawayQuery->orderBy('sale_date', 'desc')->paginate(10, ['*'], 'layawayPage');
 
         $approvers = User::whereHas('roles', function ($q) {
             $q->whereIn('name', ['admin', 'manager']);
         })->get();
 
         $totalLayawayBalance = (float)Sale::where('is_archived', false)->where('status', 'layaway')->sum('remaining_balance');
+        $layawayActiveCount = Sale::where('is_archived', false)->where('status', 'layaway')->count();
+        $layawayOverdueCount = Sale::where('is_archived', false)->where('status', 'layaway')
+            ->whereNotNull('layaway_expires_at')
+            ->whereDate('layaway_expires_at', '<', now())
+            ->count();
 
-        $dbCategories = Product::where('status', 'active')
-            ->whereNotNull('category')
-            ->where('category', '!=', '')
-            ->distinct()
-            ->pluck('category')
-            ->toArray();
-        $existingCategories = array_values(array_unique(array_merge(Product::CATEGORIES, $dbCategories)));
+        $loadedCategories = Category::where('is_active', true)->orderBy('name')->pluck('name')->toArray();
+        if (empty($loadedCategories)) {
+            $dbCategories = Product::where('status', 'active')
+                ->whereNotNull('category')
+                ->where('category', '!=', '')
+                ->distinct()
+                ->pluck('category')
+                ->toArray();
+            $existingCategories = array_values(array_unique(array_merge(Product::CATEGORIES, $dbCategories)));
+        } else {
+            $existingCategories = $loadedCategories;
+        }
 
         return view('livewire.reports-manager', [
             'sales' => $paginatedSales,
@@ -228,7 +276,9 @@ class ReportsManager extends Component
             'totalLowStockItems' => $totalLowStockItems,
             'existingCategories' => $existingCategories,
 
-            'transfers' => $transfers,
+            'layaways' => $paginatedLayaways,
+            'layawayActiveCount' => $layawayActiveCount,
+            'layawayOverdueCount' => $layawayOverdueCount,
         ]);
     }
 }

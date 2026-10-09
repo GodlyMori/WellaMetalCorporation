@@ -18,11 +18,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('sales', 'sales')->name('sales');
     Route::view('layaways', 'layaways')->name('layaways');
     Route::view('customers', 'customers')->name('customers');
+    Route::view('categories', 'categories')->name('categories');
     Route::view('promotions', 'promotions')->name('promotions');
 
     Route::view('reports', 'reports')->name('reports');
     Route::get('reports/export/sales-pdf', [ReportController::class, 'exportSalesPdf'])->name('reports.export.sales-pdf');
     Route::get('reports/export/inventory-pdf', [ReportController::class, 'exportInventoryPdf'])->name('reports.export.inventory-pdf');
+    Route::get('reports/export/layaways-pdf', [ReportController::class, 'exportLayawaysPdf'])->name('reports.export.layaways-pdf');
 
     Route::post('switch-role/{role}', function ($role) {
         // 1. Strictly disabled in production

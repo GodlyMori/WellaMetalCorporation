@@ -113,6 +113,12 @@
         <div class="p-4 border-b border-slate-200 dark:border-[#1a2858] flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50/50 dark:bg-[#0f1b40]/50">
             <!-- Filter Tabs -->
             <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 md:pb-0">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1 shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    Status:
+                </span>
                 <button type="button" wire:click="setFilter('active')"
                         class="px-3 py-1.5 rounded text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer {{ $statusFilter === 'active' ? 'bg-[#142259] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-[#1a2858]' }}">
                     Active ({{ $activeCount }})

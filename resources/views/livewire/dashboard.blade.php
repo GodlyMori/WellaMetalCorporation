@@ -22,25 +22,25 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] mb-6">
         <!-- Gross Revenue -->
         <div class="p-4 sm:p-5 min-w-0">
-            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Gross settled revenue</div>
+            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total Revenue</div>
             <div class="text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-0.5">₱{{ number_format($totalCompletedRevenue, 2) }}</div>
             <div class="text-[11px] text-slate-400 mt-0.5">{{ $completedCount }} settled · Month: ₱{{ number_format($currentMonthRevenue, 2) }}</div>
         </div>
         <!-- Cash Collected -->
         <div class="p-4 sm:p-5 min-w-0">
-            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Realized cash collected</div>
+            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Cash Collected</div>
             <div class="text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-0.5">₱{{ number_format($realizedCashCollected, 2) }}</div>
             <div class="text-[11px] text-slate-400 mt-0.5">This month: ₱{{ number_format($currentMonthCashCollected, 2) }}</div>
         </div>
         <!-- Layaway Balance -->
         <div class="p-4 sm:p-5 min-w-0">
-            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Layaway receivables</div>
+            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Layaway Balance</div>
             <div class="text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-0.5">₱{{ number_format($layawayBalance, 2) }}</div>
             <div class="text-[11px] text-slate-400 mt-0.5">{{ $layawayCount }} open accounts</div>
         </div>
         <!-- Stock Units -->
         <div class="p-4 sm:p-5 min-w-0">
-            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Physical stock on yard</div>
+            <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total Stock</div>
             <div class="text-xl font-bold text-slate-900 dark:text-white tabular-nums mt-0.5">{{ number_format($stockUnits) }} <span class="text-sm font-medium text-slate-400">units</span></div>
             <div class="text-[11px] text-slate-400 mt-0.5">{{ $totalProducts }} SKUs · {{ $categoryCount }} categories</div>
         </div>

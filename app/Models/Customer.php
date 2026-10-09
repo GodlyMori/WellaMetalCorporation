@@ -13,6 +13,8 @@ class Customer extends Model
     protected $fillable = [
         'customer_number',
         'name',
+        'first_name',
+        'last_name',
         'phone',
         'address',
         'email',
@@ -35,6 +37,12 @@ class Customer extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function getNameAttribute(): string
+    {
+        $fullName = trim("{$this->first_name} {$this->last_name}");
+        return !empty($fullName) ? $fullName : ($this->attributes['name'] ?? '');
     }
 
     public function getInitialsAttribute(): string

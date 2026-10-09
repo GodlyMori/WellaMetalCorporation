@@ -82,4 +82,53 @@ class ReportController extends Controller
 
         return $pdf->download('wella-metal-inventory-report-' . now()->format('Y-m-d') . '.pdf');
     }
+
+    /**
+     * Export Layaway Portfolio & Receivables to PDF
+     */
+    public function exportLayawaysPdf(Request $request)
+    {
+        $status = $request->query('status', 'active');
+        $query = Sale::with(['items.product', 'customer', 'creator'])->where('is_archived', false);
+
+        if ($status === 'active') {
+            $query->where('status', 'layaway');
+        } elseif ($status === 'near_due') {
+            $query->where('status', 'layaway')
+                  ->whereNotNull('layaway_expires_at')
+                  ->whereDate('layaway_expires_at', '<=', now()->addDays(14))
+                  ->whereDate('layaway_expires_at', '>=', now());
+        } elseif ($status === 'overdue') {
+            $query->where('status', 'layaway')
+                  ->whereNotNull('layaway_expires_at')
+                  ->whereDate('layaway_expires_at', '<', now());
+        } elseif ($status === 'settled') {
+            $query->where('status', 'completed')
+                  ->where('initial_deposit', '>', 0);
+        } elseif ($status === 'cancelled') {
+            $query->where('status', 'cancelled')
+                  ->where('initial_deposit', '>', 0);
+        } elseif ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $contracts = $query->orderBy('sale_date', 'desc')->get();
+
+        $totalReceivables = (float)$contracts->where('status', 'layaway')->sum('remaining_balance');
+        $totalPaid = (float)$contracts->sum('amount_paid');
+        $activeCount = $contracts->where('status', 'layaway')->count();
+        $totalContractValue = (float)$contracts->sum('amount');
+
+        $pdf = Pdf::loadView('reports.pdf.layaways', [
+            'contracts' => $contracts,
+            'totalReceivables' => $totalReceivables,
+            'totalPaid' => $totalPaid,
+            'activeCount' => $activeCount,
+            'totalContractValue' => $totalContractValue,
+            'statusFilter' => $status,
+            'generatedAt' => now()->format('F j, Y - g:i A'),
+        ]);
+
+        return $pdf->download('wella-metal-layaway-report-' . now()->format('Y-m-d') . '.pdf');
+    }
 }

@@ -145,6 +145,18 @@
                 </div>
 
                 <nav class="space-y-1">
+                    <!-- Categories Link -->
+                    <a href="{{ route('categories') }}"
+                       wire:navigate
+                       class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('categories*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
+                        <div class="flex items-center gap-2.5">
+                            <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                            </svg>
+                            <span>Categories</span>
+                        </div>
+                    </a>
+
                     <!-- Promotions Link -->
                     <a href="{{ route('promotions') }}"
                        wire:navigate
@@ -356,7 +368,7 @@
                                 <span class="w-8 h-8 rounded bg-[#142259] text-white font-bold flex items-center justify-center text-xs">MG</span>
                                 <div>
                                     <p class="font-semibold text-slate-900 dark:text-white text-xs">Operations Manager</p>
-                                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Inventory, sales, stock transfers & reports</p>
+                                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Inventory, sales, layaways & reports</p>
                                 </div>
                             </div>
                             <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Select</span>

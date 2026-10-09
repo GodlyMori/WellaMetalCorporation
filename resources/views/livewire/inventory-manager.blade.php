@@ -304,7 +304,8 @@
             </div>
 
             <!-- Filters (Right) -->
-            <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category:</span>
                 <!-- Category Filter Tab Strip -->
                 <div class="inline-flex items-center gap-3 border-b border-slate-200 dark:border-[#1a2858] overflow-x-auto scrollbar-none pb-0.5">
                     <button type="button"
@@ -326,10 +327,11 @@
                     </button>
                 </div>
 
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">Stock:</span>
                 <!-- Stock Level Filter -->
                 <select wire:model.live="stockFilter"
                         class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
-                    <option value="all">All quantities</option>
+                    <option value="all">All stock</option>
                     <option value="in_stock">In stock (&gt; 4 units)</option>
                     <option value="low_stock">Low stock (&le; 4 units)</option>
                     <option value="out_of_stock">Out of stock (0 units)</option>
@@ -404,14 +406,39 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3.5 text-xs text-center">
-                                <div class="flex items-center justify-center gap-3">
+                            <td class="py-2.5 px-3.5 text-xs text-center whitespace-nowrap">
+                                <div class="inline-flex items-center justify-center gap-1.5">
                                     @if($product->status === 'archived')
-                                        <button type="button" wire:click="restoreProduct({{ $product->id }})" class="text-xs font-semibold text-[#142259] dark:text-slate-300 hover:text-[#0e1840] transition-colors cursor-pointer">Restore</button>
+                                        <button type="button" wire:click="restoreProduct({{ $product->id }})"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 text-xs font-semibold transition-colors cursor-pointer"
+                                                title="Restore to active catalog">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            <span>Restore</span>
+                                        </button>
                                     @else
-                                        <button type="button" wire:click="openRestockModal({{ $product->id }})" class="text-xs font-semibold text-[#142259] dark:text-slate-300 hover:text-[#0e1840] dark:hover:text-white transition-colors cursor-pointer" title="Restock">Restock</button>
-                                        <button type="button" wire:click="editProduct({{ $product->id }})" class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer" title="Edit">Edit</button>
-                                        <button type="button" wire:click="archiveProduct({{ $product->id }})" wire:confirm="Archive this product from catalog?" class="text-xs font-medium text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer" title="Archive">Archive</button>
+                                        <!-- Restock Button -->
+                                        <button type="button" wire:click="openRestockModal({{ $product->id }})"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                                title="Add stock inventory">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                            <span>Restock</span>
+                                        </button>
+
+                                        <!-- Edit Button -->
+                                        <button type="button" wire:click="editProduct({{ $product->id }})"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                                                title="Edit specifications">
+                                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                            <span>Edit</span>
+                                        </button>
+
+                                        <!-- Archive Button -->
+                                        <button type="button" wire:click="archiveProduct({{ $product->id }})" wire:confirm="Archive this product from catalog?"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 text-xs font-medium transition-colors cursor-pointer"
+                                                title="Archive product">
+                                            <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                            <span>Archive</span>
+                                        </button>
                                     @endif
                                 </div>
                             </td>
@@ -555,7 +582,7 @@
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
                     <div>
                         <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
-                            Branch restock transfer
+                            Restock Inventory
                         </h3>
                         <p class="text-xs text-slate-400 mt-0.5">{{ $restockProductName }}</p>
                     </div>
@@ -575,26 +602,26 @@
 
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                            Source branch <span class="text-rose-500">*</span>
+                            Restock Source / Supplier <span class="text-rose-500">*</span>
                         </label>
                         <select wire:model="sourceBranch" class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                            <option value="Toril">Toril Branch</option>
-                            <option value="Main Warehouse">Main Warehouse</option>
-                            <option value="Tagum">Tagum Branch</option>
-                            <option value="Supplier Direct">Supplier Direct</option>
+                            <option value="Main Yard Production">Main Yard Production</option>
+                            <option value="Supplier Direct Delivery">Supplier Direct Delivery</option>
+                            <option value="Toril Facility">Toril Facility</option>
+                            <option value="Warehouse Intake">Warehouse Intake</option>
                         </select>
                     </div>
 
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                            Transfer notes / reference
+                            Restock notes / reference
                         </label>
-                        <input type="text" wire:model="restockNotes" placeholder="e.g. Delivery Waybill #1042" class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                        <input type="text" wire:model="restockNotes" placeholder="e.g. Delivery Waybill #1042 or Fabricator batch" class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
                     </div>
 
                     <div class="pt-3 border-t border-slate-200 dark:border-[#1a2858] flex justify-end gap-2">
                         <button type="button" wire:click="$set('showRestockModal', false)" class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-4 py-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
-                        <button type="submit" class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-4 py-2 rounded transition-colors cursor-pointer">Receive stock</button>
+                        <button type="submit" class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-4 py-2 rounded shadow-xs transition-colors cursor-pointer">Add to stock</button>
                     </div>
                 </form>
             </div>
