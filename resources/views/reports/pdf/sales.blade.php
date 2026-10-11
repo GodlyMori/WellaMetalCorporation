@@ -2,76 +2,80 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Wella Metal Corporation - Sales Audit Report</title>
+    <title>Wella Metal Corporation - Sales Report</title>
     <style>
         @page {
-            margin: 28pt 32pt 36pt 32pt;
+            margin: 24pt 28pt 30pt 28pt;
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #0f172a;
-            font-size: 9pt;
-            line-height: 1.35;
+            color: #1e293b;
+            font-size: 8.5pt;
+            line-height: 1.4;
             margin: 0;
             padding: 0;
         }
-        /* Minimalist Corporate Header */
+        /* Clean Header */
         .header-table {
             width: 100%;
-            border-bottom: 1.5pt solid #0f172a;
-            padding-bottom: 8pt;
-            margin-bottom: 10pt;
-        }
-        .company-title {
-            font-size: 14pt;
-            font-weight: 800;
-            letter-spacing: 0.5pt;
-            color: #0f172a;
-            text-transform: uppercase;
-            margin: 0;
-        }
-        .report-subtitle {
-            font-size: 8.5pt;
-            font-weight: 600;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.3pt;
-            margin-top: 2pt;
-        }
-        .meta-text {
-            font-size: 8pt;
-            color: #64748b;
-            line-height: 1.3;
-        }
-
-        /* Minimal Executive Summary Strip */
-        .summary-strip {
-            width: 100%;
-            border: 1pt solid #cbd5e1;
-            background-color: #f8fafc;
-            border-collapse: collapse;
+            border-bottom: 2pt solid #0f172a;
+            padding-bottom: 6pt;
             margin-bottom: 12pt;
         }
-        .summary-cell {
-            padding: 7pt 10pt;
+        .company-name {
+            font-size: 14pt;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.5pt;
+            margin: 0;
+        }
+        .report-title {
+            font-size: 9.5pt;
+            font-weight: 600;
+            color: #475569;
+            margin-top: 2pt;
+        }
+        .meta-info {
+            font-size: 7.5pt;
+            color: #64748b;
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        /* KPI Cards */
+        .kpi-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14pt;
+            background-color: #f8fafc;
+            border: 1pt solid #cbd5e1;
+        }
+        .kpi-cell {
+            padding: 8pt 10pt;
             border-right: 1pt solid #e2e8f0;
             vertical-align: top;
         }
-        .summary-cell:last-child {
+        .kpi-cell:last-child {
             border-right: none;
         }
-        .summary-label {
-            font-size: 7pt;
+        .kpi-label {
+            font-size: 6.5pt;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.3pt;
             color: #64748b;
+            letter-spacing: 0.3pt;
             margin-bottom: 2pt;
         }
-        .summary-value {
-            font-size: 12pt;
+        .kpi-value {
+            font-size: 13pt;
             font-weight: 800;
             color: #0f172a;
+        }
+        .kpi-sub {
+            font-size: 7pt;
+            color: #64748b;
+            margin-top: 1pt;
         }
 
         /* Data Table */
@@ -79,176 +83,206 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 8pt;
+            margin-bottom: 14pt;
         }
         .data-table th {
             background-color: #f1f5f9;
             color: #0f172a;
-            border-top: 1pt solid #cbd5e1;
-            border-bottom: 1.5pt solid #0f172a;
             font-size: 7.5pt;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.3pt;
-            padding: 5pt 5pt;
+            padding: 6pt 6pt;
+            border-top: 1pt solid #cbd5e1;
+            border-bottom: 1.5pt solid #0f172a;
             text-align: left;
         }
         .data-table td {
-            padding: 5pt 5pt;
+            padding: 5.5pt 6pt;
             border-bottom: 0.5pt solid #e2e8f0;
             vertical-align: middle;
-            color: #1e293b;
         }
         .data-table tr:nth-child(even) td {
-            background-color: #fafafa;
+            background-color: #fbfcfd;
         }
-        .text-right {
-            text-align: right;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .mono {
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: 600;
-        }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: 700; }
+        .mono { font-family: 'Courier New', Courier, monospace; }
 
-        /* Clean Minimal Badges */
-        .badge {
+        /* Minimal Status Pills */
+        .status-pill {
             display: inline-block;
-            padding: 1.5pt 4pt;
+            padding: 1.5pt 5pt;
             border-radius: 2pt;
             font-size: 6.5pt;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.3pt;
         }
-        .badge-completed {
-            background-color: #ecfdf5;
-            color: #065f46;
-            border: 0.5pt solid #a7f3d0;
+        .status-completed { background-color: #dcfce7; color: #166534; }
+        .status-layaway   { background-color: #e0f2fe; color: #075985; }
+        .status-pending   { background-color: #fef3c7; color: #92400e; }
+        .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+
+        /* Minimal Sign-off */
+        .sign-table {
+            width: 100%;
+            margin-top: 18pt;
+            border-top: 1pt solid #e2e8f0;
+            padding-top: 12pt;
         }
-        .badge-layaway {
-            background-color: #eff6ff;
-            color: #1e40af;
-            border: 0.5pt solid #bfdbfe;
+        .sign-box {
+            width: 45%;
+            vertical-align: top;
         }
-        .badge-pending {
-            background-color: #fffbeb;
-            color: #92400e;
-            border: 0.5pt solid #fde68a;
+        .sign-line {
+            border-bottom: 1pt solid #0f172a;
+            height: 20pt;
+            margin-bottom: 3pt;
         }
-        .badge-cancelled {
-            background-color: #fef2f2;
-            color: #991b1b;
-            border: 0.5pt solid #fecaca;
+        .sign-title {
+            font-size: 7pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #475569;
         }
 
         /* Footer */
         .footer {
-            margin-top: 15pt;
-            border-top: 0.5pt solid #cbd5e1;
-            padding-top: 5pt;
+            margin-top: 12pt;
             font-size: 7pt;
             color: #94a3b8;
-            text-align: center;
+            border-top: 0.5pt solid #e2e8f0;
+            padding-top: 4pt;
         }
     </style>
 </head>
 <body>
 
     <!-- Header Section -->
-    <table class="header-table">
+    <table class="header-table" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="vertical-align: middle;">
-                <h1 class="company-title">Wella Metal Corporation</h1>
-                <div class="report-subtitle">Official Sales & Revenue Audit Ledger</div>
+            <td style="vertical-align: bottom;">
+                <div class="company-name">Wella Metal Corporation</div>
+                <div class="report-title">Sales & Orders Report</div>
             </td>
-            <td style="text-align: right; vertical-align: middle;" class="meta-text">
-                <div><strong>Period:</strong> {{ $startDate ? date('M j, Y', strtotime($startDate)) : 'All Time' }} – {{ $endDate ? date('M j, Y', strtotime($endDate)) : 'Present' }}</div>
+            <td class="meta-info" style="vertical-align: bottom;">
+                <div><strong>Period:</strong> {{ $startDate ? date('M d, Y', strtotime($startDate)) : 'All Time' }} – {{ $endDate ? date('M d, Y', strtotime($endDate)) : 'Present' }}</div>
+                <div><strong>Status Filter:</strong> {{ strtoupper($statusFilter ?? 'ALL') }}</div>
                 <div><strong>Generated:</strong> {{ $generatedAt }}</div>
-                <div><strong>Filter Status:</strong> {{ strtoupper($statusFilter ?? 'ALL') }}</div>
             </td>
         </tr>
     </table>
 
-    <!-- Concise Top Summary Strip -->
-    <table class="summary-strip">
+    <!-- 4 Key Metrics Strip -->
+    <table class="kpi-table" cellpadding="0" cellspacing="0">
         <tr>
-            <td class="summary-cell" width="28%">
-                <div class="summary-label">Realized Cash Revenue</div>
-                <div class="summary-value">₱{{ number_format($totalRevenue, 2) }}</div>
+            <td class="kpi-cell" style="width: 28%;">
+                <div class="kpi-label">Total Realized Revenue</div>
+                <div class="kpi-value">₱{{ number_format($totalRevenue, 2) }}</div>
+                <div class="kpi-sub">Actual payments collected</div>
             </td>
-            <td class="summary-cell" width="24%">
-                <div class="summary-label">Completed Orders</div>
-                <div class="summary-value">{{ $completedCount }} <span style="font-size: 8pt; font-weight: normal; color: #64748b;">settled</span></div>
+            <td class="kpi-cell" style="width: 24%;">
+                <div class="kpi-label">Completed Orders</div>
+                <div class="kpi-value">{{ $completedCount }}</div>
+                <div class="kpi-sub">Fully settled transactions</div>
             </td>
-            <td class="summary-cell" width="24%">
-                <div class="summary-label">Active Layaways</div>
-                <div class="summary-value">{{ $layawayCount ?? 0 }} <span style="font-size: 8pt; font-weight: normal; color: #64748b;">accounts</span></div>
+            <td class="kpi-cell" style="width: 24%;">
+                <div class="kpi-label">Active Layaways</div>
+                <div class="kpi-value">{{ $layawayCount ?? 0 }}</div>
+                <div class="kpi-sub">Installment accounts open</div>
             </td>
-            <td class="summary-cell" width="24%">
-                <div class="summary-label">Average Order Value</div>
-                <div class="summary-value">₱{{ number_format($averageOrderValue ?? 0, 2) }}</div>
+            <td class="kpi-cell" style="width: 24%;">
+                <div class="kpi-label">Average Order Value</div>
+                <div class="kpi-value">₱{{ number_format($averageOrderValue ?? 0, 2) }}</div>
+                <div class="kpi-sub">Per revenue transaction</div>
             </td>
         </tr>
     </table>
 
-    <!-- Detailed Ledger Data Table -->
-    <table class="data-table">
+    <!-- Clean Data Table -->
+    <table class="data-table" cellpadding="0" cellspacing="0">
         <thead>
             <tr>
-                <th width="14%">Order #</th>
-                <th width="20%">Customer Name</th>
-                <th width="26%">Product Description</th>
-                <th width="10%" class="text-right">Discount</th>
-                <th width="12%" class="text-right">Amount (PHP)</th>
-                <th width="10%" class="text-center">Date</th>
-                <th width="8%" class="text-center">Status</th>
+                <th style="width: 14%;">Order #</th>
+                <th style="width: 12%;">Date</th>
+                <th style="width: 22%;">Customer</th>
+                <th style="width: 22%;">Item Description</th>
+                <th style="width: 15%;" class="text-right">Total (₱)</th>
+                <th style="width: 15%;" class="text-center">Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($sales as $sale)
                 <tr>
-                    <td class="mono"><strong>{{ $sale->sale_number }}</strong></td>
-                    <td>{{ $sale->customer_name }}</td>
+                    <td class="mono font-bold">{{ $sale->sale_number }}</td>
+                    <td class="mono text-center">{{ $sale->sale_date ? $sale->sale_date->format('Y-m-d') : '-' }}</td>
                     <td>
-                        {{ $sale->product_name }}
-                        @if($sale->promo_name)
-                            <span style="font-size: 6.5pt; color: #6b21a8; font-weight: bold;">({{ $sale->promo_name }})</span>
+                        <strong>{{ $sale->customer_name }}</strong>
+                        @if($sale->customer_phone)
+                            <br><span style="font-size: 7pt; color: #64748b;">{{ $sale->customer_phone }}</span>
                         @endif
                     </td>
-                    <td class="text-right" style="color: {{ $sale->discount_amount > 0 ? '#047857' : '#64748b' }};">
-                        {{ $sale->discount_amount > 0 ? '-₱' . number_format($sale->discount_amount, 2) : '—' }}
+                    <td>
+                        @if($sale->items && $sale->items->isNotEmpty())
+                            @foreach($sale->items as $it)
+                                <div>{{ $it->product?->name ?? 'Item' }} <span style="color: #64748b;">&times; {{ $it->quantity }}</span></div>
+                            @endforeach
+                        @else
+                            {{ $sale->product_name ?: 'General Order' }}
+                        @endif
                     </td>
-                    <td class="text-right mono">
-                        <strong>₱{{ number_format($sale->amount, 2) }}</strong>
+                    <td class="text-right mono font-bold">
+                        ₱{{ number_format($sale->amount, 2) }}
+                        @if($sale->status === 'layaway' && $sale->amount_paid > 0)
+                            <div style="font-size: 6.5pt; color: #047857; font-weight: normal;">Paid: ₱{{ number_format($sale->amount_paid, 2) }}</div>
+                        @endif
                     </td>
-                    <td class="text-center">{{ $sale->sale_date->format('Y-m-d') }}</td>
                     <td class="text-center">
                         @if($sale->status === 'completed')
-                            <span class="badge badge-completed">Settled</span>
+                            <span class="status-pill status-completed">Completed</span>
                         @elseif($sale->status === 'layaway')
-                            <span class="badge badge-layaway">Lay-Away</span>
-                        @elseif($sale->status === 'pending')
-                            <span class="badge badge-pending">Pending</span>
+                            <span class="status-pill status-layaway">Layaway</span>
+                        @elseif($sale->status === 'cancelled')
+                            <span class="status-pill status-danger">Cancelled</span>
                         @else
-                            <span class="badge badge-cancelled">Cancelled</span>
+                            <span class="status-pill status-pending">{{ ucfirst($sale->status) }}</span>
                         @endif
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 16pt; color: #94a3b8;">
-                        No sales transactions recorded matching the selected filter criteria.
+                    <td colspan="6" class="text-center" style="padding: 16pt; color: #94a3b8;">
+                        No sales transactions found matching criteria.
                     </td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
-    <!-- Minimal Confidential Footer -->
+    <!-- Minimal Sign-off -->
+    <table class="sign-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sign-box">
+                <div class="sign-line"></div>
+                <div class="sign-title">Prepared By (Cashier / Finance)</div>
+            </td>
+            <td style="width: 10%;"></td>
+            <td class="sign-box">
+                <div class="sign-line"></div>
+                <div class="sign-title">Approved By (Manager)</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Footer -->
     <div class="footer">
-        Confidential Internal Document &bull; Wella Metal Corporation Management Information System &bull; Total Transactions: {{ $sales->count() }}
+        <table style="width: 100%;" cellpadding="0" cellspacing="0">
+            <tr>
+                <td>Wella Metal Corporation &bull; Internal Sales Audit</td>
+                <td style="text-align: right;">Total Records: {{ $sales->count() }}</td>
+            </tr>
+        </table>
     </div>
 
 </body>
