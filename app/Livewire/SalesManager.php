@@ -20,9 +20,14 @@ class SalesManager extends Component
     public string $customer_first_name = '';
     public string $customer_last_name = '';
     public string $customer_name = '';
+    public string $customer_email = '';
     public string $customer_phone = '';
     public string $customer_address = '';
     public string $sale_notes = '';
+
+    // Email receipt status
+    public bool $emailSent = false;
+    public ?string $emailDeliveryStatus = null;
 
     // 2. Quadrant 2: Available Products Catalog
     public string $catalogCategory = 'ALL';
@@ -67,6 +72,7 @@ class SalesManager extends Component
             }
 
             $this->customer_name = $customer->name;
+            $this->customer_email = $customer->email ?? '';
             $this->customer_phone = $customer->phone ?? '';
             $this->customer_address = $customer->address ?? '';
             $this->customer_search = '';
@@ -79,6 +85,7 @@ class SalesManager extends Component
         $this->customer_first_name = '';
         $this->customer_last_name = '';
         $this->customer_name = '';
+        $this->customer_email = '';
         $this->customer_phone = '';
         $this->customer_address = '';
         $this->customer_search = '';
@@ -319,6 +326,7 @@ class SalesManager extends Component
             'customer_first_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
             'customer_last_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
             'customer_name' => ['required', 'string', 'max:255'],
+            'customer_email' => ['nullable', 'email', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9\+\-\s\(\)]+$/'],
             'customer_address' => ['required', 'string', 'max:500'],
             'payment_type' => ['required', 'in:full,layaway'],
@@ -339,6 +347,7 @@ class SalesManager extends Component
             'customer_last_name.required' => 'Customer last name is required.',
             'customer_last_name.regex' => 'Customer last name must contain letters only (numbers are not permitted).',
             'customer_name.required' => 'Customer name is required.',
+            'customer_email.email' => 'Please enter a valid email address for digital receipt delivery.',
             'customer_phone.regex' => 'Please enter a valid contact number (digits, spaces, +).',
             'customer_phone.required' => 'Customer contact number is required.',
             'customer_address.required' => 'Customer complete address is required.',
@@ -444,6 +453,7 @@ class SalesManager extends Component
                         'first_name' => $fName,
                         'last_name' => $lName,
                         'name' => trim($this->customer_name),
+                        'email' => trim($this->customer_email) ?: null,
                         'phone' => trim($this->customer_phone) ?: null,
                         'address' => trim($this->customer_address) ?: null,
                         'created_by' => Auth::id() ?? 1,
@@ -457,6 +467,9 @@ class SalesManager extends Component
                     if (empty($customer->last_name) && !empty($this->customer_last_name)) {
                         $customer->last_name = trim($this->customer_last_name);
                     }
+                    if (!empty(trim($this->customer_email))) {
+                        $customer->email = trim($this->customer_email);
+                    }
                     $customer->phone = trim($this->customer_phone) ?: $customer->phone;
                     $customer->address = trim($this->customer_address) ?: $customer->address;
                     $customer->increment('total_orders_count', 1);
@@ -469,6 +482,7 @@ class SalesManager extends Component
                     'customer_id' => $customer->id,
                     'sale_number' => null,
                     'customer_name' => trim($this->customer_name),
+                    'customer_email' => trim($this->customer_email) ?: null,
                     'customer_phone' => trim($this->customer_phone),
                     'customer_address' => trim($this->customer_address),
                     'customer_initials' => $customer->initials,
@@ -579,6 +593,7 @@ class SalesManager extends Component
             'sale_date' => now()->format('M d, Y h:i A'),
             'cashier' => Auth::user()?->name ?? 'Staff',
             'customer_name' => $this->customer_name,
+            'customer_email' => trim($this->customer_email) ?: null,
             'customer_phone' => $this->customer_phone,
             'customer_address' => $this->customer_address,
             'items' => $receiptItems,
@@ -596,13 +611,33 @@ class SalesManager extends Component
         ];
         $this->showReceiptModal = true;
 
+        // Dispatch digital receipt to customer's email if provided
+        $this->emailSent = false;
+        $this->emailDeliveryStatus = null;
+        $targetEmail = trim($this->customer_email);
+        if (!empty($targetEmail)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($targetEmail)
+                    ->send(new \App\Mail\SalesReceiptMail($createdSale, $this->receiptData));
+                $this->emailSent = true;
+                $this->emailDeliveryStatus = "Digital receipt delivered to {$targetEmail}.";
+            } catch (\Throwable $mailError) {
+                \Illuminate\Support\Facades\Log::warning("Digital receipt delivery failed for {$targetEmail}: " . $mailError->getMessage());
+                $this->emailSent = false;
+                $this->emailDeliveryStatus = "Email queued/logged, but delivery notification encountered an issue: " . $mailError->getMessage();
+            }
+        }
+
         $this->successMessage = ($this->payment_type === 'layaway')
             ? "Order {$createdSale->sale_number} recorded! Downpayment of ₱" . number_format($payable, 2) . " received. Items reserved until " . now()->addMonths(3)->format('M d, Y') . "."
             : "Sale {$createdSale->sale_number} completed! Cash Tendered: ₱" . number_format($tendered, 2) . " (Change: ₱" . number_format($change, 2) . ").";
 
         // Reset inputs for next sale
         $this->reset([
+            'customer_first_name',
+            'customer_last_name',
             'customer_name',
+            'customer_email',
             'customer_phone',
             'customer_address',
             'sale_notes',
@@ -618,10 +653,36 @@ class SalesManager extends Component
         $this->payment_type = 'full';
     }
 
+    public function resendReceiptEmail()
+    {
+        if (empty($this->receiptData) || empty($this->receiptData['customer_email']) || empty($this->receiptData['order_number'])) {
+            $this->emailDeliveryStatus = 'No valid customer email address found on this receipt.';
+            return;
+        }
+
+        $sale = Sale::where('sale_number', $this->receiptData['order_number'])->first();
+        if (!$sale) {
+            $this->emailDeliveryStatus = 'Associated order record not found.';
+            return;
+        }
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($this->receiptData['customer_email'])
+                ->send(new \App\Mail\SalesReceiptMail($sale, $this->receiptData));
+            $this->emailSent = true;
+            $this->emailDeliveryStatus = "Digital receipt re-sent successfully to {$this->receiptData['customer_email']}!";
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Manual re-send receipt failed: " . $e->getMessage());
+            $this->emailDeliveryStatus = "Could not re-send receipt: " . $e->getMessage();
+        }
+    }
+
     public function closeReceiptModal()
     {
         $this->showReceiptModal = false;
         $this->receiptData = null;
+        $this->emailSent = false;
+        $this->emailDeliveryStatus = null;
     }
 
     public function render()

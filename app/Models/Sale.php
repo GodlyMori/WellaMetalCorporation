@@ -16,6 +16,7 @@ class Sale extends Model
         'customer_name',
         'customer_phone',
         'customer_address',
+        'customer_email',
         'customer_initials',
         'avatar_color',
         'product_id',

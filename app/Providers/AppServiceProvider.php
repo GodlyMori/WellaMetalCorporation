@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('stock_requests')) {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('stock_requests') || !\Illuminate\Support\Facades\Schema::hasColumn('sales', 'customer_email')) {
                 \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             }
         } catch (\Throwable $e) {
