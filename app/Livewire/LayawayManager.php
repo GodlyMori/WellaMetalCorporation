@@ -40,6 +40,8 @@ class LayawayManager extends Component
     // Receipt Modal State
     public bool $showReceiptModal = false;
     public ?array $receiptData = null;
+    public bool $emailSent = false;
+    public ?string $emailDeliveryStatus = null;
 
     // Toast Feedback
     public string $successMessage = '';
@@ -169,10 +171,13 @@ class LayawayManager extends Component
             });
 
             // Prepare Receipt Data
+            $customerEmail = trim($sale->customer_email ?: ($sale->customer?->email ?? ''));
             $this->receiptData = [
                 'order_number' => $sale->sale_number,
                 'customer_name' => $sale->customer_name,
                 'customer_phone' => $sale->customer_phone,
+                'customer_email' => $customerEmail ?: null,
+                'customer_address' => $sale->customer_address,
                 'items' => $sale->items->map(fn($it) => [
                     'name' => $it->product?->name ?? 'Reserved Furniture Item',
                     'category' => $it->product?->category ?? 'Furniture',
@@ -181,14 +186,42 @@ class LayawayManager extends Component
                     'subtotal' => (float)$it->subtotal,
                 ])->toArray(),
                 'total_order_amount' => (float)$sale->amount,
+                'total_amount' => (float)($sale->original_amount ?: $sale->amount),
+                'discount_amount' => (float)$sale->discount_amount,
+                'promo_name' => $sale->promo_name,
+                'net_amount' => (float)$sale->amount,
                 'payment_amount' => $payment,
+                'cash_tendered' => $payment,
+                'change_due' => 0.0,
+                'downpayment_amount' => (float)$sale->downpayment_amount,
+                'amount_paid' => $authoritativeAmountPaid,
                 'payment_method' => ucfirst(str_replace('_', ' ', $this->payment_method)),
+                'payment_type' => 'layaway',
                 'payment_reference' => $this->payment_reference ?: '—',
                 'remaining_balance' => $newRemainingBalance,
                 'is_fully_paid' => $isFullyPaid,
+                'expiry_date' => $newExpiry ? \Carbon\Carbon::parse($newExpiry)->format('M d, Y') : null,
                 'payment_date' => now()->format('M d, Y h:i A'),
+                'sale_date' => now()->format('M d, Y h:i A'),
                 'cashier_name' => $user?->name ?? 'Cashier',
+                'cashier' => $user?->name ?? 'Cashier',
             ];
+
+            // Auto-send digital receipt if customer has an email address
+            $this->emailSent = false;
+            $this->emailDeliveryStatus = null;
+            if (!empty($customerEmail)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($customerEmail)
+                        ->send(new \App\Mail\SalesReceiptMail($sale, $this->receiptData));
+                    $this->emailSent = true;
+                    $this->emailDeliveryStatus = "Digital receipt delivered to {$customerEmail}.";
+                } catch (\Throwable $mailError) {
+                    \Illuminate\Support\Facades\Log::warning("Layaway digital receipt delivery failed for {$customerEmail}: " . $mailError->getMessage());
+                    $this->emailSent = false;
+                    $this->emailDeliveryStatus = "Email queued/logged, but delivery notification encountered an issue: " . $mailError->getMessage();
+                }
+            }
 
             $this->showPaymentModal = false;
             $this->showReceiptModal = true;
@@ -260,10 +293,35 @@ class LayawayManager extends Component
         $this->successMessage = "Lay-away order {$sale->sale_number} cancelled and reserved stock restored to inventory.";
     }
 
+    public function resendReceiptEmail()
+    {
+        if (empty($this->receiptData) || empty($this->receiptData['customer_email']) || empty($this->receiptData['order_number'])) {
+            $this->emailDeliveryStatus = 'No valid customer email address found on this contract.';
+            return;
+        }
+
+        $sale = Sale::where('sale_number', $this->receiptData['order_number'])->first();
+        if (!$sale) {
+            $this->emailDeliveryStatus = 'Associated contract record not found.';
+            return;
+        }
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($this->receiptData['customer_email'])
+                ->send(new \App\Mail\SalesReceiptMail($sale, $this->receiptData));
+            $this->emailSent = true;
+            $this->emailDeliveryStatus = "Digital receipt re-sent successfully to {$this->receiptData['customer_email']}!";
+        } catch (\Throwable $e) {
+            $this->emailDeliveryStatus = "Could not re-send receipt: " . $e->getMessage();
+        }
+    }
+
     public function closeReceiptModal()
     {
         $this->showReceiptModal = false;
         $this->receiptData = null;
+        $this->emailSent = false;
+        $this->emailDeliveryStatus = null;
     }
 
     // ==============================================================

@@ -567,6 +567,12 @@
                             <span class="text-slate-500">Phone:</span>
                             <span class="font-mono">{{ $receiptData['customer_phone'] ?: '—' }}</span>
                         </div>
+                        @if(!empty($receiptData['customer_email']))
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Email:</span>
+                                <span class="font-mono text-slate-700">{{ $receiptData['customer_email'] }}</span>
+                            </div>
+                        @endif
                         <div class="flex justify-between">
                             <span class="text-slate-500">Cashier:</span>
                             <span>{{ $receiptData['cashier_name'] }}</span>
@@ -616,22 +622,44 @@
                     <!-- Footer Notice -->
                     <div class="text-center text-[10px] text-slate-400 pt-1">
                         <p>Thank you for your payment!</p>
-                        <p class="mt-0.5">Please keep this official receipt for claiming your reserved furniture upon full settlement.</p>
+                        <p class="mt-0.5">Digital acknowledgment issued for store pickup upon full settlement.</p>
                     </div>
                 </div>
 
+                <!-- Digital Receipt Delivery Status Banner -->
+                @if(!empty($receiptData['customer_email']))
+                    <div class="px-5 py-3 border-t border-slate-200 {{ $emailSent ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-50 text-slate-700' }} text-xs flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2 min-w-0">
+                            @if($emailSent)
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="truncate">Receipt sent to <strong class="font-semibold">{{ $receiptData['customer_email'] }}</strong></span>
+                            @else
+                                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <span class="truncate">{{ $emailDeliveryStatus ?? ('Recipient: ' . $receiptData['customer_email']) }}</span>
+                            @endif
+                        </div>
+                        <button type="button"
+                                wire:click="resendReceiptEmail"
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition cursor-pointer shrink-0">
+                            <span wire:loading.remove wire:target="resendReceiptEmail">Resend</span>
+                            <span wire:loading wire:target="resendReceiptEmail">Sending...</span>
+                        </button>
+                    </div>
+                @endif
+
                 <!-- Modal Actions -->
-                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-between gap-2">
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
+                    <p class="text-[11px] text-slate-400 flex-1">
+                        Goods strictly for store pickup upon full settlement • Thank you!
+                    </p>
                     <button type="button" wire:click="closeReceiptModal"
-                            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer">
-                        Done / Close
-                    </button>
-                    <button type="button" onclick="window.print()"
-                            class="px-4 py-2 bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold rounded flex items-center gap-1.5 cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                        </svg>
-                        <span>Print Receipt</span>
+                            class="px-4 py-2 bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold rounded transition-colors cursor-pointer whitespace-nowrap">
+                        Close Receipt
                     </button>
                 </div>
 
