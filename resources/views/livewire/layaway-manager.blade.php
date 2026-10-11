@@ -301,16 +301,6 @@
                                             <span>Pay</span>
                                         </button>
 
-                                        <!-- Extend Deadline Action -->
-                                        <button type="button"
-                                                wire:click="openExtendModal({{ $contract->id }})"
-                                                class="p-1 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0c163b] transition-colors cursor-pointer"
-                                                title="Extend Expiry Deadline">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                        </button>
-
                                         <!-- Cancel & Restock Action -->
                                         <button type="button"
                                                 wire:click="openCancelModal({{ $contract->id }})"
@@ -447,24 +437,24 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                                    Payment method <span class="text-rose-500">*</span>
+                                    Payment mode
                                 </label>
-                                <select wire:model="payment_method"
-                                        class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] transition-colors">
-                                    <option value="cash">Cash</option>
-                                    <option value="gcash">GCash</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    <option value="check">Check</option>
-                                </select>
+                                <div class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        <span>Cash Only</span>
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-normal">Accepted Mode</span>
+                                </div>
                             </div>
 
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                                    Reference / Txn #
+                                    OR / Receipt Voucher #
                                 </label>
                                 <input type="text"
                                        wire:model="payment_reference"
-                                       placeholder="e.g. GCash Ref #, Check #"
+                                       placeholder="e.g. Official Receipt #"
                                        class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] transition-colors">
                             </div>
                         </div>
@@ -500,65 +490,7 @@
         </div>
     @endif
 
-    <!-- ============================================================== -->
-    <!-- MODAL 2: EXTEND DEADLINE                                       -->
-    <!-- ============================================================== -->
-    @if ($showExtendModal && $extendingSale)
-        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 flex items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white dark:bg-[#0c163b] rounded shadow-lg border border-slate-200 dark:border-[#1a2858] overflow-hidden"
-                 wire:click.outside="$set('showExtendModal', false)">
-                <div class="px-5 py-4 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
-                    <div>
-                        <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
-                            Extend Lay-Away Deadline
-                        </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">{{ $extendingSale->sale_number }} &middot; {{ $extendingSale->customer_name }}</p>
-                    </div>
-                    <button type="button" wire:click="$set('showExtendModal', false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
 
-                <form wire:submit.prevent="submitExtension" class="p-5 space-y-3.5 text-xs">
-                    <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded text-amber-800 dark:text-amber-300 text-xs">
-                        Current Deadline: <span class="font-bold">{{ $extendingSale->layaway_expires_at ? $extendingSale->layaway_expires_at->format('M d, Y') : 'None' }}</span>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            Days to extend from current expiry / today <span class="text-rose-500">*</span>
-                        </label>
-                        <div class="flex items-center gap-2">
-                            <input type="number" min="1" max="180" wire:model="extensionDays"
-                                   class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] transition-colors">
-                            <button type="button" wire:click="$set('extensionDays', 30)" class="px-2.5 py-2 border rounded text-xs font-medium hover:bg-slate-50 cursor-pointer">+30d</button>
-                            <button type="button" wire:click="$set('extensionDays', 60)" class="px-2.5 py-2 border rounded text-xs font-medium hover:bg-slate-50 cursor-pointer">+60d</button>
-                        </div>
-                        @error('extensionDays') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            Reason for extension (Audit log)
-                        </label>
-                        <input type="text" wire:model="extensionNotes" placeholder="e.g. Customer requested 30-day grace period"
-                               class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] transition-colors">
-                    </div>
-
-                    <div class="pt-3 border-t border-slate-200 dark:border-[#1a2858] flex justify-end gap-2">
-                        <button type="button" wire:click="$set('showExtendModal', false)"
-                                class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-4 py-2 rounded hover:bg-slate-50 transition-colors cursor-pointer">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-4 py-2 rounded transition-colors cursor-pointer">
-                            Save Extension
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
 
     <!-- ============================================================== -->
     <!-- MODAL 3: CANCEL & RESTOCK STOCK                                -->

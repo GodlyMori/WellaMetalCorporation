@@ -1,0 +1,487 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2050 1000" width="100%" height="100%">
+  <defs>
+    <style>
+      /* draw.io classic styling */
+      .drawio-table { fill: #ffffff; stroke: #000000; stroke-width: 1.2px; stroke-miterlimit: 10; }
+      .drawio-header-bg { fill: #f5f5f5; stroke: #000000; stroke-width: 1.2px; }
+      .drawio-header-text { font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; fill: #000000; text-anchor: middle; }
+      
+      .drawio-row-bg { fill: #ffffff; }
+      .drawio-row-line { stroke: #000000; stroke-width: 0.8px; }
+      .drawio-divider { stroke: #000000; stroke-width: 0.8px; }
+      
+      .drawio-key { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; fill: #000000; text-anchor: middle; }
+      .drawio-name { font-family: Arial, Helvetica, sans-serif; font-size: 11px; fill: #000000; }
+      .drawio-type { font-family: Arial, Helvetica, sans-serif; font-size: 11px; fill: #555555; }
+      
+      .drawio-line { stroke: #000000; stroke-width: 1.2px; fill: none; stroke-linejoin: miter; stroke-linecap: square; }
+      
+      /* Pure Crow's Foot markers (NO ARROWS) */
+      .cf-prong { stroke: #000000; stroke-width: 1.2px; fill: none; stroke-linecap: round; }
+      .cf-bar { stroke: #000000; stroke-width: 1.4px; }
+      .cf-circle { stroke: #000000; stroke-width: 1.2px; fill: #ffffff; }
+    </style>
+
+    <!-- Marker: Exactly One (Mandatory 1: Two parallel perpendicular bars ||) -->
+    <marker id="dio-one" viewBox="0 0 24 20" refX="2" refY="10" markerWidth="14" markerHeight="12" orient="auto">
+      <line x1="0" y1="10" x2="24" y2="10" class="drawio-line" />
+      <line x1="8" y1="2" x2="8" y2="18" class="cf-bar" />
+      <line x1="15" y1="2" x2="15" y2="18" class="cf-bar" />
+    </marker>
+
+    <!-- Marker: Optional Many (Circle + Crow's Foot fork fanning OPEN to the entity box) -->
+    <marker id="dio-many-opt" viewBox="0 0 26 20" refX="25" refY="10" markerWidth="16" markerHeight="12" orient="auto">
+      <line x1="0" y1="10" x2="10" y2="10" class="drawio-line" />
+      <circle cx="5" cy="10" r="3.5" class="cf-circle" />
+      <!-- Three prongs fanning OPEN towards the table edge at x=25 -->
+      <line x1="10" y1="10" x2="25" y2="2" class="cf-prong" />
+      <line x1="10" y1="10" x2="25" y2="10" class="cf-prong" />
+      <line x1="10" y1="10" x2="25" y2="18" class="cf-prong" />
+    </marker>
+
+    <!-- Marker: Mandatory Many (Bar + Crow's Foot fork fanning OPEN to the entity box) -->
+    <marker id="dio-many-mand" viewBox="0 0 26 20" refX="25" refY="10" markerWidth="16" markerHeight="12" orient="auto">
+      <line x1="0" y1="10" x2="10" y2="10" class="drawio-line" />
+      <line x1="5" y1="2" x2="5" y2="18" class="cf-bar" />
+      <!-- Three prongs fanning OPEN towards the table edge at x=25 -->
+      <line x1="10" y1="10" x2="25" y2="2" class="cf-prong" />
+      <line x1="10" y1="10" x2="25" y2="10" class="cf-prong" />
+      <line x1="10" y1="10" x2="25" y2="18" class="cf-prong" />
+    </marker>
+  </defs>
+
+  <!-- ======================================================== -->
+  <!-- DRAW.IO ORTHOGONAL CONNECTOR LINES (NO ARROWS)          -->
+  <!-- ======================================================== -->
+
+  <!-- 1. users to stock_transfers (1 to Many: received_by) -->
+  <path d="M 330,175 L 430,175" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 2. stock_transfers to stock_transfer_items (1 to Many) -->
+  <path d="M 730,175 L 830,175" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-mand)"/>
+
+  <!-- 3. products to stock_transfer_items (1 to Many) -->
+  <path d="M 1230,175 L 1130,175" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 4. products to sale_items (1 to Many) -->
+  <path d="M 1380,336 L 1380,440" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 5. sales to sale_items (1 to Many) -->
+  <path d="M 1630,520 L 1530,520" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-mand)"/>
+
+  <!-- 6. sales to payments (1 to Many) -->
+  <path d="M 1795,518 L 1795,620" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 7. users to promotions (1 to Many: approved_by) -->
+  <path d="M 195,310 L 195,420" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 8. promotions to sales (1 to Many: promotion_id) -->
+  <path d="M 350,550 L 1580,550 L 1580,430 L 1630,430" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 9. users to sales (1 to Many: created_by - Top Highway) -->
+  <path d="M 195,100 L 195,50 L 1795,50 L 1795,100" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 10. products to inventory_adjustments (1 to Many: product_id) -->
+  <path d="M 1280,336 L 1280,780 L 760,780" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+  <!-- 11. users to inventory_adjustments (1 to Many: user_id) -->
+  <path d="M 195,682 L 195,780 L 430,780" class="drawio-line" marker-start="url(#dio-one)" marker-end="url(#dio-many-opt)"/>
+
+
+  <!-- ======================================================== -->
+  <!-- DRAW.IO ENTITY SHAPES (B&W RECTANGULAR TABLES)           -->
+  <!-- ======================================================== -->
+
+  <!-- 1. USERS TABLE -->
+  <g transform="translate(60, 100)">
+    <rect width="270" height="210" class="drawio-table"/>
+    <!-- Header -->
+    <rect width="270" height="28" class="drawio-header-bg"/>
+    <text x="135" y="19" class="drawio-header-text">users</text>
+    
+    <!-- Vertical Divider for PK/FK column -->
+    <line x1="38" y1="28" x2="38" y2="210" class="drawio-divider"/>
+    <!-- Vertical Divider for Name / Type column -->
+    <line x1="175" y1="28" x2="175" y2="210" class="drawio-divider"/>
+    
+    <!-- Rows -->
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="270" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="183" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="270" y2="60" class="drawio-row-line"/>
+      <text x="46" y="50" class="drawio-name">name</text>
+      <text x="183" y="50" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="90" x2="270" y2="90" class="drawio-row-line"/>
+      <text x="46" y="80" class="drawio-name">email</text>
+      <text x="183" y="80" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="120" x2="270" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">password</text>
+      <text x="183" y="110" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="150" x2="270" y2="150" class="drawio-row-line"/>
+      <text x="46" y="140" class="drawio-name">remember_token</text>
+      <text x="183" y="140" class="drawio-type">VARCHAR(100)</text>
+      
+      <text x="46" y="170" class="drawio-name">created_at</text>
+      <text x="183" y="170" class="drawio-type">TIMESTAMP</text>
+    </g>
+  </g>
+
+
+  <!-- 2. STOCK_TRANSFERS TABLE -->
+  <g transform="translate(430, 100)">
+    <rect width="300" height="180" class="drawio-table"/>
+    <rect width="300" height="28" class="drawio-header-bg"/>
+    <text x="150" y="19" class="drawio-header-text">stock_transfers</text>
+    
+    <line x1="38" y1="28" x2="38" y2="180" class="drawio-divider"/>
+    <line x1="195" y1="28" x2="195" y2="180" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="300" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="203" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="300" y2="60" class="drawio-row-line"/>
+      <text x="46" y="50" class="drawio-name">source_branch</text>
+      <text x="203" y="50" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="90" x2="300" y2="90" class="drawio-row-line"/>
+      <text x="19" y="80" class="drawio-key">FK</text>
+      <text x="46" y="80" class="drawio-name">received_by</text>
+      <text x="203" y="80" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="120" x2="300" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">date_received</text>
+      <text x="203" y="110" class="drawio-type">DATE</text>
+      
+      <text x="46" y="140" class="drawio-name">notes</text>
+      <text x="203" y="140" class="drawio-type">TEXT</text>
+    </g>
+  </g>
+
+
+  <!-- 3. STOCK_TRANSFER_ITEMS TABLE -->
+  <g transform="translate(830, 100)">
+    <rect width="300" height="150" class="drawio-table"/>
+    <rect width="300" height="28" class="drawio-header-bg"/>
+    <text x="150" y="19" class="drawio-header-text">stock_transfer_items</text>
+    
+    <line x1="38" y1="28" x2="38" y2="150" class="drawio-divider"/>
+    <line x1="215" y1="28" x2="215" y2="150" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="300" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="223" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="300" y2="60" class="drawio-row-line"/>
+      <text x="19" y="50" class="drawio-key">FK</text>
+      <text x="46" y="50" class="drawio-name">stock_transfer_id</text>
+      <text x="223" y="50" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="90" x2="300" y2="90" class="drawio-row-line"/>
+      <text x="19" y="80" class="drawio-key">FK</text>
+      <text x="46" y="80" class="drawio-name">product_id</text>
+      <text x="223" y="80" class="drawio-type">BIGINT</text>
+      
+      <text x="46" y="110" class="drawio-name">quantity_received</text>
+      <text x="223" y="110" class="drawio-type">INT</text>
+    </g>
+  </g>
+
+
+  <!-- 4. PRODUCTS TABLE -->
+  <g transform="translate(1230, 100)">
+    <rect width="300" height="236" class="drawio-table"/>
+    <rect width="300" height="28" class="drawio-header-bg"/>
+    <text x="150" y="19" class="drawio-header-text">products</text>
+    
+    <line x1="38" y1="28" x2="38" y2="236" class="drawio-divider"/>
+    <line x1="195" y1="28" x2="195" y2="236" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="300" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="203" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="300" y2="60" class="drawio-row-line"/>
+      <text x="46" y="50" class="drawio-name">name</text>
+      <text x="203" y="50" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="90" x2="300" y2="90" class="drawio-row-line"/>
+      <text x="46" y="80" class="drawio-name">category</text>
+      <text x="203" y="80" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="120" x2="300" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">tagged_price</text>
+      <text x="203" y="110" class="drawio-type">DECIMAL(10,2)</text>
+      
+      <line x1="0" y1="150" x2="300" y2="150" class="drawio-row-line"/>
+      <text x="46" y="140" class="drawio-name">quantity_in_stock</text>
+      <text x="203" y="140" class="drawio-type">INT</text>
+      
+      <line x1="0" y1="180" x2="300" y2="180" class="drawio-row-line"/>
+      <text x="46" y="170" class="drawio-name">status</text>
+      <text x="203" y="170" class="drawio-type">VARCHAR(255)</text>
+      
+      <text x="19" y="198" class="drawio-key">FK</text>
+      <text x="46" y="198" class="drawio-name">archived_by</text>
+      <text x="203" y="198" class="drawio-type">BIGINT</text>
+    </g>
+  </g>
+
+
+  <!-- 5. SALES TABLE -->
+  <g transform="translate(1630, 100)">
+    <rect width="330" height="418" class="drawio-table"/>
+    <rect width="330" height="28" class="drawio-header-bg"/>
+    <text x="165" y="19" class="drawio-header-text">sales</text>
+    
+    <line x1="38" y1="28" x2="38" y2="418" class="drawio-divider"/>
+    <line x1="210" y1="28" x2="210" y2="418" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="330" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="218" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="330" y2="60" class="drawio-row-line"/>
+      <text x="46" y="50" class="drawio-name">sale_number</text>
+      <text x="218" y="50" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="90" x2="330" y2="90" class="drawio-row-line"/>
+      <text x="46" y="80" class="drawio-name">customer_name</text>
+      <text x="218" y="80" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="120" x2="330" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">customer_phone</text>
+      <text x="218" y="110" class="drawio-type">VARCHAR(50)</text>
+      
+      <line x1="0" y1="150" x2="330" y2="150" class="drawio-row-line"/>
+      <text x="46" y="140" class="drawio-name">amount</text>
+      <text x="218" y="140" class="drawio-type">DECIMAL(12,2)</text>
+      
+      <line x1="0" y1="180" x2="330" y2="180" class="drawio-row-line"/>
+      <text x="46" y="170" class="drawio-name">discount_amount</text>
+      <text x="218" y="170" class="drawio-type">DECIMAL(10,2)</text>
+      
+      <line x1="0" y1="210" x2="330" y2="210" class="drawio-row-line"/>
+      <text x="46" y="200" class="drawio-name">payment_type</text>
+      <text x="218" y="200" class="drawio-type">VARCHAR(30)</text>
+      
+      <line x1="0" y1="240" x2="330" y2="240" class="drawio-row-line"/>
+      <text x="46" y="230" class="drawio-name">downpayment_amount</text>
+      <text x="218" y="230" class="drawio-type">DECIMAL(12,2)</text>
+      
+      <line x1="0" y1="270" x2="330" y2="270" class="drawio-row-line"/>
+      <text x="46" y="260" class="drawio-name">amount_paid</text>
+      <text x="218" y="260" class="drawio-type">DECIMAL(12,2)</text>
+      
+      <line x1="0" y1="300" x2="330" y2="300" class="drawio-row-line"/>
+      <text x="46" y="290" class="drawio-name">remaining_balance</text>
+      <text x="218" y="290" class="drawio-type">DECIMAL(12,2)</text>
+      
+      <line x1="0" y1="330" x2="330" y2="330" class="drawio-row-line"/>
+      <text x="19" y="320" class="drawio-key">FK</text>
+      <text x="46" y="320" class="drawio-name">promotion_id</text>
+      <text x="218" y="320" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="360" x2="330" y2="360" class="drawio-row-line"/>
+      <text x="19" y="350" class="drawio-key">FK</text>
+      <text x="46" y="350" class="drawio-name">created_by</text>
+      <text x="218" y="350" class="drawio-type">BIGINT</text>
+      
+      <text x="46" y="380" class="drawio-name">status</text>
+      <text x="218" y="380" class="drawio-type">VARCHAR(255)</text>
+    </g>
+  </g>
+
+
+  <!-- 6. SALE_ITEMS TABLE -->
+  <g transform="translate(1230, 440)">
+    <rect width="300" height="210" class="drawio-table"/>
+    <rect width="300" height="28" class="drawio-header-bg"/>
+    <text x="150" y="19" class="drawio-header-text">sale_items</text>
+    
+    <line x1="38" y1="28" x2="38" y2="210" class="drawio-divider"/>
+    <line x1="195" y1="28" x2="195" y2="210" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="300" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="203" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="300" y2="60" class="drawio-row-line"/>
+      <text x="19" y="50" class="drawio-key">FK</text>
+      <text x="46" y="50" class="drawio-name">sale_id</text>
+      <text x="203" y="50" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="90" x2="300" y2="90" class="drawio-row-line"/>
+      <text x="19" y="80" class="drawio-key">FK</text>
+      <text x="46" y="80" class="drawio-name">product_id</text>
+      <text x="203" y="80" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="120" x2="300" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">quantity</text>
+      <text x="203" y="110" class="drawio-type">INT</text>
+      
+      <line x1="0" y1="150" x2="300" y2="150" class="drawio-row-line"/>
+      <text x="46" y="140" class="drawio-name">unit_price</text>
+      <text x="203" y="140" class="drawio-type">DECIMAL(12,2)</text>
+      
+      <text x="46" y="170" class="drawio-name">subtotal</text>
+      <text x="203" y="170" class="drawio-type">DECIMAL(12,2)</text>
+    </g>
+  </g>
+
+
+  <!-- 7. PAYMENTS TABLE -->
+  <g transform="translate(1630, 620)">
+    <rect width="330" height="210" class="drawio-table"/>
+    <rect width="330" height="28" class="drawio-header-bg"/>
+    <text x="165" y="19" class="drawio-header-text">payments</text>
+    
+    <line x1="38" y1="28" x2="38" y2="210" class="drawio-divider"/>
+    <line x1="210" y1="28" x2="210" y2="210" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="330" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="218" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="330" y2="60" class="drawio-row-line"/>
+      <text x="19" y="50" class="drawio-key">FK</text>
+      <text x="46" y="50" class="drawio-name">sale_id</text>
+      <text x="218" y="50" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="90" x2="330" y2="90" class="drawio-row-line"/>
+      <text x="46" y="80" class="drawio-name">amount</text>
+      <text x="218" y="80" class="drawio-type">DECIMAL(12,2)</text>
+      
+      <line x1="0" y1="120" x2="330" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">payment_date</text>
+      <text x="218" y="110" class="drawio-type">TIMESTAMP</text>
+      
+      <line x1="0" y1="150" x2="330" y2="150" class="drawio-row-line"/>
+      <text x="46" y="140" class="drawio-name">payment_method</text>
+      <text x="218" y="140" class="drawio-type">VARCHAR(50)</text>
+      
+      <text x="19" y="170" class="drawio-key">FK</text>
+      <text x="46" y="170" class="drawio-name">recorded_by</text>
+      <text x="218" y="170" class="drawio-type">BIGINT</text>
+    </g>
+  </g>
+
+
+  <!-- 8. PROMOTIONS TABLE -->
+  <g transform="translate(60, 420)">
+    <rect width="290" height="262" class="drawio-table"/>
+    <rect width="290" height="28" class="drawio-header-bg"/>
+    <text x="145" y="19" class="drawio-header-text">promotions</text>
+    
+    <line x1="38" y1="28" x2="38" y2="262" class="drawio-divider"/>
+    <line x1="185" y1="28" x2="185" y2="262" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="290" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="193" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="290" y2="60" class="drawio-row-line"/>
+      <text x="46" y="50" class="drawio-name">name</text>
+      <text x="193" y="50" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="90" x2="290" y2="90" class="drawio-row-line"/>
+      <text x="46" y="80" class="drawio-name">code</text>
+      <text x="193" y="80" class="drawio-type">VARCHAR(255)</text>
+      
+      <line x1="0" y1="120" x2="290" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">discount_type</text>
+      <text x="193" y="110" class="drawio-type">ENUM</text>
+      
+      <line x1="0" y1="150" x2="290" y2="150" class="drawio-row-line"/>
+      <text x="46" y="140" class="drawio-name">discount_value</text>
+      <text x="193" y="140" class="drawio-type">DECIMAL(10,2)</text>
+      
+      <line x1="0" y1="180" x2="290" y2="180" class="drawio-row-line"/>
+      <text x="46" y="170" class="drawio-name">status</text>
+      <text x="193" y="170" class="drawio-type">ENUM</text>
+      
+      <text x="19" y="200" class="drawio-key">FK</text>
+      <text x="46" y="200" class="drawio-name">approved_by</text>
+      <text x="193" y="200" class="drawio-type">BIGINT</text>
+    </g>
+  </g>
+
+
+  <!-- 9. INVENTORY_ADJUSTMENTS TABLE -->
+  <g transform="translate(430, 700)">
+    <rect width="330" height="210" class="drawio-table"/>
+    <rect width="330" height="28" class="drawio-header-bg"/>
+    <text x="165" y="19" class="drawio-header-text">inventory_adjustments</text>
+    
+    <line x1="38" y1="28" x2="38" y2="210" class="drawio-divider"/>
+    <line x1="210" y1="28" x2="210" y2="210" class="drawio-divider"/>
+    
+    <g transform="translate(0, 28)">
+      <line x1="0" y1="30" x2="330" y2="30" class="drawio-row-line"/>
+      <text x="19" y="20" class="drawio-key">PK</text>
+      <text x="46" y="20" class="drawio-name">id</text>
+      <text x="218" y="20" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="60" x2="330" y2="60" class="drawio-row-line"/>
+      <text x="19" y="50" class="drawio-key">FK</text>
+      <text x="46" y="50" class="drawio-name">product_id</text>
+      <text x="218" y="50" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="90" x2="330" y2="90" class="drawio-row-line"/>
+      <text x="19" y="80" class="drawio-key">FK</text>
+      <text x="46" y="80" class="drawio-name">user_id</text>
+      <text x="218" y="80" class="drawio-type">BIGINT</text>
+      
+      <line x1="0" y1="120" x2="330" y2="120" class="drawio-row-line"/>
+      <text x="46" y="110" class="drawio-name">quantity_change</text>
+      <text x="218" y="110" class="drawio-type">INT</text>
+      
+      <line x1="0" y1="150" x2="330" y2="150" class="drawio-row-line"/>
+      <text x="46" y="140" class="drawio-name">reason</text>
+      <text x="218" y="140" class="drawio-type">VARCHAR(255)</text>
+      
+      <text x="46" y="170" class="drawio-name">created_at</text>
+      <text x="218" y="170" class="drawio-type">TIMESTAMP</text>
+    </g>
+  </g>
+
+  <!-- DRAW.IO STYLE LEGEND (NO ARROWS) -->
+  <g transform="translate(60, 20)">
+    <rect width="420" height="40" class="drawio-table"/>
+    <text x="15" y="25" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#000000">Crow's Foot Notation</text>
+    
+    <!-- 1 Mandatory: Two vertical bars || -->
+    <line x1="160" y1="20" x2="200" y2="20" class="drawio-line"/>
+    <line x1="178" y1="13" x2="178" y2="27" class="cf-bar"/>
+    <line x1="184" y1="13" x2="184" y2="27" class="cf-bar"/>
+    <text x="210" y="24" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">1 Mandatory</text>
+
+    <!-- Many Optional: Circle + 3 Prongs fanning out (NO ARROW) -->
+    <line x1="300" y1="20" x2="335" y2="20" class="drawio-line"/>
+    <circle cx="328" cy="20" r="3.5" class="cf-circle"/>
+    <line x1="335" y1="20" x2="350" y2="13" class="cf-prong"/>
+    <line x1="335" y1="20" x2="350" y2="20" class="cf-prong"/>
+    <line x1="335" y1="20" x2="350" y2="27" class="cf-prong"/>
+    <text x="362" y="24" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000000">Many (0..*)</text>
+  </g>
+</svg>

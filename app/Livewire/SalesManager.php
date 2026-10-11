@@ -309,28 +309,35 @@ class SalesManager extends Component
     {
         $this->successMessage = '';
 
+        $fName = trim($this->customer_first_name);
+        $lName = trim($this->customer_last_name);
+        $this->customer_name = trim("{$fName} {$lName}");
+
         $payableToday = ($this->payment_type === 'layaway') ? (float)$this->downpayment_amount : (float)$this->netAmount;
 
         $rules = [
-            'customer_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
+            'customer_first_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
+            'customer_last_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
+            'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9\+\-\s\(\)]+$/'],
             'customer_address' => ['required', 'string', 'max:500'],
             'payment_type' => ['required', 'in:full,layaway'],
+            'cash_tendered' => ['required', 'numeric', 'min:' . max(0.01, $payableToday)],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ];
 
-        // Cash validation only applies when payment_type is 'full'
-        if ($this->payment_type === 'full') {
-            $rules['cash_tendered'] = ['required', 'numeric', 'min:' . max(0.01, $payableToday)];
-        } else {
+        if ($this->payment_type === 'layaway') {
             $rules['downpayment_amount'] = ['required', 'numeric', 'min:' . $this->minDownpayment, 'max:' . $this->netAmount];
         }
 
         $this->validate($rules, [
-            'customer_name.regex' => 'Customer name must contain letters only (numbers are not permitted).',
+            'customer_first_name.required' => 'Customer first name is required.',
+            'customer_first_name.regex' => 'Customer first name must contain letters only (numbers are not permitted).',
+            'customer_last_name.required' => 'Customer last name is required.',
+            'customer_last_name.regex' => 'Customer last name must contain letters only (numbers are not permitted).',
             'customer_name.required' => 'Customer name is required.',
             'customer_phone.regex' => 'Please enter a valid contact number (digits, spaces, +).',
             'customer_phone.required' => 'Customer contact number is required.',
@@ -341,7 +348,9 @@ class SalesManager extends Component
             'downpayment_amount.max' => 'Downpayment cannot exceed the total order amount.',
             'cash_tendered.required' => 'Please enter the cash amount tendered by the customer.',
             'cash_tendered.numeric' => 'Cash tendered must be a valid numeric amount.',
-            'cash_tendered.min' => 'Cash tendered cannot be less than the payable amount of ₱' . number_format($payableToday, 2) . '.',
+            'cash_tendered.min' => ($this->payment_type === 'layaway')
+                ? 'Cash tendered cannot be less than the downpayment amount of ₱' . number_format($payableToday, 2) . '.'
+                : 'Cash tendered cannot be less than the payable amount of ₱' . number_format($payableToday, 2) . '.',
         ]);
 
         // Preliminary stock check
@@ -442,6 +451,12 @@ class SalesManager extends Component
                 }
 
                 if ($customer) {
+                    if (empty($customer->first_name) && !empty($this->customer_first_name)) {
+                        $customer->first_name = trim($this->customer_first_name);
+                    }
+                    if (empty($customer->last_name) && !empty($this->customer_last_name)) {
+                        $customer->last_name = trim($this->customer_last_name);
+                    }
                     $customer->phone = trim($this->customer_phone) ?: $customer->phone;
                     $customer->address = trim($this->customer_address) ?: $customer->address;
                     $customer->increment('total_orders_count', 1);

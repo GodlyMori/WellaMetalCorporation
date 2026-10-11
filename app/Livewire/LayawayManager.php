@@ -26,17 +26,10 @@ class LayawayManager extends Component
     public ?int $payingSaleId = null;
     public ?Sale $payingSale = null;
     public string $paymentAmount = '';
-    public string $payment_method = 'cash'; // 'cash', 'gcash', 'bank_transfer', 'check'
+    public string $payment_method = 'cash'; // Company policy: strictly Cash Only
     public string $payment_reference = '';
     public string $payment_notes = '';
     public array $paymentHistory = [];
-
-    // Extend Expiry Modal State
-    public bool $showExtendModal = false;
-    public ?int $extendingSaleId = null;
-    public ?Sale $extendingSale = null;
-    public int $extensionDays = 30;
-    public string $extensionNotes = '';
 
     // Cancel / Restock Modal State
     public bool $showCancelModal = false;
@@ -110,7 +103,7 @@ class LayawayManager extends Component
 
         $this->validate([
             'paymentAmount' => ['required', 'numeric', 'min:0.01', 'max:' . $sale->remaining_balance],
-            'payment_method' => ['required', 'string'],
+            'payment_method' => ['required', 'in:cash'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'payment_notes' => ['nullable', 'string', 'max:255'],
         ], [
@@ -205,45 +198,6 @@ class LayawayManager extends Component
         } catch (\Throwable $e) {
             $this->addError('paymentAmount', $e->getMessage());
         }
-    }
-
-    // ==============================================================
-    // EXTEND DEADLINE MODAL & LOGIC
-    // ==============================================================
-    public function openExtendModal(int $saleId)
-    {
-        $this->extendingSaleId = $saleId;
-        $this->extendingSale = Sale::with(['customer', 'items.product'])->findOrFail($saleId);
-        $this->extensionDays = 30;
-        $this->extensionNotes = '';
-        $this->showExtendModal = true;
-    }
-
-    public function submitExtension()
-    {
-        $this->validate([
-            'extensionDays' => ['required', 'integer', 'min:1', 'max:180'],
-            'extensionNotes' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $sale = Sale::findOrFail($this->extendingSaleId);
-        $baseDate = $sale->layaway_expires_at ? Carbon::parse($sale->layaway_expires_at) : now();
-        // If already past expiry, extend from today
-        if ($baseDate->isPast()) {
-            $baseDate = now();
-        }
-        $newExpiry = $baseDate->addDays($this->extensionDays)->toDateString();
-
-        $auditNote = "\n[" . now()->format('Y-m-d H:i') . "] Lay-away deadline extended by {$this->extensionDays} day(s) to {$newExpiry} by " . (Auth::user()?->name ?? 'Staff') .
-            ($this->extensionNotes ? " (Reason: {$this->extensionNotes})" : "");
-
-        $sale->update([
-            'layaway_expires_at' => $newExpiry,
-            'notes' => ($sale->notes ? $sale->notes : '') . $auditNote,
-        ]);
-
-        $this->showExtendModal = false;
-        $this->successMessage = "Lay-away contract {$sale->sale_number} extended to " . Carbon::parse($newExpiry)->format('M d, Y') . ".";
     }
 
     // ==============================================================

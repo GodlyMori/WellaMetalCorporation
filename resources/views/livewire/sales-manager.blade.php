@@ -458,6 +458,34 @@
                                     </span>
                                 </div>
                             </div>
+                            @error('downpayment_amount') <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+
+                            <!-- Cash Tendered for Layaway Downpayment -->
+                            <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-slate-700 dark:text-slate-300">Tendered cash (DP)</span>
+                                    <span class="text-[11px] text-slate-400">Payable today: <strong class="font-mono text-slate-900 dark:text-white tabular-nums">₱{{ number_format((float)$downpayment_amount, 2) }}</strong></span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2.5 items-end">
+                                    <div>
+                                        <input type="number"
+                                               step="0.01"
+                                               min="0"
+                                               wire:model.live="cash_tendered"
+                                               placeholder="0.00"
+                                               class="w-full bg-white dark:bg-[#0c163b] border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-xs text-slate-900 dark:text-white font-mono placeholder-slate-400 focus:outline-none focus:border-[#142259]">
+                                        @error('cash_tendered') <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <div class="p-2 rounded border text-right {{ (float)$cash_tendered >= (float)$downpayment_amount && (float)$downpayment_amount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900' : ((float)$cash_tendered > 0 ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900' : 'bg-white dark:bg-[#0c163b] border-slate-200 dark:border-slate-700') }}">
+                                        <span class="text-[10px] font-medium block text-slate-400">Change:</span>
+                                        <span class="text-sm font-bold font-mono {{ (float)$cash_tendered >= (float)$downpayment_amount && (float)$downpayment_amount > 0 ? 'text-emerald-700 dark:text-emerald-400' : ((float)$cash_tendered > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400') }} tabular-nums">
+                                            ₱{{ (float)$cash_tendered >= (float)$downpayment_amount && (float)$downpayment_amount > 0 ? number_format($this->changeDue, 2) : '0.00' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="text-[11px] text-amber-700 dark:text-amber-400">
                                 Reserved 3 months until {{ now()->addMonths(3)->format('M d, Y') }}.
