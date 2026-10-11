@@ -23,5 +23,13 @@ class AppServiceProvider extends ServiceProvider
         if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']) || env('VERCEL') || app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('stock_requests')) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            }
+        } catch (\Throwable $e) {
+            // Silently fall back if database connection is not yet initialized
+        }
     }
 }
