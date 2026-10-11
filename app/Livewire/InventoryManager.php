@@ -381,7 +381,7 @@ class InventoryManager extends Component
     public function approveStockRequest(int $requestId)
     {
         $user = Auth::user();
-        $isAuthorized = $user && ($user->hasRole('admin') || $user->hasRole('manager') || $user->id === 1);
+        $isAuthorized = $user && ($user->hasRole('admin') || $user->hasRole('manager'));
 
         if (!$isAuthorized) {
             session()->flash('request_error', 'Only the General Manager or Administrator can approve stock requisitions.');
@@ -406,6 +406,11 @@ class InventoryManager extends Component
 
     public function openRejectForm(int $requestId)
     {
+        $user = Auth::user();
+        if (!$user || (!$user->hasRole('admin') && !$user->hasRole('manager'))) {
+            session()->flash('request_error', 'Only the General Manager or Administrator can reject stock requisitions.');
+            return;
+        }
         $this->rejectingRequestId = $requestId;
         $this->rejectionReasonInput = '';
     }
@@ -419,7 +424,7 @@ class InventoryManager extends Component
     public function rejectStockRequest(int $requestId)
     {
         $user = Auth::user();
-        $isAuthorized = $user && ($user->hasRole('admin') || $user->hasRole('manager') || $user->id === 1);
+        $isAuthorized = $user && ($user->hasRole('admin') || $user->hasRole('manager'));
 
         if (!$isAuthorized) {
             session()->flash('request_error', 'Only the General Manager or Administrator can reject stock requisitions.');

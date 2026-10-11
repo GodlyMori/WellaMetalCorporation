@@ -814,28 +814,35 @@
                                     <!-- Actions per Status -->
                                     @if($req->status === 'pending')
                                         <div class="flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                                            @if($rejectingRequestId === $req->id)
-                                                <!-- Inline Rejection Form -->
-                                                <div class="w-full flex items-center gap-2 mt-1">
-                                                    <input type="text"
-                                                           wire:model="rejectionReasonInput"
-                                                           placeholder="State reason for rejecting this requisition..."
-                                                           class="flex-1 bg-white dark:bg-[#0c163b] border border-rose-300 dark:border-rose-700 rounded px-2.5 py-1 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-rose-500">
-                                                    <button type="button" wire:click="rejectStockRequest({{ $req->id }})" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer">Confirm Reject</button>
-                                                    <button type="button" wire:click="cancelRejectForm" class="px-2 py-1 text-xs text-slate-400 hover:text-slate-600 cursor-pointer">Cancel</button>
-                                                </div>
+                                            @if(auth()->user()?->hasRole('admin') || auth()->user()?->hasRole('manager'))
+                                                @if($rejectingRequestId === $req->id)
+                                                    <!-- Inline Rejection Form -->
+                                                    <div class="w-full flex items-center gap-2 mt-1">
+                                                        <input type="text"
+                                                               wire:model="rejectionReasonInput"
+                                                               placeholder="State reason for rejecting this requisition..."
+                                                               class="flex-1 bg-white dark:bg-[#0c163b] border border-rose-300 dark:border-rose-700 rounded px-2.5 py-1 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-rose-500">
+                                                        <button type="button" wire:click="rejectStockRequest({{ $req->id }})" class="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer">Confirm Reject</button>
+                                                        <button type="button" wire:click="cancelRejectForm" class="px-2 py-1 text-xs text-slate-400 hover:text-slate-600 cursor-pointer">Cancel</button>
+                                                    </div>
+                                                @else
+                                                    <button type="button"
+                                                            wire:click="openRejectForm({{ $req->id }})"
+                                                            class="px-3 py-1 rounded bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold cursor-pointer transition-colors">
+                                                        Reject Requisition
+                                                    </button>
+                                                    <button type="button"
+                                                            wire:click="approveStockRequest({{ $req->id }})"
+                                                            class="px-3 py-1 rounded bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                        <span>Approve (Await Delivery)</span>
+                                                    </button>
+                                                @endif
                                             @else
-                                                <button type="button"
-                                                        wire:click="openRejectForm({{ $req->id }})"
-                                                        class="px-3 py-1 rounded bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold cursor-pointer transition-colors">
-                                                    Reject Requisition
-                                                </button>
-                                                <button type="button"
-                                                        wire:click="approveStockRequest({{ $req->id }})"
-                                                        class="px-3 py-1 rounded bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                                    <span>Approve (Await Delivery)</span>
-                                                </button>
+                                                <div class="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5 py-1">
+                                                    <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    <span>Requisition submitted &mdash; awaiting review and approval by General Manager</span>
+                                                </div>
                                             @endif
                                         </div>
                                     @elseif($req->status === 'awaiting_delivery')
