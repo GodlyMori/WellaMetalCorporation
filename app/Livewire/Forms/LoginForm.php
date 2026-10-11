@@ -34,6 +34,11 @@ class LoginForm extends Form
         $attempts = [];
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
             $attempts[] = $login;
+            if (str_ends_with($login, '@wellametal.test')) {
+                $attempts[] = str_replace('@wellametal.test', '@wellametalcorp.com', $login);
+            } elseif (str_ends_with($login, '@wellametalcorp.com')) {
+                $attempts[] = str_replace('@wellametalcorp.com', '@wellametal.test', $login);
+            }
         } else {
             $attempts[] = $login . '@wellametalcorp.com';
             $attempts[] = $login . '@wellametal.test';

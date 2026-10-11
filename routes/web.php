@@ -43,9 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
 
         $email = match($role) {
-            'admin' => 'admin@wellametal.test',
-            'manager' => 'manager@wellametal.test',
-            'secretary' => 'secretary@wellametal.test',
+            'admin' => 'admin@wellametalcorp.com',
+            'manager' => 'manager@wellametalcorp.com',
+            'secretary' => 'secretary@wellametalcorp.com',
             default => null,
         };
 
