@@ -31,5 +31,31 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Throwable $e) {
             // Silently fall back if database connection is not yet initialized
         }
+
+        \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            $pendingCount = 0;
+            $pendingList = collect();
+
+            if ($user && ($user->hasRole('admin') || $user->hasRole('manager'))) {
+                try {
+                    if (\Illuminate\Support\Facades\Schema::hasTable('stock_requests')) {
+                        $pendingCount = \App\Models\StockRequest::where('status', 'pending')->count();
+                        $pendingList = \App\Models\StockRequest::with(['product', 'requester'])
+                            ->where('status', 'pending')
+                            ->orderBy('id', 'desc')
+                            ->take(5)
+                            ->get();
+                    }
+                } catch (\Throwable $e) {
+                    // Fail gracefully if DB connection isn't ready
+                }
+            }
+
+            $view->with([
+                'navPendingStockRequestsCount' => $pendingCount,
+                'navPendingStockRequestsList' => $pendingList,
+            ]);
+        });
     }
 }

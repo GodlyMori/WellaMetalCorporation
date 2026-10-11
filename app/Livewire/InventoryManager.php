@@ -70,6 +70,11 @@ class InventoryManager extends Component
 
     public function mount()
     {
+        if (request()->has('open_requests') || request()->has('open_hub')) {
+            $this->showRequestsHubModal = true;
+            $this->requestsTab = 'pending';
+        }
+
         if (empty($this->entryItems)) {
             $this->resetEntryForm();
         }

@@ -90,6 +90,11 @@
                             </svg>
                             <span>Inventory</span>
                         </div>
+                        @if(($navPendingStockRequestsCount ?? 0) > 0)
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-xs" title="{{ $navPendingStockRequestsCount }} pending requisition(s)">
+                                {{ $navPendingStockRequestsCount }}
+                            </span>
+                        @endif
                     </a>
 
                     <!-- Sales Link -->
@@ -287,6 +292,83 @@
                         </svg>
                     </button>
 
+
+                    @if(auth()->user()?->hasRole('admin') || auth()->user()?->hasRole('manager'))
+                        <!-- Stock Requisitions Notification Bell -->
+                        <div class="relative" x-data="{ notifOpen: false }">
+                            <button type="button"
+                                    @click="notifOpen = !notifOpen"
+                                    class="relative w-9 h-9 rounded bg-white dark:bg-[#121f4a] border border-slate-200 dark:border-slate-700/80 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:border-slate-600 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400"
+                                    title="Stock Requisition Alerts"
+                                    aria-label="Stock Requisition Alerts">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                </svg>
+                                @if(($navPendingStockRequestsCount ?? 0) > 0)
+                                    <span class="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-amber-500 text-white text-[9px] font-bold shadow-xs animate-pulse">
+                                        {{ $navPendingStockRequestsCount }}
+                                    </span>
+                                @endif
+                            </button>
+
+                            <!-- Notification Dropdown Menu -->
+                            <div x-show="notifOpen"
+                                 @click.away="notifOpen = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-80 sm:w-88 bg-white dark:bg-[#0c163b] rounded shadow-xl border border-slate-200 dark:border-[#1a2858] py-1.5 z-50 text-xs overflow-hidden"
+                                 style="display: none;">
+                                <div class="px-4 py-2.5 border-b border-slate-100 dark:border-[#1a2858] flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+                                        <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                        <span>Stock Requisitions</span>
+                                    </div>
+                                    @if(($navPendingStockRequestsCount ?? 0) > 0)
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+                                            {{ $navPendingStockRequestsCount }} pending
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                    @forelse(($navPendingStockRequestsList ?? []) as $notifReq)
+                                        <a href="{{ route('inventory', ['open_requests' => 1]) }}"
+                                           class="block px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#121f4a] transition-colors group">
+                                            <div class="flex items-center justify-between gap-1 mb-1">
+                                                <span class="font-mono font-bold text-[#142259] dark:text-blue-400 text-xs">{{ $notifReq->request_number }}</span>
+                                                <span class="text-[10px] text-slate-400">{{ $notifReq->created_at->diffForHumans() }}</span>
+                                            </div>
+                                            <p class="font-semibold text-slate-900 dark:text-white text-xs truncate group-hover:text-[#142259] dark:group-hover:text-blue-300">
+                                                {{ $notifReq->product?->name ?? 'Product' }}
+                                            </p>
+                                            <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                                <span>Qty: <strong class="text-slate-800 dark:text-slate-200">{{ $notifReq->quantity_requested }} units</strong></span>
+                                                <span class="text-[10px] text-slate-400">By {{ $notifReq->requester?->name ?? 'Secretary' }}</span>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-4 py-6 text-center text-xs text-slate-400">
+                                            <svg class="w-6 h-6 mx-auto text-slate-300 dark:text-slate-600 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"/></svg>
+                                            <p>No pending requisitions.</p>
+                                            <p class="text-[10px] text-slate-400 mt-0.5">All stock requests are up to date.</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <div class="p-2 border-t border-slate-100 dark:border-[#1a2858] bg-slate-50/50 dark:bg-[#0f1b40]/50">
+                                    <a href="{{ route('inventory', ['open_requests' => 1]) }}"
+                                       class="w-full text-center py-1.5 px-3 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#142259] dark:hover:bg-[#1a2c73] text-[#142259] dark:text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+                                        <span>Open Procurement Hub</span>
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     <!-- User Profile Dropdown -->
                     <div class="relative">
