@@ -136,24 +136,6 @@ class Dashboard extends Component
             $salesChartData[] = (float)$monthSum;
         }
 
-        // Pending stock requisitions awaiting managerial authorization
-        $pendingRequisitions = collect();
-        $pendingRequisitionsCount = 0;
-        $awaitingDeliveryCount = 0;
-        try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('stock_requests')) {
-                $pendingRequisitionsCount = \App\Models\StockRequest::where('status', 'pending')->count();
-                $awaitingDeliveryCount = \App\Models\StockRequest::where('status', 'awaiting_delivery')->count();
-                $pendingRequisitions = \App\Models\StockRequest::with(['product', 'requester'])
-                    ->where('status', 'pending')
-                    ->orderBy('id', 'desc')
-                    ->take(5)
-                    ->get();
-            }
-        } catch (\Throwable $e) {
-            // Silently fall back if DB is not ready
-        }
-
         return view('livewire.dashboard', [
             'totalProducts' => $totalProducts,
             'categoryCount' => $categoryCount,
@@ -175,9 +157,6 @@ class Dashboard extends Component
             'totalOutOfStockCount' => $totalOutOfStockCount,
             'totalLowStockCount' => $totalLowStockCount,
             'totalImmediateActions' => $totalImmediateActions,
-            'pendingRequisitions' => $pendingRequisitions,
-            'pendingRequisitionsCount' => $pendingRequisitionsCount,
-            'awaitingDeliveryCount' => $awaitingDeliveryCount,
         ]);
     }
 }
