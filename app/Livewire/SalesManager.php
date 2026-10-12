@@ -478,11 +478,10 @@ class SalesManager extends Component
                 }
 
                 // 2. Create Sale Record
-                $sale = Sale::create([
+                $saleData = [
                     'customer_id' => $customer->id,
                     'sale_number' => null,
                     'customer_name' => trim($this->customer_name),
-                    'customer_email' => trim($this->customer_email) ?: null,
                     'customer_phone' => trim($this->customer_phone),
                     'customer_address' => trim($this->customer_address),
                     'customer_initials' => $customer->initials,
@@ -505,7 +504,13 @@ class SalesManager extends Component
                     'is_archived' => false,
                     'notes' => $this->sale_notes ?: ($isLayaway ? 'Lay-Away Reservation (Store Pickup, 3-month expiry)' : 'Store Pickup (Cash Basis)'),
                     'created_by' => Auth::id() ?? 1,
-                ]);
+                ];
+
+                if (\Illuminate\Support\Facades\Schema::hasColumn('sales', 'customer_email')) {
+                    $saleData['customer_email'] = trim($this->customer_email) ?: null;
+                }
+
+                $sale = Sale::create($saleData);
 
                 // 3. Collision-Safe Monotonic Order Number
                 $candidateNumber = sprintf('ORD-%s-%03d', date('Y'), $sale->id);
@@ -723,6 +728,11 @@ class SalesManager extends Component
             'availableProducts' => $availableProducts,
             'existingCategories' => $existingCategories,
             'searchedCustomers' => $searchedCustomers,
+            'successMessage' => $this->successMessage,
+            'emailSent' => $this->emailSent,
+            'emailDeliveryStatus' => $this->emailDeliveryStatus,
+            'showReceiptModal' => $this->showReceiptModal,
+            'receiptData' => $this->receiptData,
         ]);
     }
 }

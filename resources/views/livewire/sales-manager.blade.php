@@ -534,7 +534,7 @@
     <!-- ============================================================== -->
     <!-- DIGITAL SALES RECEIPT MODAL                                   -->
     <!-- ============================================================== -->
-    @if($showReceiptModal && $receiptData)
+    @if(!empty($showReceiptModal) && !empty($receiptData))
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 flex items-center justify-center p-4">
             <div class="relative w-full max-w-md bg-white dark:bg-[#0c163b] rounded-md shadow-lg border border-slate-200 dark:border-[#1a2858] overflow-hidden" wire:click.outside="closeReceiptModal">
 
@@ -664,9 +664,9 @@
 
                 <!-- Digital Receipt Delivery Status Banner -->
                 @if(!empty($receiptData['customer_email']))
-                    <div class="px-5 py-3 border-t border-slate-200 dark:border-[#1a2858] {{ $emailSent ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300' }} text-xs flex items-center justify-between gap-3">
+                    <div class="px-5 py-3 border-t border-slate-200 dark:border-[#1a2858] {{ !empty($emailSent) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300' }} text-xs flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2 min-w-0">
-                            @if($emailSent)
+                            @if(!empty($emailSent))
                                 <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>
@@ -675,7 +675,7 @@
                                 <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                 </svg>
-                                <span class="truncate">{{ $emailDeliveryStatus ?? ('Recipient: ' . $receiptData['customer_email']) }}</span>
+                                <span class="truncate">{{ !empty($emailDeliveryStatus) ? $emailDeliveryStatus : ('Recipient: ' . ($receiptData['customer_email'] ?? '')) }}</span>
                             @endif
                         </div>
                         <button type="button"
