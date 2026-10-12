@@ -18,20 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->report(function (\Throwable $e) {
-            try {
-                $err = [
-                    'class' => get_class($e),
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 20),
-                    'timestamp' => date('Y-m-d H:i:s'),
-                ];
-                @file_put_contents(storage_path('logs/last_500.json'), json_encode($err, JSON_PRETTY_PRINT));
-            } catch (\Throwable $ignored) {}
-        });
-
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
