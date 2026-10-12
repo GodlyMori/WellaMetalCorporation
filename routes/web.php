@@ -77,3 +77,16 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 require __DIR__.'/auth.php';
+
+Route::get('/debug-log', function () {
+    if (request('key') !== 'wella_debug_2026') {
+        abort(404);
+    }
+    $logPath = storage_path('logs/laravel.log');
+    if (!file_exists($logPath)) {
+        return response('No log file found at ' . $logPath, 200);
+    }
+    $lines = file($logPath);
+    return response('<pre>' . htmlspecialchars(implode('', array_slice($lines, -300))) . '</pre>', 200)
+        ->header('Content-Type', 'text/html');
+});
