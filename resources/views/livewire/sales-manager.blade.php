@@ -317,20 +317,20 @@
                 <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs">
                     <div class="flex justify-between text-slate-500 dark:text-slate-400">
                         <span>Items subtotal:</span>
-                        <span class="font-mono font-medium text-slate-800 dark:text-slate-200 tabular-nums">₱{{ number_format($this->totalAmount, 2) }}</span>
+                        <span class="font-mono font-medium text-slate-800 dark:text-slate-200 tabular-nums">₱{{ number_format($totalAmount, 2) }}</span>
                     </div>
 
-                    @if($this->discountAmount > 0)
+                    @if($discountAmount > 0)
                         <div class="flex justify-between text-amber-700 dark:text-amber-400">
                             <span>Promo discount:</span>
-                            <span class="font-mono font-semibold tabular-nums">-₱{{ number_format($this->discountAmount, 2) }}</span>
+                            <span class="font-mono font-semibold tabular-nums">-₱{{ number_format($discountAmount, 2) }}</span>
                         </div>
                     @endif
 
                     <div class="flex justify-between items-baseline pt-2 border-t border-slate-200 dark:border-slate-800">
                         <span class="text-sm font-semibold text-slate-900 dark:text-white">Total payable:</span>
                         <span class="text-xl font-bold font-mono text-[#142259] dark:text-white tabular-nums">
-                            ₱{{ number_format($this->netAmount, 2) }}
+                            ₱{{ number_format($netAmount, 2) }}
                         </span>
                     </div>
                 </div>
@@ -362,7 +362,7 @@
                         <div class="space-y-2">
                             <select wire:model.live="selected_promotion_id" class="w-full bg-white dark:bg-[#0c163b] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500">
                                 <option value="">No promo applied</option>
-                                @foreach($this->availablePromotions as $promo)
+                                @foreach($availablePromotions as $promo)
                                     <option value="{{ $promo->id }}">
                                         {{ $promo->name }} ({{ $promo->discount_type === 'percentage' ? (float)$promo->discount_value . '% off' : '₱' . number_format($promo->discount_value, 2) . ' off' }})
                                     </option>
@@ -414,7 +414,7 @@
                         <div class="rounded bg-slate-50 dark:bg-[#0f1b40] border border-slate-200 dark:border-slate-700 p-3 mt-3 space-y-2.5">
                             <div class="flex items-center justify-between text-xs">
                                 <span class="font-semibold text-slate-700 dark:text-slate-300">Tendered cash</span>
-                                <span class="text-[11px] text-slate-400">Due: <strong class="font-mono text-slate-900 dark:text-white tabular-nums">₱{{ number_format($this->netAmount, 2) }}</strong></span>
+                                <span class="text-[11px] text-slate-400">Due: <strong class="font-mono text-slate-900 dark:text-white tabular-nums">₱{{ number_format($netAmount, 2) }}</strong></span>
                             </div>
 
                             <div class="grid grid-cols-2 gap-2.5 items-end">
@@ -428,10 +428,10 @@
                                     @error('cash_tendered') <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="p-2 rounded border text-right {{ (float)$cash_tendered >= $this->netAmount && $this->netAmount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900' : ((float)$cash_tendered > 0 ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900' : 'bg-white dark:bg-[#0c163b] border-slate-200 dark:border-slate-700') }}">
+                                <div class="p-2 rounded border text-right {{ (float)$cash_tendered >= $netAmount && $netAmount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900' : ((float)$cash_tendered > 0 ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900' : 'bg-white dark:bg-[#0c163b] border-slate-200 dark:border-slate-700') }}">
                                     <span class="text-[10px] font-medium block text-slate-400">Change:</span>
-                                    <span class="text-sm font-bold font-mono {{ (float)$cash_tendered >= $this->netAmount && $this->netAmount > 0 ? 'text-emerald-700 dark:text-emerald-400' : ((float)$cash_tendered > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400') }} tabular-nums">
-                                        ₱{{ (float)$cash_tendered >= $this->netAmount && $this->netAmount > 0 ? number_format($this->changeDue, 2) : '0.00' }}
+                                    <span class="text-sm font-bold font-mono {{ (float)$cash_tendered >= $netAmount && $netAmount > 0 ? 'text-emerald-700 dark:text-emerald-400' : ((float)$cash_tendered > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400') }} tabular-nums">
+                                        ₱{{ (float)$cash_tendered >= $netAmount && $netAmount > 0 ? number_format($changeDue, 2) : '0.00' }}
                                     </span>
                                 </div>
                             </div>
@@ -443,17 +443,17 @@
                         <div class="rounded bg-slate-50 dark:bg-[#0f1b40] border border-slate-200 dark:border-slate-700 p-3 mt-3 space-y-2.5">
                             <div class="flex items-center justify-between text-xs">
                                 <span class="font-semibold text-amber-700 dark:text-amber-400">Downpayment calculation</span>
-                                <span class="text-[11px] text-slate-400">Min 20%: <strong class="font-mono text-amber-600 tabular-nums">₱{{ number_format($this->minDownpayment, 2) }}</strong></span>
+                                <span class="text-[11px] text-slate-400">Min 20%: <strong class="font-mono text-amber-600 tabular-nums">₱{{ number_format($minDownpayment, 2) }}</strong></span>
                             </div>
 
                             <div class="grid grid-cols-2 gap-2.5 items-end">
                                 <div class="flex items-center gap-1.5">
                                     <input type="number"
                                            step="0.01"
-                                           min="{{ $this->minDownpayment }}"
-                                           max="{{ $this->netAmount }}"
+                                           min="{{ $minDownpayment }}"
+                                           max="{{ $netAmount }}"
                                            wire:model.live="downpayment_amount"
-                                           placeholder="{{ number_format($this->minDownpayment, 2) }}"
+                                           placeholder="{{ number_format($minDownpayment, 2) }}"
                                            class="w-full bg-white dark:bg-[#0c163b] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-[#142259]">
                                     <button type="button"
                                             wire:click="setMinimumDownpayment"
@@ -465,7 +465,7 @@
                                 <div class="p-2 rounded border bg-white dark:bg-[#0c163b] border-slate-200 dark:border-slate-700 text-right">
                                     <span class="text-[10px] font-medium block text-slate-400">Remaining bal:</span>
                                     <span class="text-sm font-bold font-mono text-rose-600 dark:text-rose-400 tabular-nums">
-                                        ₱{{ number_format($this->calculatedBalance, 2) }}
+                                        ₱{{ number_format($calculatedBalance, 2) }}
                                     </span>
                                 </div>
                             </div>
@@ -492,7 +492,7 @@
                                     <div class="p-2 rounded border text-right {{ (float)$cash_tendered >= (float)$downpayment_amount && (float)$downpayment_amount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900' : ((float)$cash_tendered > 0 ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900' : 'bg-white dark:bg-[#0c163b] border-slate-200 dark:border-slate-700') }}">
                                         <span class="text-[10px] font-medium block text-slate-400">Change:</span>
                                         <span class="text-sm font-bold font-mono {{ (float)$cash_tendered >= (float)$downpayment_amount && (float)$downpayment_amount > 0 ? 'text-emerald-700 dark:text-emerald-400' : ((float)$cash_tendered > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400') }} tabular-nums">
-                                            ₱{{ (float)$cash_tendered >= (float)$downpayment_amount && (float)$downpayment_amount > 0 ? number_format($this->changeDue, 2) : '0.00' }}
+                                            ₱{{ (float)$cash_tendered >= (float)$downpayment_amount && (float)$downpayment_amount > 0 ? number_format($changeDue, 2) : '0.00' }}
                                         </span>
                                     </div>
                                 </div>
@@ -516,7 +516,7 @@
                             @if($payment_type === 'layaway')
                                 Confirm lay-away reservation (Pay ₱{{ number_format((float)$downpayment_amount, 2) }})
                             @else
-                                Complete cash sale (Pay ₱{{ number_format($this->netAmount, 2) }})
+                                Complete cash sale (Pay ₱{{ number_format($netAmount, 2) }})
                             @endif
                         </span>
                         <span wire:loading class="flex items-center gap-2">

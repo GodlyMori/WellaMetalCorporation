@@ -751,6 +751,13 @@ class SalesManager extends Component
             'successMessage' => $this->successMessage,
             'emailSent' => $this->emailSent,
             'emailDeliveryStatus' => $this->emailDeliveryStatus,
+            'totalAmount' => $this->totalAmount,
+            'discountAmount' => $this->discountAmount,
+            'netAmount' => $this->netAmount,
+            'availablePromotions' => $this->availablePromotions,
+            'changeDue' => $this->changeDue,
+            'minDownpayment' => $this->minDownpayment,
+            'calculatedBalance' => $this->calculatedBalance,
         ]);
     }
 }
