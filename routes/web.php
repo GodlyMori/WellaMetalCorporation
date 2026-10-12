@@ -86,8 +86,8 @@ Route::get('/debug-log', function () {
     if (request('action') === 'test-layaway') {
         try {
             $user = \App\Models\User::first();
-            if ($user) {
-                \Illuminate\Support\Facades\Auth::login($user);
+            if (!$user) {
+                return 'No user found';
             }
 
             $product = \App\Models\Product::where('status', 'active')->where('quantity_in_stock', '>', 0)->first();
@@ -95,35 +95,32 @@ Route::get('/debug-log', function () {
                 return 'No product found with stock';
             }
 
-            $component = new \App\Livewire\SalesManager();
-            $component->mount();
-            $component->items = [
-                [
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'unit_price' => (float)$product->tagged_price,
-                    'quantity' => 1,
-                    'subtotal' => (float)$product->tagged_price,
-                    'stock' => $product->quantity_in_stock,
-                ]
-            ];
-            $component->customer_first_name = 'Test';
-            $component->customer_last_name = 'Customer';
-            $component->customer_name = 'Test Customer';
-            $component->customer_phone = '09123456789';
-            $component->customer_address = 'Davao City';
-            $component->customer_email = 'test@example.com';
-            $component->payment_type = 'layaway';
-            $component->downpayment_amount = (string)$component->minDownpayment;
-            $component->cash_tendered = (string)$component->minDownpayment;
+            $test = \Livewire\Livewire::actingAs($user)
+                ->test(\App\Livewire\SalesManager::class)
+                ->call('addProductToCart', $product->id)
+                ->set('customer_first_name', 'Test')
+                ->set('customer_last_name', 'Customer')
+                ->set('customer_phone', '09123456789')
+                ->set('customer_address', 'Davao City')
+                ->set('customer_email', 'alvinlegarbes07@gmail.com')
+                ->set('payment_type', 'layaway')
+                ->call('updatedPaymentType', 'layaway');
 
-            $component->recordSale();
+            $minDp = $test->get('minDownpayment');
 
-            // Test rendering
-            $view = $component->render();
-            $html = $view->render();
+            $test->set('downpayment_amount', (string)$minDp)
+                ->set('cash_tendered', (string)$minDp)
+                ->call('recordSale');
 
-            return 'SUCCESS! Receipt order number: ' . ($component->receiptData['order_number'] ?? 'none') . ', Render HTML length: ' . strlen($html);
+            $errors = $test->errors();
+            $receipt = $test->get('receiptData');
+
+            return '<pre>SUCCESS!
+Errors: ' . json_encode($errors->all()) . '
+Show Receipt: ' . ($test->get('showReceiptModal') ? 'YES' : 'NO') . '
+Email Sent: ' . ($test->get('emailSent') ? 'YES' : 'NO') . '
+Email Status: ' . $test->get('emailDeliveryStatus') . '
+Order Number: ' . ($receipt['order_number'] ?? 'NONE') . '</pre>';
         } catch (\Throwable $e) {
             return '<pre>EXCEPTION: ' . get_class($e) . "\nMessage: " . $e->getMessage() . "\nFile: " . $e->getFile() . ':' . $e->getLine() . "\n\nStack Trace:\n" . $e->getTraceAsString() . '</pre>';
         }

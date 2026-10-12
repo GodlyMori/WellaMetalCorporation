@@ -1,7 +1,7 @@
 <div class="space-y-4">
 
     <!-- Alert / Success Notification Banner -->
-    @if($successMessage)
+    @if(!empty($successMessage))
         <div class="p-3 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
