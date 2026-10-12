@@ -82,9 +82,56 @@ Route::get('/debug-log', function () {
     if (request('key') !== 'wella_debug_2026') {
         abort(404);
     }
+
+    if (request('action') === 'test-layaway') {
+        try {
+            $user = \App\Models\User::first();
+            if ($user) {
+                \Illuminate\Support\Facades\Auth::login($user);
+            }
+
+            $product = \App\Models\Product::where('status', 'active')->where('quantity_in_stock', '>', 0)->first();
+            if (!$product) {
+                return 'No product found with stock';
+            }
+
+            $component = new \App\Livewire\SalesManager();
+            $component->mount();
+            $component->items = [
+                [
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'unit_price' => (float)$product->tagged_price,
+                    'quantity' => 1,
+                    'subtotal' => (float)$product->tagged_price,
+                    'stock' => $product->quantity_in_stock,
+                ]
+            ];
+            $component->customer_first_name = 'Test';
+            $component->customer_last_name = 'Customer';
+            $component->customer_name = 'Test Customer';
+            $component->customer_phone = '09123456789';
+            $component->customer_address = 'Davao City';
+            $component->customer_email = 'test@example.com';
+            $component->payment_type = 'layaway';
+            $component->downpayment_amount = (string)$component->minDownpayment;
+            $component->cash_tendered = (string)$component->minDownpayment;
+
+            $component->recordSale();
+
+            // Test rendering
+            $view = $component->render();
+            $html = $view->render();
+
+            return 'SUCCESS! Receipt order number: ' . ($component->receiptData['order_number'] ?? 'none') . ', Render HTML length: ' . strlen($html);
+        } catch (\Throwable $e) {
+            return '<pre>EXCEPTION: ' . get_class($e) . "\nMessage: " . $e->getMessage() . "\nFile: " . $e->getFile() . ':' . $e->getLine() . "\n\nStack Trace:\n" . $e->getTraceAsString() . '</pre>';
+        }
+    }
+
     $logPath = storage_path('logs/laravel.log');
     if (!file_exists($logPath)) {
-        return response('No log file found at ' . $logPath, 200);
+        return response('No log file found at ' . $logPath . '. Try ?action=test-layaway', 200);
     }
     $lines = file($logPath);
     return response('<pre>' . htmlspecialchars(implode('', array_slice($lines, -300))) . '</pre>', 200)
