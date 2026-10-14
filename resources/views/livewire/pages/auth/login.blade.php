@@ -50,7 +50,7 @@ new #[Layout('layouts.guest')] class extends Component
     </div>
 
     <!-- Login Card Container -->
-    <div class="w-full max-w-[420px] rounded-md bg-[#121f4a] border border-[#223368] p-7 sm:p-9 shadow-lg"
+    <div class="w-full max-w-[420px] rounded-md bg-[#20315a] border border-white/[0.18] p-7 sm:p-9 shadow-2xl shadow-black/50"
          x-data="{ showPassword: false }">
 
         <!-- Header -->
@@ -84,8 +84,7 @@ new #[Layout('layouts.guest')] class extends Component
                         required
                         autofocus
                         autocomplete="username"
-                        placeholder="admin / manager / secretary"
-                        class="w-full bg-[#1b2b5e] text-white placeholder-slate-400 text-xs sm:text-sm rounded pl-10 pr-3.5 py-2.5 border border-[#2c3f7a] focus:border-[#142259] focus:outline-none focus:ring-1 focus:ring-[#142259] focus-visible:outline-none transition-colors"
+                        class="w-full bg-[#1b2b5e] text-white caret-white placeholder-slate-400 text-xs sm:text-sm rounded pl-10 pr-3.5 py-2.5 border border-[#2c3f7a] focus:border-[#142259] focus:outline-none focus:ring-1 focus:ring-[#142259] focus-visible:outline-none transition-colors"
                     />
                 </div>
                 @error('form.username')
@@ -116,8 +115,7 @@ new #[Layout('layouts.guest')] class extends Component
                         name="password"
                         required
                         autocomplete="current-password"
-                        placeholder="••••••••"
-                        class="w-full bg-[#1b2b5e] text-white placeholder-slate-400 text-xs sm:text-sm rounded pl-10 pr-10 py-2.5 border border-[#2c3f7a] focus:border-[#142259] focus:outline-none focus:ring-1 focus:ring-[#142259] focus-visible:outline-none transition-colors"
+                        class="w-full bg-[#1b2b5e] text-white caret-white placeholder-slate-400 text-xs sm:text-sm rounded pl-10 pr-10 py-2.5 border border-[#2c3f7a] focus:border-[#142259] focus:outline-none focus:ring-1 focus:ring-[#142259] focus-visible:outline-none transition-colors"
                     />
                     <!-- Eye Toggle Button with aria-label -->
                     <button
@@ -153,7 +151,7 @@ new #[Layout('layouts.guest')] class extends Component
             <div class="pt-2">
                 <button
                     type="submit"
-                    class="w-full bg-[#142259] hover:bg-[#0e1840] active:bg-[#0a112e] text-white font-semibold text-xs tracking-wide py-3 rounded flex items-center justify-center gap-2 uppercase transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#142259]/50 focus-visible:outline-none"
+                    class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-xs tracking-wide py-3 rounded flex items-center justify-center gap-2 uppercase shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none"
                 >
                     <span>Sign In</span>
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -50,12 +50,33 @@ class Promotion extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function redemptions()
+    {
+        return $this->hasMany(PromotionRedemption::class);
+    }
+
+    public function redeemedCustomers()
+    {
+        return $this->belongsToMany(Customer::class, 'promotion_redemptions');
+    }
+
+    /**
+     * Check if this promotion has already been redeemed by a specific customer.
+     */
+    public function isRedeemedBy(int|Customer $customer): bool
+    {
+        $customerId = $customer instanceof Customer ? $customer->id : $customer;
+
+        return $this->redemptions()->where('customer_id', $customerId)->exists();
+    }
+
     /**
      * Scope: Promos that are active, approved by admin, and currently within date range
      */
     public function scopeAvailableForSales($query)
     {
         $today = now()->toDateString();
+
         return $query->where('status', 'active')
             ->whereDate('starts_at', '<=', $today)
             ->whereDate('ends_at', '>=', $today);
@@ -67,6 +88,7 @@ class Promotion extends Model
     public function getIsDateValidAttribute(): bool
     {
         $today = now()->toDateString();
+
         return $this->starts_at->toDateString() <= $today && $this->ends_at->toDateString() >= $today;
     }
 
@@ -87,26 +109,26 @@ class Promotion extends Model
         foreach ($items as $item) {
             $pId = $item['product_id'] ?? null;
             $product = $products->get($pId);
-            if (!$product) {
+            if (! $product) {
                 continue;
             }
 
             // Check category eligibility
             if ($this->applicable_category === 'ALL' || strcasecmp($this->applicable_category, $product->category) === 0) {
-                $eligibleSubtotal += (float)($item['subtotal'] ?? 0);
+                $eligibleSubtotal += (float) ($item['subtotal'] ?? 0);
             }
         }
 
         // Check minimum order requirement
-        if ($eligibleSubtotal <= 0 || ($this->min_order_amount > 0 && $eligibleSubtotal < (float)$this->min_order_amount)) {
+        if ($eligibleSubtotal <= 0 || ($this->min_order_amount > 0 && $eligibleSubtotal < (float) $this->min_order_amount)) {
             return 0.0;
         }
 
         if ($this->discount_type === 'percentage') {
-            $discount = $eligibleSubtotal * ((float)$this->discount_value / 100.0);
+            $discount = $eligibleSubtotal * ((float) $this->discount_value / 100.0);
         } else {
             // Fixed cash discount
-            $discount = min($eligibleSubtotal, (float)$this->discount_value);
+            $discount = min($eligibleSubtotal, (float) $this->discount_value);
         }
 
         return round(max(0.0, $discount), 2);

@@ -1,4 +1,4 @@
-<div class="space-y-4" x-data="{ isFormOpen: @entangle('isFormOpen') }">
+<div class="space-y-4">
 
     <!-- Toast Notification Banner -->
     @if($successMessage)
@@ -23,8 +23,8 @@
         </div>
     @endif
 
-    <!-- Validation Error Banner -->
-    @if ($errors->any())
+    <!-- Validation Error Banner (Shown when modal is closed) -->
+    @if ($errors->any() && !$showAddModal)
         <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 px-4 py-3 rounded text-xs space-y-1">
             <div class="font-bold flex items-center gap-1.5">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -38,280 +38,20 @@
         </div>
     @endif
 
-    <!-- ============================================================== -->
-    <!-- 1. TOP SECTION: SLIDING ADD INVENTORY CARD (EXPANDABLE/COLLAPSIBLE) -->
-    <!-- ============================================================== -->
-    <div class="bg-white dark:bg-[#0c163b] rounded border border-slate-200 dark:border-[#1a2858] transition-all duration-300"
-         :class="{ 'overflow-hidden': !isFormOpen }">
-
-        <!-- Form Content (Visible when isFormOpen is true) -->
-        <div x-show="isFormOpen" x-collapse>
-            <div class="p-5 space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <div class="flex items-center gap-2.5">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                        <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
-                            Add inventory / product batch
-                        </h2>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-slate-400 font-mono">{{ count($entryItems) }} item row(s)</span>
-                        <button type="button"
-                                wire:click="resetEntryForm"
-                                class="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer">
-                            Reset
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Existing Product Search & Auto-Fill (Mirrors Customer Fill-Up in Sales) -->
-                <div class="relative">
-                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Search existing product to pre-fill / add stock
-                    </label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
-                        <input type="text"
-                                wire:model.live.debounce.200ms="product_search"
-                                placeholder="Type existing product name, category, or specs to apply..."
-                                class="w-full pl-9 pr-8 py-2 bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                        @if($product_search)
-                            <button type="button" wire:click="$set('product_search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        @endif
-                    </div>
-
-                    <!-- Autocomplete Suggestions Dropdown -->
-                    @if(!empty($product_search) && count($searchedExistingProducts) > 0)
-                        <div class="absolute z-20 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-md overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
-                            @foreach($searchedExistingProducts as $sp)
-                                <button type="button"
-                                        wire:click="selectExistingProduct({{ $sp->id }})"
-                                        class="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors flex items-center justify-between">
-                                    <div>
-                                        <div class="font-semibold text-xs text-slate-900 dark:text-white">{{ $sp->name }}</div>
-                                        <div class="text-[11px] text-slate-400 font-mono">{{ $sp->category }} • ₱{{ number_format($sp->tagged_price, 2) }} • {{ $sp->quantity_in_stock }} in stock</div>
-                                    </div>
-                                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">Apply to row</span>
-                                </button>
-                            @endforeach
-                        </div>
-                    @elseif(!empty($product_search) && count($searchedExistingProducts) === 0)
-                        <div class="absolute z-20 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-md p-3 text-center text-xs text-slate-400">
-                            No existing catalog product found. You can type a new product directly in the rows below.
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Dynamic Item Rows -->
-                <div class="space-y-3">
-                    @foreach($entryItems as $index => $item)
-                        @php
-                            $isExisting = !empty($item['is_existing']);
-                        @endphp
-                        <div class="border {{ $isExisting ? 'border-blue-200 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40]' }} rounded p-3 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                                        Item #{{ $index + 1 }}
-                                    </span>
-                                    @if($isExisting)
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                                            Existing Product (Price &amp; Category locked — stock addition only)
-                                        </span>
-                                    @endif
-                                </div>
-                                @if(count($entryItems) > 1)
-                                    <button type="button"
-                                            wire:click="removeEntryRow({{ $index }})"
-                                            class="text-slate-400 hover:text-rose-500 text-xs font-semibold flex items-center gap-1 cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        <span>Remove</span>
-                                    </button>
-                                @endif
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
-                                <!-- Product Name -->
-                                <div class="md:col-span-3">
-                                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                        Product name <span class="text-rose-500">*</span>
-                                    </label>
-                                    <input type="text"
-                                           wire:model="entryItems.{{ $index }}.name"
-                                           @if($isExisting) readonly @endif
-                                           placeholder="e.g. 6-Seater Wooden Dining Set"
-                                           class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                                    @error("entryItems.{$index}.name") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Category (Locked if existing product) -->
-                                <div class="md:col-span-2 relative" x-data="{ open: false }" :class="{ 'z-40': open }">
-                                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                        Category <span class="text-rose-500">*</span>
-                                        @if($isExisting) <span class="text-[10px] text-slate-400 font-normal">(Locked)</span> @endif
-                                    </label>
-                                    @if($isExisting)
-                                        <input type="text"
-                                               wire:model="entryItems.{{ $index }}.category"
-                                               readonly
-                                               disabled
-                                               class="w-full bg-slate-100 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-500 dark:text-slate-400 cursor-not-allowed">
-                                    @else
-                                        <div class="relative">
-                                            <input type="text"
-                                                   wire:model="entryItems.{{ $index }}.category"
-                                                   @focus="open = true"
-                                                   @click="open = true"
-                                                   @click.outside="open = false"
-                                                   placeholder="Select or type..."
-                                                   autocomplete="off"
-                                                   class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded pl-3 pr-7 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
-                                            <button type="button" 
-                                                    @click="open = !open" 
-                                                    class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 pointer-events-auto">
-                                                <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-
-                                        <!-- In-DOM Custom Dropdown Menu -->
-                                        <div x-show="open"
-                                             x-transition:enter="transition ease-out duration-100"
-                                             x-transition:enter-start="opacity-0 scale-95"
-                                             x-transition:enter-end="opacity-100 scale-100"
-                                             x-transition:leave="transition ease-in duration-75"
-                                             x-transition:leave-start="opacity-100 scale-100"
-                                             x-transition:leave-end="opacity-0 scale-95"
-                                             class="absolute z-50 mt-1 w-full min-w-[200px] bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-56 overflow-y-auto ring-1 ring-black/10 dark:ring-white/10"
-                                             style="display: none;">
-                                            @foreach($existingCategories as $cat)
-                                                <button type="button"
-                                                        @click="$wire.set('entryItems.{{ $index }}.category', '{{ addslashes($cat) }}'); open = false;"
-                                                        class="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors flex items-center justify-between group cursor-pointer">
-                                                    <span class="font-medium text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#142259] dark:group-hover:text-white">{{ $cat }}</span>
-                                                    <span class="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 font-sans">Select</span>
-                                                </button>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                    @error("entryItems.{$index}.category") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Material / Spec Notes -->
-                                <div class="md:col-span-2">
-                                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                        Specs / notes
-                                        @if($isExisting) <span class="text-[10px] text-slate-400 font-normal">(Locked)</span> @endif
-                                    </label>
-                                    <input type="text"
-                                           wire:model="entryItems.{{ $index }}.description"
-                                           @if($isExisting) readonly disabled @endif
-                                           placeholder="e.g. Galvanized 6m"
-                                           class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                                </div>
-
-                                <!-- Tagged Price (Locked if existing product) -->
-                                <div class="md:col-span-2">
-                                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                        Unit price (₱) <span class="text-rose-500">*</span>
-                                        @if($isExisting) <span class="text-[10px] text-slate-400 font-normal">(Locked)</span> @endif
-                                    </label>
-                                    <input type="number"
-                                           step="0.01"
-                                           min="0"
-                                           wire:model="entryItems.{{ $index }}.tagged_price"
-                                           @if($isExisting) readonly disabled @endif
-                                           placeholder="0.00"
-                                           class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs placeholder-slate-400 font-mono focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                                    @error("entryItems.{$index}.tagged_price") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Quantity to Add (Always editable!) -->
-                                <div class="md:col-span-1">
-                                    <label class="block text-[11px] font-semibold text-slate-900 dark:text-white mb-1">
-                                        {{ $isExisting ? '+ Add Qty' : 'Stock' }} <span class="text-rose-500">*</span>
-                                    </label>
-                                    <input type="number"
-                                           min="1"
-                                           wire:model="entryItems.{{ $index }}.quantity_in_stock"
-                                           placeholder="1"
-                                           class="w-full bg-white dark:bg-[#0f1b40] border-2 border-[#142259] dark:border-blue-500 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-[#142259]/30 transition-colors">
-                                    @error("entryItems.{$index}.quantity_in_stock") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Low Stock Alert Threshold -->
-                                <div class="md:col-span-2">
-                                    <label class="block text-[11px] font-semibold text-amber-700 dark:text-amber-400 mb-1">
-                                        Low stock threshold <span class="text-rose-500">*</span>
-                                    </label>
-                                    <input type="number"
-                                           min="0"
-                                           wire:model="entryItems.{{ $index }}.low_stock_threshold"
-                                           @if($isExisting) readonly disabled @endif
-                                           placeholder="5"
-                                           title="When inventory falls to or below this quantity, a low-stock alert will trigger"
-                                           class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-amber-300 dark:border-amber-700/60 rounded px-3 py-2 text-xs placeholder-slate-400 font-mono text-center focus:outline-none focus:border-amber-500 transition-colors">
-                                    @error("entryItems.{$index}.low_stock_threshold") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-
-                <!-- Form Bottom Actions -->
-                <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
-                    <button type="button"
-                            wire:click="addEntryRow"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded border border-dashed border-slate-300 dark:border-slate-700 hover:border-[#142259] text-slate-600 dark:text-slate-400 hover:text-[#142259] text-xs font-semibold transition-colors cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>Add another item</span>
-                    </button>
-
-                    <div class="flex items-center gap-2">
-                        <button type="button"
-                                wire:click="resetEntryForm"
-                                class="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 px-4 py-2 cursor-pointer transition-colors">
-                            Clear
-                        </button>
-                        <button type="button"
-                                wire:click="saveInventoryEntries"
-                                wire:loading.attr="disabled"
-                                class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-4 py-2 rounded transition-colors cursor-pointer flex items-center gap-2">
-                            <span wire:loading.remove>Save to inventory</span>
-                            <span wire:loading class="flex items-center gap-1.5">
-                                <svg class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                Saving...
-                            </span>
-                        </button>
-                    </div>
-                </div>
-            </div>
+    <!-- Top Action Row: Positioned directly below SE avatar / header controls on upper-right -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+            <h1 class="text-sm font-semibold text-slate-900 dark:text-white">Product Catalog & Yard Inventory</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Physical yard storage, batch intake, and stock levels</p>
         </div>
-
-        <!-- Sliding Pull Handle at Bottom Center (collapse handle) -->
-        <button type="button"
-                @click="isFormOpen = !isFormOpen"
-                class="w-full py-2 bg-slate-50 hover:bg-slate-100 dark:bg-[#0f1b40] dark:hover:bg-[#142259]/20 border-t border-slate-200 dark:border-[#1a2858] flex flex-col items-center justify-center transition-colors cursor-pointer group"
-                title="Click to slide Add Inventory form up/down">
-            <div class="flex flex-col items-center gap-0.5">
-                <div class="w-10 h-0.5 bg-slate-300 dark:bg-slate-600 group-hover:bg-[#142259] rounded-full transition-colors"></div>
-                <div class="w-10 h-0.5 bg-slate-300 dark:bg-slate-600 group-hover:bg-[#142259] rounded-full transition-colors"></div>
-            </div>
-            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 group-hover:text-[#142259] mt-1 flex items-center gap-1">
-                <span x-text="isFormOpen ? 'Collapse add inventory section' : 'Add inventory section — click to slide down'"></span>
-                <svg class="w-3 h-3 transition-transform" :class="isFormOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </span>
-        </button>
+        <div class="flex items-center justify-end">
+            <button type="button"
+                    wire:click="openAddModal"
+                    class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                <span>+ Add Inventory</span>
+            </button>
+        </div>
     </div>
 
     <!-- ============================================================== -->
@@ -320,9 +60,9 @@
     <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
 
         <!-- Integrated Table Workbench Bar -->
-        <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             <!-- Search Bar (Left) -->
-            <div class="relative w-full lg:w-80">
+            <div class="relative w-full md:w-72 lg:w-80">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -335,34 +75,23 @@
             </div>
 
             <!-- Filters & Stock Requests Hub Action (Right) -->
-            <div class="flex flex-wrap items-center gap-3">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category:</span>
-                <!-- Category Filter Tab Strip -->
-                <div class="inline-flex items-center gap-3 border-b border-slate-200 dark:border-[#1a2858] overflow-x-auto scrollbar-none pb-0.5">
-                    <button type="button"
-                            wire:click="setCategory('ALL')"
-                            class="whitespace-nowrap cursor-pointer pb-1.5 {{ $selectedCategory === 'ALL' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white font-semibold text-xs' : 'text-slate-500 dark:text-slate-400 text-xs hover:text-slate-900 dark:hover:text-white transition-colors' }}">
-                        All ({{ $allCount }})
-                    </button>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+                <!-- Category Dropdown Filter -->
+                <select wire:model.live="selectedCategory"
+                        aria-label="Filter products by category"
+                        class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
+                    <option value="ALL">Category: All ({{ $allCount }})</option>
                     @foreach($existingCategories as $cat)
-                        <button type="button"
-                                wire:click="setCategory('{{ $cat }}')"
-                                class="whitespace-nowrap cursor-pointer pb-1.5 {{ $selectedCategory === $cat ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white font-semibold text-xs' : 'text-slate-500 dark:text-slate-400 text-xs hover:text-slate-900 dark:hover:text-white transition-colors' }}">
-                            {{ $cat }} ({{ $categoryCounts[$cat] ?? 0 }})
-                        </button>
+                        <option value="{{ $cat }}">{{ $cat }} ({{ $categoryCounts[$cat] ?? 0 }})</option>
                     @endforeach
-                    <button type="button"
-                            wire:click="setCategory('ARCHIVED')"
-                            class="whitespace-nowrap cursor-pointer pb-1.5 {{ $selectedCategory === 'ARCHIVED' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white font-semibold text-xs' : 'text-slate-500 dark:text-slate-400 text-xs hover:text-slate-900 dark:hover:text-white transition-colors' }}">
-                        Archived ({{ $archivedCount }})
-                    </button>
-                </div>
+                    <option value="ARCHIVED">Archived ({{ $archivedCount }})</option>
+                </select>
 
-                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">Stock:</span>
                 <!-- Stock Level Filter -->
                 <select wire:model.live="stockFilter"
+                        aria-label="Filter products by stock status"
                         class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
-                    <option value="all">All stock</option>
+                    <option value="all">Stock: All</option>
                     <option value="in_stock">In stock (&gt; alert)</option>
                     <option value="low_stock">Low stock (&le; alert)</option>
                     <option value="out_of_stock">Out of stock (0)</option>
@@ -371,9 +100,9 @@
                 <!-- Stock Requests Hub Button -->
                 <button type="button"
                         wire:click="openRequestsHubModal"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#0f1b40] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#0f1b40] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
                         title="View stock requisitions hub & delivery tracking">
-                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
                     <span>Requests Hub</span>
@@ -928,6 +657,384 @@
                         <button type="submit" class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-4 py-2 rounded shadow-xs transition-colors cursor-pointer">Add to stock</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- ============================================================== -->
+    <!-- MODAL: ADD INVENTORY / PRODUCT BATCH                           -->
+    <!-- ============================================================== -->
+    @if ($showAddModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 flex items-center justify-center p-4"
+             x-data
+             @keydown.escape.window="$wire.closeAddModal()">
+            <div class="relative w-full max-w-4xl bg-white dark:bg-[#0c163b] rounded-md shadow-2xl border border-slate-200 dark:border-[#1a2858] overflow-hidden flex flex-col max-h-[90vh]"
+                 x-data="{
+                     duplicateErrors: {},
+                     hasDuplicates: false,
+                     hasIncomplete: false,
+                     get hasErrors() {
+                         return this.hasDuplicates || this.hasIncomplete;
+                     },
+                     checkRows() {
+                         const rows = this.$el.querySelectorAll('.batch-entry-row');
+                         const seen = new Map();
+                         const newDuplicates = {};
+                         let incompleteFound = false;
+
+                         rows.forEach((row, idx) => {
+                             const prodIdInput = row.querySelector('[data-field=\'product_id\']');
+                             const nameInput = row.querySelector('[data-field=\'name\']');
+                             const catInput = row.querySelector('[data-field=\'category\']');
+                             const specsInput = row.querySelector('[data-field=\'description\']');
+                             const priceInput = row.querySelector('[data-field=\'tagged_price\']');
+                             const qtyInput = row.querySelector('[data-field=\'quantity_in_stock\']');
+
+                             const prodId = prodIdInput ? (prodIdInput.value || '').trim() : '';
+                             const name = nameInput ? (nameInput.value || '').trim() : '';
+                             const cat = catInput ? (catInput.value || '').trim() : '';
+                             const specs = specsInput ? (specsInput.value || '').trim() : '';
+                             const price = priceInput ? (priceInput.value || '').trim() : '';
+                             const qty = qtyInput ? (qtyInput.value || '').trim() : '';
+
+                             if (!name || price === '' || isNaN(price) || parseFloat(price) < 0 || qty === '' || isNaN(qty) || parseInt(qty) < 1) {
+                                 incompleteFound = true;
+                             }
+
+                             if (!name && !prodId) return;
+
+                             const normName = name.toLowerCase();
+                             const normCat = cat.toLowerCase();
+                             const normSpecs = specs.toLowerCase();
+                             const key = prodId ? ('id:' + prodId) : (normName + '|' + normCat + '|' + normSpecs);
+
+                             if (seen.has(key)) {
+                                 const firstIdx = seen.get(key);
+                                 newDuplicates[idx] = 'Duplicate entry: This product is already entered in Item #' + (firstIdx + 1) + '. Adjust quantity there instead.';
+                             } else {
+                                 seen.set(key, idx);
+                             }
+                         });
+
+                         this.duplicateErrors = newDuplicates;
+                         this.hasDuplicates = Object.keys(newDuplicates).length > 0;
+                         this.hasIncomplete = incompleteFound;
+                     }
+                 }"
+                 x-init="checkRows(); $nextTick(() => checkRows())"
+                 @input="checkRows()"
+                 @change="checkRows()"
+                 wire:click.outside="closeAddModal">
+
+                <!-- Modal Header -->
+                <div class="px-5 py-4 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded bg-[#142259]/10 dark:bg-blue-900/30 text-[#142259] dark:text-blue-300 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
+                                Add inventory / product batch
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Record new catalog items or restock physical yard units</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-slate-400 font-mono">{{ count($entryItems) }} item row(s)</span>
+                        <button type="button"
+                                wire:click="closeAddModal"
+                                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-1"
+                                aria-label="Close dialog">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body (Scrollable for multi-item rows) -->
+                <div class="p-5 space-y-4 overflow-y-auto flex-1">
+                    @if ($errors->any())
+                        <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 px-4 py-3 rounded text-xs space-y-1">
+                            <div class="font-bold flex items-center gap-1.5">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <span>Please correct the errors before proceeding:</span>
+                            </div>
+                            <ul class="list-disc list-inside pl-1 space-y-0.5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <!-- Existing Product Search & Auto-Fill -->
+                    <div class="relative">
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Search existing product to pre-fill / add stock
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <input type="text"
+                                   wire:model.live.debounce.200ms="product_search"
+                                   placeholder="Type existing product name, category, or specs to apply..."
+                                   class="w-full pl-9 pr-8 py-2 bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                            @if($product_search)
+                                <button type="button" wire:click="$set('product_search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            @endif
+                        </div>
+
+                        <!-- Autocomplete Suggestions Dropdown -->
+                        @if(!empty($product_search) && count($searchedExistingProducts) > 0)
+                            <div class="absolute z-20 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-md overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                                @foreach($searchedExistingProducts as $sp)
+                                    <button type="button"
+                                            wire:click="selectExistingProduct({{ $sp->id }})"
+                                            class="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors flex items-center justify-between cursor-pointer">
+                                        <div>
+                                            <div class="font-semibold text-xs text-slate-900 dark:text-white">{{ $sp->name }}</div>
+                                            <div class="text-[11px] text-slate-400 font-mono">{{ $sp->category }} • ₱{{ number_format($sp->tagged_price, 2) }} • {{ $sp->quantity_in_stock }} in stock</div>
+                                        </div>
+                                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">Apply to row</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @elseif(!empty($product_search) && count($searchedExistingProducts) === 0)
+                            <div class="absolute z-20 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-md p-3 text-center text-xs text-slate-400">
+                                No existing catalog product found. You can type a new product directly in the rows below.
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Dynamic Item Rows -->
+                    <div class="space-y-3">
+                        @foreach($entryItems as $index => $item)
+                            @php
+                                $isExisting = !empty($item['is_existing']);
+                                $rowHasDuplicate = isset($duplicateErrors[$index]);
+                            @endphp
+                            <div class="batch-entry-row rounded p-3 space-y-3 transition-colors border {{ $rowHasDuplicate ? 'border-red-500 bg-red-50/20 dark:bg-red-950/25 ring-1 ring-red-500/30' : ($isExisting ? 'border-blue-200 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40]') }}"
+                                 :class="duplicateErrors[{{ $index }}] ? 'border-red-500 bg-red-50/20 dark:bg-red-950/25 ring-1 ring-red-500/30' : ({{ $isExisting ? 'true' : 'false' }} ? 'border-blue-200 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40]')">
+
+                                <input type="hidden" data-field="product_id" value="{{ $item['product_id'] ?? '' }}">
+
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                            Item #{{ $index + 1 }}
+                                        </span>
+                                        @if($isExisting)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                Existing Product (Price &amp; Category locked — stock addition only)
+                                            </span>
+                                        @endif
+                                    </div>
+                                    @if(count($entryItems) > 1)
+                                        <button type="button"
+                                                wire:click="removeEntryRow({{ $index }})"
+                                                class="text-slate-400 hover:text-rose-500 text-xs font-semibold flex items-center gap-1 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <span>Remove</span>
+                                        </button>
+                                    @endif
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
+                                    <!-- Product Name -->
+                                    <div class="md:col-span-3">
+                                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Product name <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="text"
+                                               data-field="name"
+                                               wire:model.live.debounce.150ms="entryItems.{{ $index }}.name"
+                                               @if($isExisting) readonly @endif
+                                               placeholder="e.g. 6-Seater Wooden Dining Set"
+                                               class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                                        @error("entryItems.{$index}.name") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Category (Locked if existing product) -->
+                                    <div class="md:col-span-2 relative" x-data="{ open: false }" :class="{ 'z-40': open }">
+                                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Category <span class="text-rose-500">*</span>
+                                            @if($isExisting) <span class="text-[10px] text-slate-400 font-normal">(Locked)</span> @endif
+                                        </label>
+                                        @if($isExisting)
+                                            <input type="text"
+                                                   data-field="category"
+                                                   wire:model="entryItems.{{ $index }}.category"
+                                                   readonly
+                                                   disabled
+                                                   class="w-full bg-slate-100 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                                        @else
+                                            <div class="relative">
+                                                <input type="text"
+                                                       data-field="category"
+                                                       wire:model.live="entryItems.{{ $index }}.category"
+                                                       @focus="open = true"
+                                                       @click="open = true"
+                                                       @click.outside="open = false"
+                                                       placeholder="Select or type..."
+                                                       autocomplete="off"
+                                                       class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded pl-3 pr-7 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
+                                                <button type="button" 
+                                                        @click="open = !open" 
+                                                        class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 pointer-events-auto">
+                                                    <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            <!-- In-DOM Custom Dropdown Menu -->
+                                            <div x-show="open"
+                                                 x-transition:enter="transition ease-out duration-100"
+                                                 x-transition:enter-start="opacity-0 scale-95"
+                                                 x-transition:enter-end="opacity-100 scale-100"
+                                                 x-transition:leave="transition ease-in duration-75"
+                                                 x-transition:leave-start="opacity-100 scale-100"
+                                                 x-transition:leave-end="opacity-0 scale-95"
+                                                 class="absolute z-50 mt-1 w-full min-w-[200px] bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-56 overflow-y-auto ring-1 ring-black/10 dark:ring-white/10"
+                                                 style="display: none;">
+                                                @foreach($existingCategories as $cat)
+                                                    <button type="button"
+                                                            @click="$wire.set('entryItems.{{ $index }}.category', '{{ addslashes($cat) }}'); open = false; $nextTick(() => checkRows());"
+                                                            class="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors flex items-center justify-between group cursor-pointer">
+                                                        <span class="font-medium text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#142259] dark:group-hover:text-white">{{ $cat }}</span>
+                                                        <span class="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 font-sans">Select</span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                        @error("entryItems.{$index}.category") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Material / Spec Notes -->
+                                    <div class="md:col-span-2">
+                                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Specs / notes
+                                            @if($isExisting) <span class="text-[10px] text-slate-400 font-normal">(Locked)</span> @endif
+                                        </label>
+                                        <input type="text"
+                                               data-field="description"
+                                               wire:model.live.debounce.150ms="entryItems.{{ $index }}.description"
+                                               @if($isExisting) readonly disabled @endif
+                                               placeholder="e.g. Galvanized 6m"
+                                               class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                                    </div>
+
+                                    <!-- Tagged Price (Locked if existing product) -->
+                                    <div class="md:col-span-2">
+                                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Unit price (₱) <span class="text-rose-500">*</span>
+                                            @if($isExisting) <span class="text-[10px] text-slate-400 font-normal">(Locked)</span> @endif
+                                        </label>
+                                        <input type="number"
+                                               data-field="tagged_price"
+                                               step="0.01"
+                                               min="0"
+                                               wire:model.live.debounce.150ms="entryItems.{{ $index }}.tagged_price"
+                                               @if($isExisting) readonly disabled @endif
+                                               placeholder="0.00"
+                                               class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs placeholder-slate-400 font-mono focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                                        @error("entryItems.{$index}.tagged_price") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Quantity to Add (Always editable!) -->
+                                    <div class="md:col-span-1">
+                                        <label class="block text-[11px] font-semibold text-slate-900 dark:text-white mb-1">
+                                            {{ $isExisting ? '+ Add Qty' : 'Stock' }} <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="number"
+                                               data-field="quantity_in_stock"
+                                               min="1"
+                                               wire:model.live.debounce.150ms="entryItems.{{ $index }}.quantity_in_stock"
+                                               placeholder="1"
+                                               class="w-full bg-white dark:bg-[#0f1b40] border-2 border-[#142259] dark:border-blue-500 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-[#142259]/30 transition-colors">
+                                        @error("entryItems.{$index}.quantity_in_stock") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Low Stock Alert Threshold -->
+                                    <div class="md:col-span-2">
+                                        <label class="block text-[11px] font-semibold text-amber-700 dark:text-amber-400 mb-1">
+                                            Low stock threshold <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="number"
+                                               data-field="low_stock_threshold"
+                                               min="0"
+                                               wire:model.live.debounce.150ms="entryItems.{{ $index }}.low_stock_threshold"
+                                               @if($isExisting) readonly disabled @endif
+                                               placeholder="5"
+                                               title="When inventory falls to or below this quantity, a low-stock alert will trigger"
+                                               class="w-full {{ $isExisting ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 cursor-not-allowed' : 'bg-white dark:bg-[#0f1b40] text-slate-900 dark:text-white' }} border border-amber-300 dark:border-amber-700/60 rounded px-3 py-2 text-xs placeholder-slate-400 font-mono text-center focus:outline-none focus:border-amber-500 transition-colors">
+                                        @error("entryItems.{$index}.low_stock_threshold") <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Inline Duplicate Error Message -->
+                                <div x-show="duplicateErrors[{{ $index }}]"
+                                     x-cloak
+                                     class="mt-2 text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5 p-2 rounded bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 animate-in fade-in duration-150">
+                                    <svg class="w-4 h-4 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <span x-text="duplicateErrors[{{ $index }}]"></span>
+                                </div>
+                                @if(isset($duplicateErrors[$index]))
+                                    <div x-show="!duplicateErrors[{{ $index }}]"
+                                         class="mt-2 text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5 p-2 rounded bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60">
+                                        <svg class="w-4 h-4 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <span>{{ $duplicateErrors[$index] }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-5 py-3.5 border-t border-slate-200 dark:border-[#1a2858] bg-slate-50/50 dark:bg-[#0f1b40]/50 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+                    <button type="button"
+                            wire:click="addEntryRow"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-dashed border-slate-300 dark:border-slate-700 hover:border-[#142259] text-slate-600 dark:text-slate-400 hover:text-[#142259] text-xs font-semibold transition-colors cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>+ Add another item</span>
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button"
+                                wire:click="resetEntryForm"
+                                class="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-3 py-1.5 cursor-pointer transition-colors">
+                            Clear
+                        </button>
+                        <button type="button"
+                                wire:click="closeAddModal"
+                                class="bg-white dark:bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-4 py-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                            Cancel
+                        </button>
+                        <button type="button"
+                                wire:click="saveInventoryEntries"
+                                wire:loading.attr="disabled"
+                                :disabled="hasErrors || {{ $hasDuplicateOrIncomplete ? 'true' : 'false' }}"
+                                class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-1.5 rounded shadow-xs transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none">
+                            <span wire:loading.remove>Save to inventory</span>
+                            <span wire:loading class="flex items-center gap-1.5">
+                                <svg class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                Saving...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
     @endif

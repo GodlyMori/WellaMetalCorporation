@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
+use App\Livewire\Actions\Logout;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('secretary/workspace', 'dashboard')->name('secretary.workspace');
 
     Route::view('inventory', 'inventory')->name('inventory');
+    Route::post('inventory/batch', [InventoryController::class, 'storeBatch'])->name('inventory.batch');
     Route::view('sales', 'sales')->name('sales');
     Route::view('layaways', 'layaways')->name('layaways');
     Route::view('customers', 'customers')->name('customers');
@@ -38,18 +41,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $isAdmin = $currentUser && $currentUser->hasRole('admin');
 
         // 2. Strict authorization: Only genuine admins or an admin currently testing a subordinate role may switch
-        if (!$isAdmin && !$isOriginalAdmin) {
+        if (! $isAdmin && ! $isOriginalAdmin) {
             abort(403, 'Unauthorized: Role switching is strictly restricted to System Administrators.');
         }
 
-        $email = match($role) {
+        $email = match ($role) {
             'admin' => 'admin@wellametalcorp.com',
             'manager' => 'manager@wellametalcorp.com',
             'secretary' => 'secretary@wellametalcorp.com',
             default => null,
         };
 
-        if (!$email) {
+        if (! $email) {
             return back()->with('error', 'Invalid role requested.');
         }
 
@@ -57,7 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         if ($targetUser) {
             if ($role === 'admin') {
                 session()->forget('original_admin_id');
-            } elseif ($isAdmin && !session()->has('original_admin_id')) {
+            } elseif ($isAdmin && ! session()->has('original_admin_id')) {
                 session(['original_admin_id' => $currentUser->id]);
             }
             Auth::login($targetUser);
@@ -66,8 +69,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return back();
     })->name('switch-role');
 
-    Route::post('logout', function (\App\Livewire\Actions\Logout $logout) {
+    Route::post('logout', function (Logout $logout) {
         $logout();
+
         return redirect()->route('login');
     })->name('logout');
 });
@@ -77,5 +81,3 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 require __DIR__.'/auth.php';
-
-

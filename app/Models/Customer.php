@@ -34,6 +34,16 @@ class Customer extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function promotionRedemptions()
+    {
+        return $this->hasMany(PromotionRedemption::class);
+    }
+
+    public function redeemedPromotions()
+    {
+        return $this->belongsToMany(Promotion::class, 'promotion_redemptions');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -42,7 +52,8 @@ class Customer extends Model
     public function getNameAttribute(): string
     {
         $fullName = trim("{$this->first_name} {$this->last_name}");
-        return !empty($fullName) ? $fullName : ($this->attributes['name'] ?? '');
+
+        return ! empty($fullName) ? $fullName : ($this->attributes['name'] ?? '');
     }
 
     public function getInitialsAttribute(): string
@@ -52,6 +63,7 @@ class Customer extends Model
         foreach ($parts as $p) {
             $initials .= strtoupper(substr($p, 0, 1));
         }
+
         return substr($initials, 0, 2) ?: 'CU';
     }
 }

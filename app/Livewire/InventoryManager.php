@@ -8,7 +8,7 @@ use App\Models\Product;
 use App\Models\StockRequest;
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
-use App\Models\User;
+use App\Services\InventoryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -19,50 +19,78 @@ class InventoryManager extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $selectedCategory = 'ALL';
+
     public string $stockFilter = 'all'; // all, in_stock, low_stock, out_of_stock
 
-    // Top Section: Sliding Add Inventory Form state & rows
-    public bool $isFormOpen = true; // Open by default
+    // Top Section: Add Inventory Modal state & rows
+    public bool $isFormOpen = false;
+
+    public bool $showAddModal = false;
+
     public string $product_search = ''; // Search existing products to prefill/restock
 
     public array $entryItems = [
-        ['name' => '', 'category' => 'Sala Set', 'description' => '', 'tagged_price' => '', 'quantity_in_stock' => '1', 'low_stock_threshold' => '5', 'is_existing' => false],
+        ['product_id' => null, 'name' => '', 'category' => 'Sala Set', 'description' => '', 'tagged_price' => '', 'quantity_in_stock' => '1', 'low_stock_threshold' => '5', 'is_existing' => false],
     ];
 
     // Edit Modal state & fields
     public bool $showEditModal = false;
+
     public ?int $editingProductId = null;
+
     public string $edit_name = '';
+
     public string $edit_category = '';
+
     public string $edit_description = '';
+
     public string $edit_price = '';
+
     public string $edit_stock = '';
+
     public string $edit_low_stock_threshold = '5';
+
     public string $edit_stock_reason = '';
 
     // Stock Request Modal (Secretary submits requisition)
     public bool $showRequestModal = false;
+
     public ?int $requestProductId = null;
+
     public string $requestProductName = '';
+
     public int $requestCurrentStock = 0;
+
     public int $requestQuantity = 5;
+
     public string $requestReason = 'Stock Replenishment';
+
     public string $requestNotes = '';
 
     // Stock Requests Hub Modal (GM/Admin approval + Delivery reception)
     public bool $showRequestsHubModal = false;
+
     public string $requestsTab = 'pending'; // 'pending', 'awaiting_delivery', 'history'
+
     public ?int $rejectingRequestId = null;
+
     public string $rejectionReasonInput = '';
+
     public string $receiveNotesInput = '';
 
     // Direct Restock Modal state & fields (Administrative fallback)
     public bool $showRestockModal = false;
+
     public ?int $restockProductId = null;
+
     public string $restockProductName = '';
+
     public int $restockQuantity = 5;
+
     public string $sourceBranch = 'Main Yard Production';
+
     public string $restockNotes = '';
 
     // Toast notification message
@@ -86,9 +114,19 @@ class InventoryManager extends Component
         $this->resetPage();
     }
 
+    public function updatedSelectedCategory()
+    {
+        $this->resetPage();
+    }
+
     public function setStockFilter($filter)
     {
         $this->stockFilter = $filter;
+        $this->resetPage();
+    }
+
+    public function updatedStockFilter()
+    {
         $this->resetPage();
     }
 
@@ -97,27 +135,41 @@ class InventoryManager extends Component
         $this->resetPage();
     }
 
-    public function toggleForm()
+    public function toggleForm(): void
     {
-        $this->isFormOpen = !$this->isFormOpen;
+        $this->showAddModal = ! $this->showAddModal;
+        $this->isFormOpen = $this->showAddModal;
+    }
+
+    public function openAddModal(): void
+    {
+        $this->resetValidation();
+        $this->showAddModal = true;
+    }
+
+    public function closeAddModal(): void
+    {
+        $this->showAddModal = false;
+        $this->resetValidation();
     }
 
     // Quick prefill from existing catalog product
     public function selectExistingProduct(int $productId, ?int $rowIndex = null)
     {
         $prod = Product::find($productId);
-        if (!$prod) {
+        if (! $prod) {
             return;
         }
 
         if ($rowIndex !== null && isset($this->entryItems[$rowIndex])) {
             $this->entryItems[$rowIndex]['is_existing'] = true;
+            $this->entryItems[$rowIndex]['product_id'] = $prod->id;
             $this->entryItems[$rowIndex]['name'] = $prod->name;
             $this->entryItems[$rowIndex]['category'] = $prod->category;
             $this->entryItems[$rowIndex]['description'] = $prod->description ?? '';
-            $this->entryItems[$rowIndex]['tagged_price'] = (string)$prod->tagged_price;
+            $this->entryItems[$rowIndex]['tagged_price'] = (string) $prod->tagged_price;
             $this->entryItems[$rowIndex]['quantity_in_stock'] = '1';
-            $this->entryItems[$rowIndex]['low_stock_threshold'] = (string)($prod->low_stock_threshold ?? 5);
+            $this->entryItems[$rowIndex]['low_stock_threshold'] = (string) ($prod->low_stock_threshold ?? 5);
         } else {
             // Find first empty row or append new row
             $targetIndex = null;
@@ -130,31 +182,35 @@ class InventoryManager extends Component
 
             if ($targetIndex !== null) {
                 $this->entryItems[$targetIndex]['is_existing'] = true;
+                $this->entryItems[$targetIndex]['product_id'] = $prod->id;
                 $this->entryItems[$targetIndex]['name'] = $prod->name;
                 $this->entryItems[$targetIndex]['category'] = $prod->category;
                 $this->entryItems[$targetIndex]['description'] = $prod->description ?? '';
-                $this->entryItems[$targetIndex]['tagged_price'] = (string)$prod->tagged_price;
+                $this->entryItems[$targetIndex]['tagged_price'] = (string) $prod->tagged_price;
                 $this->entryItems[$targetIndex]['quantity_in_stock'] = '1';
-                $this->entryItems[$targetIndex]['low_stock_threshold'] = (string)($prod->low_stock_threshold ?? 5);
+                $this->entryItems[$targetIndex]['low_stock_threshold'] = (string) ($prod->low_stock_threshold ?? 5);
             } else {
                 $this->entryItems[] = [
                     'is_existing' => true,
+                    'product_id' => $prod->id,
                     'name' => $prod->name,
                     'category' => $prod->category,
                     'description' => $prod->description ?? '',
-                    'tagged_price' => (string)$prod->tagged_price,
+                    'tagged_price' => (string) $prod->tagged_price,
                     'quantity_in_stock' => '1',
-                    'low_stock_threshold' => (string)($prod->low_stock_threshold ?? 5),
+                    'low_stock_threshold' => (string) ($prod->low_stock_threshold ?? 5),
                 ];
             }
         }
 
         $this->product_search = '';
+        $this->resetValidation();
     }
 
-    public function addEntryRow()
+    public function addEntryRow(): void
     {
         $this->entryItems[] = [
+            'product_id' => null,
             'is_existing' => false,
             'name' => '',
             'category' => 'Sala Set',
@@ -165,7 +221,7 @@ class InventoryManager extends Component
         ];
     }
 
-    public function removeEntryRow(int $index)
+    public function removeEntryRow(int $index): void
     {
         if (count($this->entryItems) > 1) {
             unset($this->entryItems[$index]);
@@ -173,112 +229,60 @@ class InventoryManager extends Component
         } else {
             $this->resetEntryForm();
         }
+        $this->resetValidation();
     }
 
-    public function resetEntryForm()
+    public function resetEntryForm(): void
     {
         $this->entryItems = [
-            ['is_existing' => false, 'name' => '', 'category' => 'Sala Set', 'description' => '', 'tagged_price' => '', 'quantity_in_stock' => '1', 'low_stock_threshold' => '5'],
+            [
+                'product_id' => null,
+                'is_existing' => false,
+                'name' => '',
+                'category' => 'Sala Set',
+                'description' => '',
+                'tagged_price' => '',
+                'quantity_in_stock' => '1',
+                'low_stock_threshold' => '5',
+            ],
         ];
         $this->product_search = '';
         $this->resetValidation();
     }
 
-    public function saveInventoryEntries()
+    /**
+     * Real-time duplicate error messages keyed by row index.
+     *
+     * @return array<int, string>
+     */
+    public function getDuplicateErrors(): array
     {
-        $this->validate([
-            'entryItems.*.name' => 'required|string|max:255',
-            'entryItems.*.category' => 'required|string',
-            'entryItems.*.description' => 'nullable|string|max:1000',
-            'entryItems.*.tagged_price' => ['required', 'numeric', 'min:0'],
-            'entryItems.*.quantity_in_stock' => ['required', 'integer', 'min:1'],
-            'entryItems.*.low_stock_threshold' => ['required', 'integer', 'min:0'],
-        ], [
-            'entryItems.*.name.required' => 'Product name is required for all item rows.',
-            'entryItems.*.tagged_price.required' => 'Price is required for all item rows.',
-            'entryItems.*.tagged_price.numeric' => 'Price must be a valid number.',
-            'entryItems.*.tagged_price.min' => 'Product price cannot be negative.',
-            'entryItems.*.quantity_in_stock.required' => 'Quantity is required.',
-            'entryItems.*.quantity_in_stock.integer' => 'Quantity must be a whole number.',
-            'entryItems.*.quantity_in_stock.min' => 'Quantity must be at least 1 unit.',
-            'entryItems.*.low_stock_threshold.required' => 'Low stock threshold is required.',
-            'entryItems.*.low_stock_threshold.integer' => 'Threshold must be a whole number.',
-            'entryItems.*.low_stock_threshold.min' => 'Threshold cannot be negative.',
-        ]);
+        return app(InventoryService::class)->findDuplicateErrors($this->entryItems);
+    }
 
-        $user = Auth::user();
-        $newCount = 0;
-        $restockedCount = 0;
-        $updatedSummaries = [];
+    /**
+     * Check if duplicate or incomplete rows exist to control save state.
+     */
+    public function getHasDuplicateOrIncompleteProperty(): bool
+    {
+        return app(InventoryService::class)->hasDuplicateOrIncompleteRows($this->entryItems);
+    }
 
-        DB::transaction(function () use ($user, &$newCount, &$restockedCount, &$updatedSummaries) {
-            foreach ($this->entryItems as $item) {
-                $trimmedName = trim($item['name'] ?? '');
-                if (empty($trimmedName)) {
-                    continue;
-                }
-
-                $existingProduct = Product::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($trimmedName)])
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($existingProduct) {
-                    $oldStock = (int)$existingProduct->quantity_in_stock;
-                    $addedStock = (int)$item['quantity_in_stock'];
-                    $newStock = $oldStock + $addedStock;
-
-                    // When adding stock to existing product, preserve category & tagged_price intact
-                    $existingProduct->update([
-                        'quantity_in_stock' => $newStock,
-                        'status' => 'active',
-                    ]);
-
-                    InventoryAdjustment::create([
-                        'product_id' => $existingProduct->id,
-                        'user_id' => $user?->id ?? 1,
-                        'old_quantity' => $oldStock,
-                        'new_quantity' => $newStock,
-                        'quantity_change' => $addedStock,
-                        'reason' => 'Existing Product Stock Addition',
-                        'notes' => "Added {$addedStock} units to existing catalog item '{$existingProduct->name}' via Inventory Entry (Previous: {$oldStock}, New Total: {$newStock})",
-                    ]);
-
-                    $restockedCount++;
-                    $updatedSummaries[] = "{$existingProduct->name} (+{$addedStock} units)";
-                } else {
-                    $catId = Category::where('name', $item['category'])->value('id');
-                    $newProduct = Product::create([
-                        'name' => $trimmedName,
-                        'category' => $item['category'],
-                        'category_id' => $catId,
-                        'description' => $item['description'] ?? '',
-                        'tagged_price' => (float)$item['tagged_price'],
-                        'quantity_in_stock' => (int)$item['quantity_in_stock'],
-                        'low_stock_threshold' => (int)($item['low_stock_threshold'] ?? 5),
-                        'status' => 'active',
-                    ]);
-
-                    InventoryAdjustment::create([
-                        'product_id' => $newProduct->id,
-                        'user_id' => $user?->id ?? 1,
-                        'old_quantity' => 0,
-                        'new_quantity' => (int)$item['quantity_in_stock'],
-                        'quantity_change' => (int)$item['quantity_in_stock'],
-                        'reason' => 'Initial Stock Creation',
-                        'notes' => "Initial catalog entry of '{$newProduct->name}' with {$item['quantity_in_stock']} unit(s)",
-                    ]);
-
-                    $newCount++;
-                }
-            }
-        });
+    public function saveInventoryEntries(InventoryService $inventoryService): void
+    {
+        $result = $inventoryService->saveBatch($this->entryItems, Auth::user());
 
         $this->resetEntryForm();
+        $this->showAddModal = false;
+
+        $newCount = $result['newCount'];
+        $restockedCount = $result['restockedCount'];
+        $updatedSummaries = $result['updatedSummaries'];
 
         if ($newCount > 0 && $restockedCount > 0) {
-            $this->successMessage = "Inventory updated: {$newCount} new product(s) added, and {$restockedCount} existing item(s) restocked (" . implode(', ', $updatedSummaries) . ").";
+            $this->successMessage = "Inventory updated: {$newCount} new product(s) added, and {$restockedCount} existing item(s) restocked (".implode(', ', $updatedSummaries).').';
         } elseif ($restockedCount > 0) {
-            $this->successMessage = "Stock added to {$restockedCount} existing product(s): " . implode(', ', $updatedSummaries) . ".";
+            $this->successMessage = "Stock added to {$restockedCount} existing product(s): ".implode(', ', $updatedSummaries).'.';
         } else {
             $this->successMessage = "{$newCount} new product(s) saved to inventory successfully.";
         }
@@ -291,9 +295,9 @@ class InventoryManager extends Component
         $this->edit_name = $product->name;
         $this->edit_category = $product->category;
         $this->edit_description = $product->description ?? '';
-        $this->edit_price = (string)$product->tagged_price;
-        $this->edit_stock = (string)$product->quantity_in_stock; // Display only
-        $this->edit_low_stock_threshold = (string)($product->low_stock_threshold ?? 5);
+        $this->edit_price = (string) $product->tagged_price;
+        $this->edit_stock = (string) $product->quantity_in_stock; // Display only
+        $this->edit_low_stock_threshold = (string) ($product->low_stock_threshold ?? 5);
         $this->edit_stock_reason = '';
         $this->showEditModal = true;
     }
@@ -323,8 +327,8 @@ class InventoryManager extends Component
             'category' => $this->edit_category,
             'category_id' => $catId,
             'description' => $this->edit_description ?? '',
-            'tagged_price' => (float)$this->edit_price,
-            'low_stock_threshold' => (int)$this->edit_low_stock_threshold,
+            'tagged_price' => (float) $this->edit_price,
+            'low_stock_threshold' => (int) $this->edit_low_stock_threshold,
         ]);
 
         $this->showEditModal = false;
@@ -339,7 +343,7 @@ class InventoryManager extends Component
         $product = Product::findOrFail($id);
         $this->requestProductId = $product->id;
         $this->requestProductName = $product->name;
-        $this->requestCurrentStock = (int)$product->quantity_in_stock;
+        $this->requestCurrentStock = (int) $product->quantity_in_stock;
         $this->requestQuantity = 5;
         $this->requestReason = 'Stock Replenishment';
         $this->requestNotes = '';
@@ -356,13 +360,13 @@ class InventoryManager extends Component
 
         $product = Product::findOrFail($this->requestProductId);
         $nextId = (StockRequest::max('id') ?? 0) + 1;
-        $reqNumber = 'REQ-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+        $reqNumber = 'REQ-'.date('Y').'-'.str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
         StockRequest::create([
             'request_number' => $reqNumber,
             'product_id' => $product->id,
             'requested_by' => Auth::id() ?? 1,
-            'quantity_requested' => (int)$this->requestQuantity,
+            'quantity_requested' => (int) $this->requestQuantity,
             'reason' => $this->requestReason,
             'notes' => $this->requestNotes ?: null,
             'status' => 'pending',
@@ -388,8 +392,9 @@ class InventoryManager extends Component
         $user = Auth::user();
         $isAuthorized = $user && ($user->hasRole('admin') || $user->hasRole('manager'));
 
-        if (!$isAuthorized) {
+        if (! $isAuthorized) {
             session()->flash('request_error', 'Only the General Manager or Administrator can approve stock requisitions.');
+
             return;
         }
 
@@ -397,6 +402,7 @@ class InventoryManager extends Component
 
         if ($request->status !== 'pending') {
             session()->flash('request_error', 'This request is no longer in pending status.');
+
             return;
         }
 
@@ -412,8 +418,9 @@ class InventoryManager extends Component
     public function openRejectForm(int $requestId)
     {
         $user = Auth::user();
-        if (!$user || (!$user->hasRole('admin') && !$user->hasRole('manager'))) {
+        if (! $user || (! $user->hasRole('admin') && ! $user->hasRole('manager'))) {
             session()->flash('request_error', 'Only the General Manager or Administrator can reject stock requisitions.');
+
             return;
         }
         $this->rejectingRequestId = $requestId;
@@ -431,8 +438,9 @@ class InventoryManager extends Component
         $user = Auth::user();
         $isAuthorized = $user && ($user->hasRole('admin') || $user->hasRole('manager'));
 
-        if (!$isAuthorized) {
+        if (! $isAuthorized) {
             session()->flash('request_error', 'Only the General Manager or Administrator can reject stock requisitions.');
+
             return;
         }
 
@@ -462,13 +470,14 @@ class InventoryManager extends Component
 
         if ($request->status !== 'awaiting_delivery') {
             session()->flash('request_error', 'Only requests in "Awaiting Delivery" status can be received.');
+
             return;
         }
 
         DB::transaction(function () use ($request, $user) {
             $product = Product::where('id', $request->product_id)->lockForUpdate()->firstOrFail();
-            $oldStock = (int)$product->quantity_in_stock;
-            $newStock = $oldStock + (int)$request->quantity_requested;
+            $oldStock = (int) $product->quantity_in_stock;
+            $newStock = $oldStock + (int) $request->quantity_requested;
 
             $product->update([
                 'quantity_in_stock' => $newStock,
@@ -487,7 +496,7 @@ class InventoryManager extends Component
                 'user_id' => $user?->id ?? 1,
                 'old_quantity' => $oldStock,
                 'new_quantity' => $newStock,
-                'quantity_change' => (int)$request->quantity_requested,
+                'quantity_change' => (int) $request->quantity_requested,
                 'reason' => 'Stock Request Delivery Receipt',
                 'notes' => "Requisition {$request->request_number}: Received {$request->quantity_requested} units of {$product->name} (Prev: {$oldStock}, New: {$newStock})",
             ]);
@@ -531,11 +540,11 @@ class InventoryManager extends Component
             StockTransferItem::create([
                 'stock_transfer_id' => $transfer->id,
                 'product_id' => $product->id,
-                'quantity_received' => (int)$this->restockQuantity,
+                'quantity_received' => (int) $this->restockQuantity,
             ]);
 
-            $oldStock = (int)$product->quantity_in_stock;
-            $newStock = $oldStock + (int)$this->restockQuantity;
+            $oldStock = (int) $product->quantity_in_stock;
+            $newStock = $oldStock + (int) $this->restockQuantity;
             $product->update([
                 'quantity_in_stock' => $newStock,
                 'status' => 'active',
@@ -546,7 +555,7 @@ class InventoryManager extends Component
                 'user_id' => $user?->id ?? 1,
                 'old_quantity' => $oldStock,
                 'new_quantity' => $newStock,
-                'quantity_change' => (int)$this->restockQuantity,
+                'quantity_change' => (int) $this->restockQuantity,
                 'reason' => 'Branch Restock Inflow',
                 'notes' => "Received {$this->restockQuantity} units from {$this->sourceBranch} branch",
             ]);
@@ -579,7 +588,7 @@ class InventoryManager extends Component
     {
         // 1. Dynamic categories: active categories from Category management
         $activeCategoryNames = Category::whereNull('deleted_at')->where('is_active', true)->orderBy('name')->pluck('name')->toArray();
-        $existingCategories = !empty($activeCategoryNames) ? $activeCategoryNames : Product::CATEGORIES;
+        $existingCategories = ! empty($activeCategoryNames) ? $activeCategoryNames : Product::CATEGORIES;
 
         // 2. Category counts
         $allCount = Product::where('status', 'active')->count();
@@ -593,12 +602,12 @@ class InventoryManager extends Component
         // 3. Search existing products for pre-fill / restock in Add Inventory section
         $searchedExistingProducts = [];
         if (strlen(trim($this->product_search)) >= 1) {
-            $ps = '%' . trim($this->product_search) . '%';
+            $ps = '%'.trim($this->product_search).'%';
             $searchedExistingProducts = Product::where('status', 'active')
                 ->where(function ($q) use ($ps) {
                     $q->where('name', 'like', $ps)
-                      ->orWhere('description', 'like', $ps)
-                      ->orWhere('category', 'like', $ps);
+                        ->orWhere('description', 'like', $ps)
+                        ->orWhere('category', 'like', $ps);
                 })
                 ->take(8)
                 ->get();
@@ -624,12 +633,12 @@ class InventoryManager extends Component
             $query->whereColumn('quantity_in_stock', '>', 'low_stock_threshold');
         }
 
-        if (!empty($this->search)) {
-            $s = '%' . trim($this->search) . '%';
+        if (! empty($this->search)) {
+            $s = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($s) {
                 $q->where('name', 'like', $s)
-                  ->orWhere('description', 'like', $s)
-                  ->orWhere('id', 'like', '%' . ltrim(trim($this->search), 'Pp0#') . '%');
+                    ->orWhere('description', 'like', $s)
+                    ->orWhere('id', 'like', '%'.ltrim(trim($this->search), 'Pp0#').'%');
             });
         }
 
@@ -662,6 +671,8 @@ class InventoryManager extends Component
             'pendingRequestsCount' => $pendingRequestsCount,
             'awaitingDeliveryCount' => $awaitingDeliveryCount,
             'hubRequests' => $hubRequests,
+            'duplicateErrors' => $this->getDuplicateErrors(),
+            'hasDuplicateOrIncomplete' => $this->hasDuplicateOrIncomplete,
         ]);
     }
 }

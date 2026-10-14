@@ -65,6 +65,11 @@ class Sale extends Model
         return $this->belongsTo(Promotion::class);
     }
 
+    public function promotionRedemption()
+    {
+        return $this->hasOne(PromotionRedemption::class);
+    }
+
     public function archiver()
     {
         return $this->belongsTo(User::class, 'archived_by');
@@ -97,7 +102,7 @@ class Sale extends Model
 
     public function getComputedInitialsAttribute(): string
     {
-        if (!empty($this->customer_initials)) {
+        if (! empty($this->customer_initials)) {
             return $this->customer_initials;
         }
         $parts = explode(' ', trim($this->customer_name));
@@ -105,6 +110,7 @@ class Sale extends Model
         foreach ($parts as $p) {
             $initials .= strtoupper(substr($p, 0, 1));
         }
+
         return substr($initials, 0, 2);
     }
 }
