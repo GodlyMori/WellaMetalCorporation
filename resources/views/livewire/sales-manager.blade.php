@@ -165,41 +165,44 @@
 
         <!-- LEFT COLUMN (7 COLS): PRODUCT CATALOG (MAX VIEWPORT REAL ESTATE) -->
         <div class="lg:col-span-7 bg-white dark:bg-[#0c163b] rounded border border-slate-200 dark:border-[#1a2858] p-4 sm:p-5 flex flex-col">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-3">
                 <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>
-                    <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Product catalog</h2>
+                    <h2 class="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">Product catalog</h2>
                 </div>
 
-                <!-- Search Input -->
-                <div class="relative w-full sm:w-56">
-                    <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <!-- Unified Filter Toolbar: Search Input + Category Dropdown Side-by-Side -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-48 md:w-56">
+                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <input type="text"
+                               wire:model.live.debounce.250ms="catalogSearch"
+                               placeholder="Search product SKU, name..."
+                               class="w-full pl-8 pr-3 bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
                     </div>
-                    <input type="text"
-                           wire:model.live.debounce.250ms="catalogSearch"
-                           placeholder="Search product SKU, name..."
-                           class="w-full pl-8 pr-3 bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                </div>
-            </div>
 
-            <!-- Category Filter Tabs (with Explicit Label) -->
-            <div class="flex items-center gap-3 border-b border-slate-200 dark:border-[#1a2858] mt-3 overflow-x-auto scrollbar-none pb-1">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 whitespace-nowrap">Category:</span>
-                <button type="button"
-                        wire:click="$set('catalogCategory', 'ALL')"
-                        class="{{ $catalogCategory === 'ALL' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors' }} text-xs pb-1.5 cursor-pointer whitespace-nowrap">
-                    All items
-                </button>
-                @foreach($existingCategories as $cat)
-                    <button type="button"
-                            wire:click="$set('catalogCategory', '{{ $cat }}')"
-                            class="{{ $catalogCategory === $cat ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white font-semibold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors' }} text-xs pb-1.5 cursor-pointer whitespace-nowrap">
-                        {{ $cat }}
-                    </button>
-                @endforeach
+                    <!-- Category Dropdown Filter -->
+                    <div class="relative w-full sm:w-auto">
+                        <select wire:model.live="selectedCategory"
+                                aria-label="Filter product catalog by category"
+                                class="appearance-none w-full sm:w-auto bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded pl-2.5 pr-8 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
+                            <option value="ALL">All categories ({{ $allCount }})</option>
+                            @foreach($existingCategories as $cat)
+                                <option value="{{ $cat }}">{{ $cat }} ({{ $categoryCounts[$cat] ?? 0 }})</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Deep Scrollable Product List (max-h-[520px]) -->

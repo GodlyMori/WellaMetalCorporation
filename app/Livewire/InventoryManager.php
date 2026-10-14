@@ -40,6 +40,8 @@ class InventoryManager extends Component
 
     public ?int $editingProductId = null;
 
+    public string $edit_sku = '';
+
     public string $edit_name = '';
 
     public string $edit_category = '';
@@ -288,25 +290,51 @@ class InventoryManager extends Component
         }
     }
 
-    public function editProduct(int $id)
+    public function editProduct(int $id): void
     {
         $product = Product::findOrFail($id);
         $this->editingProductId = $product->id;
+        $this->edit_sku = $product->formatted_id;
         $this->edit_name = $product->name;
         $this->edit_category = $product->category;
         $this->edit_description = $product->description ?? '';
         $this->edit_price = (string) $product->tagged_price;
-        $this->edit_stock = (string) $product->quantity_in_stock; // Display only
+        $this->edit_stock = (string) $product->quantity_in_stock; // Strictly read-only
         $this->edit_low_stock_threshold = (string) ($product->low_stock_threshold ?? 5);
         $this->edit_stock_reason = '';
         $this->showEditModal = true;
     }
 
-    public function updateProduct()
+    /**
+     * Anti-tampering guard: Re-sync edit_stock if client attempts to alter it via DevTools.
+     */
+    public function updatedEditStock(): void
+    {
+        if ($this->editingProductId) {
+            $product = Product::find($this->editingProductId);
+            if ($product) {
+                $this->edit_stock = (string) $product->quantity_in_stock;
+            }
+        }
+    }
+
+    /**
+     * Anti-tampering guard: Re-sync edit_category if client attempts to alter it via DevTools.
+     */
+    public function updatedEditCategory(): void
+    {
+        if ($this->editingProductId) {
+            $product = Product::find($this->editingProductId);
+            if ($product) {
+                $this->edit_category = (string) $product->category;
+            }
+        }
+    }
+
+    public function updateProduct(?InventoryService $inventoryService = null): void
     {
         $this->validate([
             'edit_name' => 'required|string|max:255',
-            'edit_category' => 'required|string',
             'edit_description' => 'nullable|string|max:1000',
             'edit_price' => ['required', 'numeric', 'min:0'],
             'edit_low_stock_threshold' => ['required', 'integer', 'min:0'],
@@ -319,14 +347,15 @@ class InventoryManager extends Component
         ]);
 
         $product = Product::findOrFail($this->editingProductId);
-        $catId = Category::where('name', $this->edit_category)->value('id');
 
-        // Quantity in stock is strictly NOT editable in Edit Product details (use Add Inventory or Stock Request Delivery)
-        $product->update([
+        // Anti-tampering defense: ensure client cannot mutate stock or category through input tampering
+        $this->edit_stock = (string) $product->quantity_in_stock;
+        $this->edit_category = (string) $product->category;
+
+        $service = $inventoryService ?? app(InventoryService::class);
+        $service->updateCatalogProduct($product, [
             'name' => trim($this->edit_name),
-            'category' => $this->edit_category,
-            'category_id' => $catId,
-            'description' => $this->edit_description ?? '',
+            'description' => trim($this->edit_description ?? ''),
             'tagged_price' => (float) $this->edit_price,
             'low_stock_threshold' => (int) $this->edit_low_stock_threshold,
         ]);

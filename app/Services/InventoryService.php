@@ -263,4 +263,34 @@ class InventoryService
             ]);
         }
     }
+
+    /**
+     * Update static catalog fields for a product, strictly excluding stock quantity
+     * to enforce enterprise-grade data integrity and audit compliance.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateCatalogProduct(Product $product, array $attributes): Product
+    {
+        // Explicitly strip any attempt to modify stock quantity or category once created
+        unset(
+            $attributes['quantity_in_stock'],
+            $attributes['stock'],
+            $attributes['edit_stock'],
+            $attributes['category_id'],
+            $attributes['category'],
+            $attributes['edit_category']
+        );
+
+        $allowedAttributes = [
+            'name' => trim((string) ($attributes['name'] ?? $product->name)),
+            'description' => trim((string) ($attributes['description'] ?? $attributes['spec_notes'] ?? $product->description ?? '')),
+            'tagged_price' => (float) ($attributes['tagged_price'] ?? $attributes['unit_price'] ?? $product->tagged_price),
+            'low_stock_threshold' => (int) ($attributes['low_stock_threshold'] ?? $product->low_stock_threshold ?? 5),
+        ];
+
+        $product->update($allowedAttributes);
+
+        return $product;
+    }
 }

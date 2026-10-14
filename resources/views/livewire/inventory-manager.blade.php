@@ -246,8 +246,13 @@
             <div class="relative w-full max-w-lg bg-white dark:bg-[#0c163b] rounded-md shadow-lg border border-slate-200 dark:border-[#1a2858] overflow-hidden" wire:click.outside="$set('showEditModal', false)">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
-                            Edit product details
+                        <h3 class="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                            <svg class="w-4 h-4 text-[#142259] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            <span>Edit product details</span>
+                            <span class="text-xs font-normal text-slate-300 dark:text-slate-600">·</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                SKU: {{ $edit_sku ?: ($editingProductId ? sprintf('P%03d', $editingProductId) : 'N/A') }}
+                            </span>
                         </h3>
                         <p class="text-xs text-slate-400 mt-0.5">Modify catalog item specifications and pricing</p>
                     </div>
@@ -266,55 +271,29 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="relative" x-data="{ open: false }" :class="{ 'z-40': open }">
+                        <div>
                             <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                Category <span class="text-rose-500">*</span>
+                                Category <span class="text-[10px] text-slate-400 font-normal">(Read-only)</span>
                             </label>
-                            <div class="relative">
-                                <input type="text"
-                                       wire:model="edit_category"
-                                       @focus="open = true"
-                                       @click="open = true"
-                                       @click.outside="open = false"
-                                       placeholder="Select or type..."
-                                       autocomplete="off"
-                                       class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded pl-3 pr-7 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors cursor-pointer">
-                                <button type="button" 
-                                        @click="open = !open" 
-                                        class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 pointer-events-auto">
-                                    <svg class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <!-- In-DOM Custom Dropdown Menu -->
-                            <div x-show="open"
-                                 x-transition:enter="transition ease-out duration-100"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-75"
-                                 x-transition:leave-start="opacity-100 scale-100"
-                                 x-transition:leave-end="opacity-0 scale-95"
-                                 class="absolute z-50 mt-1 w-full bg-white dark:bg-[#0c163b] border border-slate-200 dark:border-[#1a2858] rounded shadow-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-56 overflow-y-auto ring-1 ring-black/10 dark:ring-white/10"
-                                 style="display: none;">
-                                @foreach($existingCategories as $cat)
-                                    <button type="button"
-                                            @click="$wire.set('edit_category', '{{ addslashes($cat) }}'); open = false;"
-                                            class="w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors flex items-center justify-between group cursor-pointer">
-                                        <span class="font-medium text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#142259] dark:group-hover:text-white">{{ $cat }}</span>
-                                        <span class="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 font-sans">Select</span>
-                                    </button>
-                                @endforeach
-                            </div>
-                            @error('edit_category') <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
+                            <input type="text"
+                                   wire:model="edit_category"
+                                   readonly
+                                   disabled
+                                   class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed select-none opacity-80"
+                                   aria-readonly="true">
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">Category cannot be changed once created.</span>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                Unit price (₱) <span class="text-rose-500">*</span>
+                                Unit price <span class="text-rose-500">*</span>
                             </label>
-                            <input type="number" step="0.01" min="0" wire:model="edit_price" class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 font-mono focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                            <div class="relative rounded">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 dark:text-slate-400 font-semibold text-xs">
+                                    ₱
+                                </div>
+                                <input type="number" step="0.01" min="0" wire:model="edit_price" class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded pl-7 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 font-mono focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                            </div>
                             @error('edit_price') <span class="text-rose-500 text-[10px] mt-0.5 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
@@ -323,10 +302,10 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                Quantity in stock <span class="text-[10px] text-slate-400 font-normal">(Read-only)</span>
+                                Quantity in stock 🔒 (Read-only)
                             </label>
-                            <input type="number" wire:model="edit_stock" readonly disabled class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-not-allowed">
-                            <span class="text-[10px] text-slate-400 mt-1 block">Stock cannot be edited here. Use Add Inventory or Stock Request Delivery.</span>
+                            <input type="number" wire:model="edit_stock" readonly disabled class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-not-allowed select-none opacity-80" aria-readonly="true">
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">Stock cannot be edited here. It is automatically deducted upon purchase, and additions must go through Add Inventory or Stock Request.</span>
                         </div>
 
                         <div>

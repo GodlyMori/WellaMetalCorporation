@@ -47,6 +47,8 @@ class SalesManager extends Component
     public ?string $emailDeliveryStatus = null;
 
     // 2. Quadrant 2: Available Products Catalog
+    public string $selectedCategory = 'ALL';
+
     public string $catalogCategory = 'ALL';
 
     public string $catalogSearch = '';
@@ -857,13 +859,24 @@ class SalesManager extends Component
         $this->emailDeliveryStatus = null;
     }
 
+    public function updatedSelectedCategory($value): void
+    {
+        $this->catalogCategory = $value;
+    }
+
+    public function updatedCatalogCategory($value): void
+    {
+        $this->selectedCategory = $value;
+    }
+
     public function render()
     {
         // 1. Available products for Quadrant 2
         $catalogQuery = Product::where('status', 'active')->where('quantity_in_stock', '>', 0);
 
-        if ($this->catalogCategory !== 'ALL') {
-            $catalogQuery->where('category', $this->catalogCategory);
+        $activeCategory = $this->selectedCategory !== 'ALL' ? $this->selectedCategory : $this->catalogCategory;
+        if ($activeCategory !== 'ALL') {
+            $catalogQuery->where('category', $activeCategory);
         }
 
         if (! empty($this->catalogSearch)) {
@@ -880,7 +893,17 @@ class SalesManager extends Component
         $activeCategoryNames = Category::whereNull('deleted_at')->where('is_active', true)->orderBy('name')->pluck('name')->toArray();
         $existingCategories = ! empty($activeCategoryNames) ? $activeCategoryNames : Product::CATEGORIES;
 
-        // 3. Customer search query for Quadrant 1
+        // 3. Dynamic category product counts for catalog dropdown
+        $allCount = Product::where('status', 'active')->where('quantity_in_stock', '>', 0)->count();
+        $categoryCounts = [];
+        foreach ($existingCategories as $cat) {
+            $categoryCounts[$cat] = Product::where('status', 'active')
+                ->where('quantity_in_stock', '>', 0)
+                ->where('category', $cat)
+                ->count();
+        }
+
+        // 4. Customer search query for Quadrant 1
         $searchedCustomers = [];
         if (strlen(trim($this->customer_search)) >= 1) {
             $cs = '%'.trim($this->customer_search).'%';
@@ -894,6 +917,9 @@ class SalesManager extends Component
         return view('livewire.sales-manager', [
             'availableProducts' => $availableProducts,
             'existingCategories' => $existingCategories,
+            'allCount' => $allCount,
+            'categoryCounts' => $categoryCounts,
+            'selectedCategory' => $this->selectedCategory,
             'searchedCustomers' => $searchedCustomers,
             'selected_customer_id' => $this->selected_customer_id,
             'customer_search' => $this->customer_search,
