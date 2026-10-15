@@ -2,16 +2,22 @@
 
     <!-- Alert / Success Notification Banner -->
     @if(!empty($successMessage))
-        <div class="p-3 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">
+        <div class="p-3 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <span class="font-semibold">{{ $successMessage }}</span>
             </div>
-            <button type="button" wire:click="$set('successMessage', '')" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" wire:click="reopenReceiptModal" class="px-2.5 py-1 text-[11px] font-bold rounded bg-[#142259] text-white hover:bg-[#0e1840] transition cursor-pointer flex items-center gap-1 shadow-xs">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>View digital receipt</span>
+                </button>
+                <button type="button" wire:click="$set('successMessage', '')" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
         </div>
     @endif
 
@@ -539,7 +545,7 @@
     <!-- ============================================================== -->
     @if(!empty($showReceiptModal) && !empty($receiptData))
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 flex items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white dark:bg-[#0c163b] rounded-md shadow-lg border border-slate-200 dark:border-[#1a2858] overflow-hidden" wire:click.outside="closeReceiptModal">
+            <div class="relative w-full max-w-md bg-white dark:bg-[#0c163b] rounded-md shadow-lg border border-slate-200 dark:border-[#1a2858] overflow-hidden" @click.stop>
 
                 <!-- Receipt Header -->
                 <div class="p-6 text-center border-b border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40]">
@@ -693,9 +699,10 @@
 
                 <!-- Receipt Footer & Dismissal -->
                 <div class="px-5 py-4 border-t border-slate-200 dark:border-[#1a2858] flex items-center justify-between gap-2 bg-white dark:bg-[#0c163b]">
-                    <p class="text-[11px] text-slate-400 flex-1">
-                        Goods strictly for store pickup • Thank you for choosing Wella Metal Corporation!
-                    </p>
+                    <a href="{{ route('sales.receipt', $receiptData['order_number']) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        <span>Open printable tab</span>
+                    </a>
                     <button type="button"
                             wire:click="closeReceiptModal"
                             class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-4 py-2 rounded transition-colors cursor-pointer whitespace-nowrap">

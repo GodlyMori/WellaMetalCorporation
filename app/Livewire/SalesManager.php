@@ -13,6 +13,7 @@ use App\Models\PromotionRedemption;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -73,6 +74,8 @@ class SalesManager extends Component
     public bool $showReceiptModal = false;
 
     public ?array $receiptData = null;
+
+    public ?int $lastRecordedSaleId = null;
 
     // Feedback
     public string $successMessage = '';
@@ -822,7 +825,60 @@ class SalesManager extends Component
             'promo_code_input',
             'promoErrorMessage',
         ]);
+        $this->lastRecordedSaleId = $createdSale->id;
         $this->payment_type = 'full';
+    }
+
+    public function reopenReceiptModal(): void
+    {
+        if ($this->receiptData) {
+            $this->showReceiptModal = true;
+
+            return;
+        }
+
+        if ($this->lastRecordedSaleId) {
+            $sale = Sale::with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->find($this->lastRecordedSaleId);
+            if ($sale) {
+                $receiptItems = [];
+                foreach ($sale->items as $it) {
+                    $receiptItems[] = [
+                        'name' => $it->product?->name ?? 'Custom Item',
+                        'quantity' => (int) $it->quantity,
+                        'unit_price' => (float) $it->unit_price,
+                        'subtotal' => (float) $it->subtotal,
+                    ];
+                }
+
+                $tendered = (float) ($sale->payments->sum('amount') ?: $sale->amount_paid);
+
+                $this->receiptData = [
+                    'order_number' => $sale->sale_number ?? ('ORD-'.$sale->id),
+                    'sale_date' => $sale->sale_date ? Carbon::parse($sale->sale_date)->format('M d, Y h:i A') : $sale->created_at->format('M d, Y h:i A'),
+                    'cashier' => $sale->creator?->name ?? 'Staff',
+                    'customer_name' => $sale->customer_name ?: ($sale->customer?->name ?? 'Valued Customer'),
+                    'customer_email' => $sale->customer_email ?: ($sale->customer?->email ?? null),
+                    'customer_phone' => $sale->customer_phone ?: ($sale->customer?->phone ?? '—'),
+                    'customer_address' => $sale->customer_address ?: ($sale->customer?->address ?? '—'),
+                    'items' => $receiptItems,
+                    'total_amount' => (float) ($sale->original_amount ?? $sale->amount),
+                    'discount_amount' => (float) ($sale->discount_amount ?? 0),
+                    'promo_name' => $sale->promo_name,
+                    'net_amount' => (float) $sale->amount,
+                    'payment_type' => $sale->payment_type,
+                    'cash_tendered' => $tendered,
+                    'change_due' => 0.0,
+                    'downpayment_amount' => (float) $sale->downpayment_amount,
+                    'remaining_balance' => (float) $sale->remaining_balance,
+                    'expiry_date' => $sale->layaway_expires_at ? Carbon::parse($sale->layaway_expires_at)->format('M d, Y') : null,
+                    'notes' => $sale->notes,
+                ];
+
+                $this->emailSent = false;
+                $this->emailDeliveryStatus = null;
+                $this->showReceiptModal = true;
+            }
+        }
     }
 
     public function resendReceiptEmail()
@@ -854,7 +910,6 @@ class SalesManager extends Component
     public function closeReceiptModal()
     {
         $this->showReceiptModal = false;
-        $this->receiptData = null;
         $this->emailSent = false;
         $this->emailDeliveryStatus = null;
     }

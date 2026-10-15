@@ -3,6 +3,7 @@
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SalesReceiptController;
 use App\Livewire\Actions\Logout;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -22,10 +23,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('inventory/batch', [InventoryController::class, 'storeBatch'])->name('inventory.batch');
     Route::put('inventory/products/{product}', [InventoryController::class, 'update'])->name('inventory.products.update');
     Route::view('sales', 'sales')->name('sales');
+    Route::get('sales/receipt/{sale}', [SalesReceiptController::class, 'show'])->name('sales.receipt');
+    Route::get('receipt/{sale}', [SalesReceiptController::class, 'show'])->name('receipt.show');
     Route::view('layaways', 'layaways')->name('layaways');
     Route::view('customers', 'customers')->name('customers');
     Route::view('categories', 'categories')->name('categories');
     Route::view('promotions', 'promotions')->name('promotions');
+
+    // Safe handling for GET /livewire/update to avoid 404s on browser re-fetch or reverse proxy redirect
+    Route::get('livewire/update', function () {
+        return redirect()->route('dashboard');
+    });
 
     Route::view('reports', 'reports')->name('reports');
     Route::get('reports/export/periodic-pdf', [ReportController::class, 'exportPeriodicPdf'])->name('reports.export.periodic-pdf');

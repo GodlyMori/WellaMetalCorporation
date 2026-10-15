@@ -329,10 +329,18 @@
                                 </div>
                             </div>
                             <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-                                <div>{{ $sale->sale_date ? \Carbon\Carbon::parse($sale->sale_date)->format('M d, Y') : '—' }} • {{ ucfirst($sale->payment_type) }}</div>
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold {{ $sale->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : ($sale->status === 'layaway' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700') }}">
-                                    {{ ucfirst($sale->status) }}
-                                </span>
+                                <div>{{ $sale->sale_date ? \Illuminate\Support\Carbon::parse($sale->sale_date)->format('M d, Y') : '—' }} • {{ ucfirst($sale->payment_type) }}</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold {{ $sale->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : ($sale->status === 'layaway' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700') }}">
+                                        {{ ucfirst($sale->status) }}
+                                    </span>
+                                    <button type="button"
+                                            wire:click="openReceipt({{ $sale->id }})"
+                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#142259] text-white hover:bg-[#0e1840] text-[10px] font-semibold transition-colors cursor-pointer">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <span>View Receipt</span>
+                                    </button>
+                                </div>
                             </div>
                             @if($sale->items && $sale->items->count() > 0)
                                 <div class="mt-2 pl-3 border-l-2 border-slate-200 dark:border-slate-700 space-y-0.5 text-[11px] text-slate-600 dark:text-slate-300">
@@ -355,6 +363,177 @@
                 <div class="px-5 py-3 border-t border-slate-200 dark:border-[#1a2858] flex justify-end bg-slate-50/50 dark:bg-[#0f1b40]/50">
                     <button wire:click="closeHistoryModal" class="bg-white dark:bg-[#0c163b] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-4 py-2 rounded hover:bg-slate-50 transition-colors cursor-pointer">
                         Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ============================================================== -->
+    <!-- DIGITAL SALES RECEIPT MODAL (VIEW FROM HISTORY)                -->
+    <!-- ============================================================== -->
+    @if(!empty($showReceiptModal) && !empty($receiptData))
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 flex items-center justify-center p-4">
+            <div class="relative w-full max-w-md bg-white dark:bg-[#0c163b] rounded-md shadow-lg border border-slate-200 dark:border-[#1a2858] overflow-hidden" @click.stop>
+
+                <!-- Receipt Header -->
+                <div class="p-6 text-center border-b border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40]">
+                    <div class="flex items-center justify-end mb-2">
+                        <button type="button" wire:click="closeReceiptModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <h2 class="text-base font-bold tracking-wider text-slate-900 dark:text-white">
+                        Wella Metal Corporation
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Furniture & Metal Fabrications</p>
+                    <p class="text-[11px] font-mono text-slate-400 mt-1 uppercase">Official sales receipt • Store pickup</p>
+                </div>
+
+                <!-- Receipt Metadata & Customer -->
+                <div class="p-5 space-y-3 text-xs border-b border-dashed border-slate-300 dark:border-slate-700">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase tracking-wider text-[11px]">Order number:</span>
+                        <span class="font-mono font-bold text-slate-900 dark:text-white text-xs">{{ $receiptData['order_number'] }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase tracking-wider text-[11px]">Date / time:</span>
+                        <span class="text-slate-700 dark:text-slate-300 font-mono">{{ $receiptData['sale_date'] }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400 uppercase tracking-wider text-[11px]">Cashier:</span>
+                        <span class="text-slate-700 dark:text-slate-300">{{ $receiptData['cashier'] }}</span>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Customer:</span>
+                            <span class="font-semibold text-slate-900 dark:text-white">{{ $receiptData['customer_name'] }}</span>
+                        </div>
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-slate-400">Contact:</span>
+                            <span class="text-slate-600 dark:text-slate-400 font-mono">{{ $receiptData['customer_phone'] }}</span>
+                        </div>
+                        @if(!empty($receiptData['customer_email']))
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-400">Email:</span>
+                                <span class="text-slate-600 dark:text-slate-400 font-mono">{{ $receiptData['customer_email'] }}</span>
+                            </div>
+                        @endif
+                        @if(!empty($receiptData['customer_address']))
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-400">Address:</span>
+                                <span class="text-slate-600 dark:text-slate-400 text-right truncate max-w-[200px]">{{ $receiptData['customer_address'] }}</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Line Items Breakdown -->
+                <div class="p-5 space-y-2 text-xs border-b border-dashed border-slate-300 dark:border-slate-700 max-h-48 overflow-y-auto">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 pb-1 border-b border-slate-200 dark:border-slate-800 flex justify-between">
+                        <span>Item description</span>
+                        <span>Subtotal</span>
+                    </div>
+                    @foreach($receiptData['items'] as $item)
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1 pr-4">
+                                <div class="font-semibold text-slate-900 dark:text-white">{{ $item['name'] }}</div>
+                                <div class="text-[11px] text-slate-400 font-mono">{{ $item['quantity'] }} × ₱{{ number_format($item['unit_price'], 2) }}</div>
+                            </div>
+                            <div class="font-mono font-bold text-slate-900 dark:text-white text-right">
+                                ₱{{ number_format($item['subtotal'], 2) }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Financial Breakdown -->
+                <div class="p-5 space-y-2 text-xs border-b border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40]">
+                    <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                        <span>Items subtotal:</span>
+                        <span class="font-mono text-slate-800 dark:text-slate-200">₱{{ number_format($receiptData['total_amount'], 2) }}</span>
+                    </div>
+
+                    @if(!empty($receiptData['discount_amount']) && $receiptData['discount_amount'] > 0)
+                        <div class="flex justify-between text-amber-700 dark:text-amber-400">
+                            <span>Promo discount ({{ $receiptData['promo_name'] ?? 'Applied' }}):</span>
+                            <span class="font-mono font-semibold">-₱{{ number_format($receiptData['discount_amount'], 2) }}</span>
+                        </div>
+                    @endif
+
+                    <div class="flex justify-between text-sm font-bold text-slate-900 dark:text-white pt-1.5 border-t border-slate-200 dark:border-slate-800">
+                        <span>Total payable:</span>
+                        <span class="font-mono text-base text-[#142259] dark:text-white">₱{{ number_format($receiptData['net_amount'], 2) }}</span>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400 text-[11px]">
+                            <span>Settlement method:</span>
+                            <span class="font-semibold text-slate-900 dark:text-white">
+                                {{ $receiptData['payment_type'] === 'layaway' ? 'Lay-away reservation' : 'Full cash settlement' }}
+                            </span>
+                        </div>
+
+                        @if($receiptData['payment_type'] === 'full')
+                            <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                                <span>Cash tendered:</span>
+                                <span class="font-mono font-bold text-slate-900 dark:text-white">₱{{ number_format($receiptData['cash_tendered'], 2) }}</span>
+                            </div>
+                        @else
+                            <div class="flex justify-between text-amber-700 dark:text-amber-400 font-semibold">
+                                <span>Downpayment paid:</span>
+                                <span class="font-mono">₱{{ number_format($receiptData['downpayment_amount'], 2) }}</span>
+                            </div>
+                            <div class="flex justify-between text-rose-600 dark:text-rose-400 font-bold">
+                                <span>Remaining balance:</span>
+                                <span class="font-mono">₱{{ number_format($receiptData['remaining_balance'], 2) }}</span>
+                            </div>
+                            @if(!empty($receiptData['expiry_date']))
+                                <div class="flex justify-between text-slate-500 text-[11px]">
+                                    <span>Reserved until:</span>
+                                    <span class="font-mono text-amber-600 dark:text-amber-400">{{ $receiptData['expiry_date'] }}</span>
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Digital Receipt Delivery Status Banner -->
+                @if(!empty($receiptData['customer_email']))
+                    <div class="px-5 py-3 border-t border-slate-200 dark:border-[#1a2858] {{ !empty($emailSent) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300' }} text-xs flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2 min-w-0">
+                            @if(!empty($emailSent))
+                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span class="truncate">Receipt sent to <strong class="font-semibold">{{ $receiptData['customer_email'] }}</strong></span>
+                            @else
+                                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <span class="truncate">{{ !empty($emailDeliveryStatus) ? $emailDeliveryStatus : ('Recipient: ' . ($receiptData['customer_email'] ?? '')) }}</span>
+                            @endif
+                        </div>
+                        <button type="button"
+                                wire:click="resendReceiptEmail"
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shrink-0">
+                            <span wire:loading.remove wire:target="resendReceiptEmail">Resend</span>
+                            <span wire:loading wire:target="resendReceiptEmail">Sending...</span>
+                        </button>
+                    </div>
+                @endif
+
+                <!-- Receipt Footer & Dismissal -->
+                <div class="px-5 py-4 border-t border-slate-200 dark:border-[#1a2858] flex items-center justify-between gap-2 bg-white dark:bg-[#0c163b]">
+                    <a href="{{ route('sales.receipt', $receiptData['order_number']) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        <span>Open printable tab</span>
+                    </a>
+                    <button type="button"
+                            wire:click="closeReceiptModal"
+                            class="bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold px-4 py-2 rounded transition-colors cursor-pointer whitespace-nowrap">
+                        Close receipt
                     </button>
                 </div>
             </div>
