@@ -3,14 +3,12 @@
 namespace App\Livewire;
 
 use App\Models\Category;
-use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\LayawayService;
+use App\Services\PeriodicReportService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -18,32 +16,55 @@ class ReportsManager extends Component
 {
     use WithPagination;
 
-    public string $activeTab = 'sales'; // 'sales', 'inventory', 'layaways'
+    public string $activeTab = 'periodic'; // 'periodic', 'sales', 'inventory', 'layaways'
+
+    // Objective 3: Periodic Report Filters
+    public string $periodicity = 'daily'; // 'daily', 'weekly', 'monthly'
+
+    public string $periodicDatePreset = 'this_month'; // 'today', 'this_week', 'this_month', 'last_month', 'all'
+
+    public ?string $periodicStartDate = null;
+
+    public ?string $periodicEndDate = null;
+
+    public string $periodicSearch = '';
 
     // Sales filters
     public string $datePreset = 'this_month'; // 'all', 'this_month', 'this_week', 'today', 'custom'
+
     public ?string $startDate = null;
+
     public ?string $endDate = null;
+
     public string $salesStatus = 'ALL'; // ALL, completed, layaway, pending, cancelled, ARCHIVED
+
     public string $salesSearch = '';
 
     // Layaway filters
     public string $layawayStatus = 'active'; // 'active', 'near_due', 'overdue', 'settled', 'cancelled', 'all'
+
     public string $layawaySearch = '';
 
     // Secretary Archive Authorization Modal
     public bool $showAuthModal = false;
+
     public ?int $pendingArchiveId = null;
+
     public ?int $authApproverId = null;
+
     public string $authPassword = '';
+
     public string $authReason = '';
+
     public string $authError = '';
 
     public string $successMessage = '';
 
     // Inventory filters
     public string $inventoryCategory = 'ALL';
+
     public string $stockFilter = 'all'; // 'all', 'in_stock', 'low_stock', 'out_of_stock'
+
     public string $inventorySearch = '';
 
     public function setTab($tab)
@@ -52,6 +73,31 @@ class ReportsManager extends Component
         $this->resetPage('salesPage');
         $this->resetPage('invPage');
         $this->resetPage('layawayPage');
+    }
+
+    public function setPeriodicity(string $p)
+    {
+        $this->periodicity = $p;
+    }
+
+    public function updatedPeriodicDatePreset($preset)
+    {
+        if ($preset === 'today') {
+            $this->periodicStartDate = now()->toDateString();
+            $this->periodicEndDate = now()->toDateString();
+        } elseif ($preset === 'this_week') {
+            $this->periodicStartDate = now()->startOfWeek()->toDateString();
+            $this->periodicEndDate = now()->endOfWeek()->toDateString();
+        } elseif ($preset === 'this_month') {
+            $this->periodicStartDate = now()->startOfMonth()->toDateString();
+            $this->periodicEndDate = now()->endOfMonth()->toDateString();
+        } elseif ($preset === 'last_month') {
+            $this->periodicStartDate = now()->subMonth()->startOfMonth()->toDateString();
+            $this->periodicEndDate = now()->subMonth()->endOfMonth()->toDateString();
+        } else {
+            $this->periodicStartDate = null;
+            $this->periodicEndDate = null;
+        }
     }
 
     public function setLayawayStatus(string $status)
@@ -82,6 +128,8 @@ class ReportsManager extends Component
     {
         $this->startDate = now()->startOfMonth()->toDateString();
         $this->endDate = now()->endOfMonth()->toDateString();
+        $this->periodicStartDate = now()->startOfMonth()->toDateString();
+        $this->periodicEndDate = now()->endOfMonth()->toDateString();
     }
 
     public function setSalesStatus(string $status)
@@ -90,16 +138,15 @@ class ReportsManager extends Component
         $this->resetPage('salesPage');
     }
 
-
     public function processExpiredLayaways()
     {
-        $service = new LayawayService();
+        $service = new LayawayService;
         $processed = $service->processExpiredLayaways(Auth::id());
 
         if ($processed > 0) {
             $this->successMessage = "Processed {$processed} expired lay-away order(s). Reserved inventory has been restored.";
         } else {
-            $this->successMessage = "No expired lay-away orders found.";
+            $this->successMessage = 'No expired lay-away orders found.';
         }
     }
 
@@ -111,7 +158,7 @@ class ReportsManager extends Component
             'is_archived' => true,
             'archived_by' => $user?->id,
             'archive_approved_by' => $user?->id,
-            'archive_reason' => 'Direct archive by ' . ($user?->name ?? 'User'),
+            'archive_reason' => 'Direct archive by '.($user?->name ?? 'User'),
         ]);
         $this->successMessage = "Sale record {$sale->sale_number} has been archived.";
     }
@@ -123,8 +170,50 @@ class ReportsManager extends Component
         $this->successMessage = "Sale record {$sale->sale_number} has been restored.";
     }
 
-    public function render()
+    public function render(PeriodicReportService $periodicService)
     {
+        // 0. Objective 3 Periodic Aggregations & Movements
+        $periodicSummary = [
+            'periodicity' => $this->periodicity,
+            'start_date' => $this->periodicStartDate,
+            'end_date' => $this->periodicEndDate,
+            'buckets' => [],
+            'totals' => [
+                'total_transactions' => 0,
+                'completed_count' => 0,
+                'completed_revenue' => 0.0,
+                'layaway_count' => 0,
+                'layaway_deposits' => 0.0,
+                'realized_cash' => 0.0,
+                'gross_sales_volume' => 0.0,
+                'total_discounts' => 0.0,
+                'outstanding_receivables' => 0.0,
+                'average_ticket' => 0.0,
+            ],
+        ];
+        $inventoryMovements = ['items' => [], 'total_units_sold' => 0, 'total_restocked' => 0, 'overall_turnover_rate' => 0.0];
+        $traceableSales = collect();
+
+        if ($this->activeTab === 'periodic') {
+            $periodicSummary = $periodicService->getPeriodicSummary(
+                $this->periodicity,
+                $this->periodicStartDate,
+                $this->periodicEndDate,
+                $this->periodicSearch
+            );
+            $inventoryMovements = $periodicService->getInventoryMovements(
+                $this->periodicStartDate,
+                $this->periodicEndDate
+            );
+            $traceableSales = $periodicService->getTraceableSales(
+                $this->periodicStartDate,
+                $this->periodicEndDate,
+                $this->periodicSearch,
+                null,
+                50
+            );
+        }
+
         // 1. Sales Report Query & Metrics
         $salesQuery = Sale::query()->with(['items.product', 'customer']);
 
@@ -143,19 +232,19 @@ class ReportsManager extends Component
         if ($this->endDate) {
             $salesQuery->whereDate('sale_date', '<=', $this->endDate);
         }
-        if (!empty($this->salesSearch)) {
+        if (! empty($this->salesSearch)) {
             $salesQuery->where(function ($q) {
-                $q->where('customer_name', 'like', '%' . $this->salesSearch . '%')
-                  ->orWhere('customer_phone', 'like', '%' . $this->salesSearch . '%')
-                  ->orWhere('product_name', 'like', '%' . $this->salesSearch . '%')
-                  ->orWhere('sale_number', 'like', '%' . $this->salesSearch . '%');
+                $q->where('customer_name', 'like', '%'.$this->salesSearch.'%')
+                    ->orWhere('customer_phone', 'like', '%'.$this->salesSearch.'%')
+                    ->orWhere('product_name', 'like', '%'.$this->salesSearch.'%')
+                    ->orWhere('sale_number', 'like', '%'.$this->salesSearch.'%');
             });
         }
 
         $allFilteredSales = (clone $salesQuery)->get();
         $validSalesForRevenue = $allFilteredSales->where('status', '!=', 'cancelled');
-        $totalSalesRevenue = (float)$validSalesForRevenue->where('status', 'completed')->sum('amount') 
-            + (float)$validSalesForRevenue->where('status', 'layaway')->sum('amount_paid');
+        $totalSalesRevenue = (float) $validSalesForRevenue->where('status', 'completed')->sum('amount')
+            + (float) $validSalesForRevenue->where('status', 'layaway')->sum('amount_paid');
         $completedTransactionsCount = $validSalesForRevenue->where('status', 'completed')->count();
         $totalTransactionsCount = $allFilteredSales->count();
         $revenueTransactionsCount = $validSalesForRevenue->whereIn('status', ['completed', 'layaway'])->count();
@@ -188,16 +277,16 @@ class ReportsManager extends Component
             $invQuery->whereColumn('quantity_in_stock', '>', 'low_stock_threshold');
         }
 
-        if (!empty($this->inventorySearch)) {
+        if (! empty($this->inventorySearch)) {
             $invQuery->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->inventorySearch . '%')
-                  ->orWhere('description', 'like', '%' . $this->inventorySearch . '%');
+                $q->where('name', 'like', '%'.$this->inventorySearch.'%')
+                    ->orWhere('description', 'like', '%'.$this->inventorySearch.'%');
             });
         }
 
         $allFilteredProducts = (clone $invQuery)->get();
         $totalStockUnits = $allFilteredProducts->sum('quantity_in_stock');
-        $totalInventoryValuation = $allFilteredProducts->sum(fn($p) => $p->tagged_price * $p->quantity_in_stock);
+        $totalInventoryValuation = $allFilteredProducts->sum(fn ($p) => $p->tagged_price * $p->quantity_in_stock);
         $totalLowStockItems = Product::where('status', 'active')->where('quantity_in_stock', '>', 0)->whereColumn('quantity_in_stock', '<=', 'low_stock_threshold')->count();
 
         $paginatedProducts = $invQuery->orderBy('id', 'asc')->paginate(10, ['*'], 'invPage');
@@ -226,11 +315,11 @@ class ReportsManager extends Component
             $layawayQuery->where('status', $this->layawayStatus);
         }
 
-        if (!empty($this->layawaySearch)) {
+        if (! empty($this->layawaySearch)) {
             $layawayQuery->where(function ($q) {
-                $q->where('customer_name', 'like', '%' . $this->layawaySearch . '%')
-                  ->orWhere('customer_phone', 'like', '%' . $this->layawaySearch . '%')
-                  ->orWhere('sale_number', 'like', '%' . $this->layawaySearch . '%');
+                $q->where('customer_name', 'like', '%'.$this->layawaySearch.'%')
+                    ->orWhere('customer_phone', 'like', '%'.$this->layawaySearch.'%')
+                    ->orWhere('sale_number', 'like', '%'.$this->layawaySearch.'%');
             });
         }
 
@@ -240,7 +329,7 @@ class ReportsManager extends Component
             $q->whereIn('name', ['admin', 'manager']);
         })->get();
 
-        $totalLayawayBalance = (float)Sale::where('is_archived', false)->where('status', 'layaway')->sum('remaining_balance');
+        $totalLayawayBalance = (float) Sale::where('is_archived', false)->where('status', 'layaway')->sum('remaining_balance');
         $layawayActiveCount = Sale::where('is_archived', false)->where('status', 'layaway')->count();
         $layawayOverdueCount = Sale::where('is_archived', false)->where('status', 'layaway')
             ->whereNotNull('layaway_expires_at')
@@ -261,6 +350,12 @@ class ReportsManager extends Component
         }
 
         return view('livewire.reports-manager', [
+            // Objective 3 Periodic Data
+            'periodicSummary' => $periodicSummary,
+            'inventoryMovements' => $inventoryMovements,
+            'traceableSales' => $traceableSales,
+
+            // Sales Data
             'sales' => $paginatedSales,
             'totalSalesRevenue' => $totalSalesRevenue,
             'completedTransactionsCount' => $completedTransactionsCount,
@@ -270,12 +365,14 @@ class ReportsManager extends Component
             'counts' => $counts,
             'approvers' => $approvers,
 
+            // Inventory Data
             'products' => $paginatedProducts,
             'totalStockUnits' => $totalStockUnits,
             'totalInventoryValuation' => $totalInventoryValuation,
             'totalLowStockItems' => $totalLowStockItems,
             'existingCategories' => $existingCategories,
 
+            // Layaways Data
             'layaways' => $paginatedLayaways,
             'layawayActiveCount' => $layawayActiveCount,
             'layawayOverdueCount' => $layawayOverdueCount,

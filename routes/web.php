@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Livewire\Actions\Logout;
@@ -26,10 +27,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('promotions', 'promotions')->name('promotions');
 
     Route::view('reports', 'reports')->name('reports');
+    Route::get('reports/export/periodic-pdf', [ReportController::class, 'exportPeriodicPdf'])->name('reports.export.periodic-pdf');
     Route::get('reports/export/sales-pdf', [ReportController::class, 'exportSalesPdf'])->name('reports.export.sales-pdf');
     Route::get('reports/export/inventory-pdf', [ReportController::class, 'exportInventoryPdf'])->name('reports.export.inventory-pdf');
     Route::get('reports/export/layaways-pdf', [ReportController::class, 'exportLayawaysPdf'])->name('reports.export.layaways-pdf');
     Route::get('reports/export/all-pdf', [ReportController::class, 'exportAllPdf'])->name('reports.export.all-pdf');
+
+    Route::view('backup', 'backup')->name('backup');
+    Route::get('backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
 
     Route::post('switch-role/{role}', function ($role) {
         // 1. Strictly disabled in production

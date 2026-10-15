@@ -4,11 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Sale;
+use App\Services\PeriodicReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
+    /**
+     * Export Executive Periodic Business Report to PDF (Objective 3)
+     */
+    public function exportPeriodicPdf(Request $request, PeriodicReportService $periodicService)
+    {
+        $periodicity = $request->query('periodicity', 'daily');
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
+        $search = $request->query('search');
+
+        $periodic = $periodicService->getPeriodicSummary($periodicity, $startDate, $endDate, $search);
+        $movements = $periodicService->getInventoryMovements($startDate, $endDate);
+        $traceableSales = $periodicService->getTraceableSales($startDate, $endDate, $search, null, 100);
+
+        $currentUser = Auth::user();
+        $generatedBy = $currentUser ? $currentUser->name : 'System Auditor';
+
+        $pdf = Pdf::loadView('reports.pdf.periodic', [
+            'periodicity' => $periodicity,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'periodic' => $periodic,
+            'movements' => $movements,
+            'traceableSales' => $traceableSales,
+            'generatedAt' => now()->format('F j, Y - g:i A'),
+            'generatedBy' => $generatedBy,
+        ]);
+
+        return $pdf->download("wella-metal-periodic-{$periodicity}-report-".now()->format('Y-m-d').'.pdf');
+    }
+
     /**
      * Export Sales to PDF
      */
@@ -17,8 +50,9 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
         $status = $request->query('status');
+        $search = $request->query('search');
 
-        $query = Sale::with('creator')->where('is_archived', false);
+        $query = Sale::with(['creator', 'items.product'])->where('is_archived', false);
 
         if ($startDate) {
             $query->whereDate('sale_date', '>=', $startDate);
@@ -29,12 +63,21 @@ class ReportController extends Controller
         if ($status && $status !== 'ALL') {
             $query->where('status', $status);
         }
+        if ($search) {
+            $s = '%'.trim($search).'%';
+            $query->where(function ($q) use ($s) {
+                $q->where('customer_name', 'like', $s)
+                    ->orWhere('customer_phone', 'like', $s)
+                    ->orWhere('sale_number', 'like', $s)
+                    ->orWhere('product_name', 'like', $s);
+            });
+        }
 
         $sales = $query->orderBy('sale_date', 'desc')->get();
-        $totalRevenue = (float)$sales->where('status', 'completed')->sum('amount') + (float)$sales->where('status', 'layaway')->sum('amount_paid');
+        $totalRevenue = (float) $sales->where('status', 'completed')->sum('amount') + (float) $sales->where('status', 'layaway')->sum('amount_paid');
         $completedCount = $sales->where('status', 'completed')->count();
         $layawayCount = $sales->where('status', 'layaway')->count();
-        $totalDiscounts = (float)$sales->sum('discount_amount');
+        $totalDiscounts = (float) $sales->sum('discount_amount');
         $revenueTransactionsCount = $sales->whereIn('status', ['completed', 'layaway'])->count();
         $averageOrderValue = $revenueTransactionsCount > 0 ? ($totalRevenue / $revenueTransactionsCount) : 0.0;
 
@@ -51,7 +94,7 @@ class ReportController extends Controller
             'generatedAt' => now()->format('F j, Y - g:i A'),
         ]);
 
-        return $pdf->download('wella-metal-sales-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('wella-metal-sales-report-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**
@@ -67,8 +110,8 @@ class ReportController extends Controller
         }
 
         $products = $query->orderBy('id', 'asc')->get();
-        $totalStock = (int)$products->sum('quantity_in_stock');
-        $totalValuation = (float)$products->sum(fn($p) => $p->tagged_price * $p->quantity_in_stock);
+        $totalStock = (int) $products->sum('quantity_in_stock');
+        $totalValuation = (float) $products->sum(fn ($p) => $p->tagged_price * $p->quantity_in_stock);
         $lowStockCount = $products->where('quantity_in_stock', '<=', 4)->count();
 
         $pdf = Pdf::loadView('reports.pdf.inventory', [
@@ -80,7 +123,7 @@ class ReportController extends Controller
             'generatedAt' => now()->format('F j, Y - g:i A'),
         ]);
 
-        return $pdf->download('wella-metal-inventory-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('wella-metal-inventory-report-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**
@@ -95,29 +138,29 @@ class ReportController extends Controller
             $query->where('status', 'layaway');
         } elseif ($status === 'near_due') {
             $query->where('status', 'layaway')
-                  ->whereNotNull('layaway_expires_at')
-                  ->whereDate('layaway_expires_at', '<=', now()->addDays(14))
-                  ->whereDate('layaway_expires_at', '>=', now());
+                ->whereNotNull('layaway_expires_at')
+                ->whereDate('layaway_expires_at', '<=', now()->addDays(14))
+                ->whereDate('layaway_expires_at', '>=', now());
         } elseif ($status === 'overdue') {
             $query->where('status', 'layaway')
-                  ->whereNotNull('layaway_expires_at')
-                  ->whereDate('layaway_expires_at', '<', now());
+                ->whereNotNull('layaway_expires_at')
+                ->whereDate('layaway_expires_at', '<', now());
         } elseif ($status === 'settled') {
             $query->where('status', 'completed')
-                  ->where('initial_deposit', '>', 0);
+                ->where('initial_deposit', '>', 0);
         } elseif ($status === 'cancelled') {
             $query->where('status', 'cancelled')
-                  ->where('initial_deposit', '>', 0);
+                ->where('initial_deposit', '>', 0);
         } elseif ($status !== 'all') {
             $query->where('status', $status);
         }
 
         $contracts = $query->orderBy('sale_date', 'desc')->get();
 
-        $totalReceivables = (float)$contracts->where('status', 'layaway')->sum('remaining_balance');
-        $totalPaid = (float)$contracts->sum('amount_paid');
+        $totalReceivables = (float) $contracts->where('status', 'layaway')->sum('remaining_balance');
+        $totalPaid = (float) $contracts->sum('amount_paid');
         $activeCount = $contracts->where('status', 'layaway')->count();
-        $totalContractValue = (float)$contracts->sum('amount');
+        $totalContractValue = (float) $contracts->sum('amount');
 
         $pdf = Pdf::loadView('reports.pdf.layaways', [
             'contracts' => $contracts,
@@ -129,7 +172,7 @@ class ReportController extends Controller
             'generatedAt' => now()->format('F j, Y - g:i A'),
         ]);
 
-        return $pdf->download('wella-metal-layaway-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('wella-metal-layaway-report-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**
@@ -142,10 +185,10 @@ class ReportController extends Controller
             ->where('is_archived', false)
             ->orderBy('sale_date', 'desc')
             ->get();
-        $totalSalesRevenue = (float)$sales->where('status', 'completed')->sum('amount') 
-            + (float)$sales->where('status', 'layaway')->sum('amount_paid');
+        $totalSalesRevenue = (float) $sales->where('status', 'completed')->sum('amount')
+            + (float) $sales->where('status', 'layaway')->sum('amount_paid');
         $completedSalesCount = $sales->where('status', 'completed')->count();
-        $totalDiscounts = (float)$sales->sum('discount_amount');
+        $totalDiscounts = (float) $sales->sum('discount_amount');
         $revenueTransactionsCount = $sales->whereIn('status', ['completed', 'layaway'])->count();
         $averageOrderValue = $revenueTransactionsCount > 0 ? ($totalSalesRevenue / $revenueTransactionsCount) : 0.0;
 
@@ -153,8 +196,8 @@ class ReportController extends Controller
         $products = Product::where('status', 'active')
             ->orderBy('id', 'asc')
             ->get();
-        $totalStockUnits = (int)$products->sum('quantity_in_stock');
-        $totalValuation = (float)$products->sum(fn($p) => $p->tagged_price * $p->quantity_in_stock);
+        $totalStockUnits = (int) $products->sum('quantity_in_stock');
+        $totalValuation = (float) $products->sum(fn ($p) => $p->tagged_price * $p->quantity_in_stock);
         $lowStockCount = $products->where('quantity_in_stock', '<=', 4)->count();
 
         // 3. Layaway Receivables Data
@@ -163,10 +206,10 @@ class ReportController extends Controller
             ->where('status', 'layaway')
             ->orderBy('sale_date', 'desc')
             ->get();
-        $totalLayawayReceivables = (float)$layaways->sum('remaining_balance');
-        $totalLayawayCollected = (float)$layaways->sum('amount_paid');
+        $totalLayawayReceivables = (float) $layaways->sum('remaining_balance');
+        $totalLayawayCollected = (float) $layaways->sum('amount_paid');
         $activeLayawaysCount = $layaways->count();
-        $overdueLayawaysCount = $layaways->filter(fn($c) => $c->layaway_expires_at && $c->layaway_expires_at->isPast())->count();
+        $overdueLayawaysCount = $layaways->filter(fn ($c) => $c->layaway_expires_at && $c->layaway_expires_at->isPast())->count();
 
         $pdf = Pdf::loadView('reports.pdf.all', [
             // Sales
@@ -193,6 +236,6 @@ class ReportController extends Controller
             'generatedAt' => now()->format('F j, Y - g:i A'),
         ]);
 
-        return $pdf->download('wella-metal-master-audit-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('wella-metal-master-audit-report-'.now()->format('Y-m-d').'.pdf');
     }
 }

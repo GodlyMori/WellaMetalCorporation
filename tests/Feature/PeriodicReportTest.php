@@ -1,0 +1,174 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\User;
+use App\Services\PeriodicReportService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class PeriodicReportTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Role::firstOrCreate(['name' => 'admin']);
+        Role::firstOrCreate(['name' => 'manager']);
+        Role::firstOrCreate(['name' => 'secretary']);
+
+        $this->user = User::factory()->create([
+            'email' => 'admin@wellametalcorp.com',
+        ]);
+        $this->user->assignRole('admin');
+    }
+
+    public function test_periodic_report_service_groups_daily_sales(): void
+    {
+        $product = Product::create([
+            'name' => 'Steel Canopy',
+            'category' => 'Garden Set',
+            'tagged_price' => 12000.00,
+            'quantity_in_stock' => 15,
+            'low_stock_threshold' => 3,
+            'status' => 'active',
+        ]);
+
+        $sale1 = Sale::create([
+            'sale_number' => 'WMC-20261010-001',
+            'customer_name' => 'Roberto Carlos',
+            'customer_phone' => '09181112233',
+            'product_name' => $product->name,
+            'amount' => 12000.00,
+            'amount_paid' => 12000.00,
+            'remaining_balance' => 0.00,
+            'status' => 'completed',
+            'sale_date' => '2026-10-10',
+            'created_by' => $this->user->id,
+        ]);
+        SaleItem::create([
+            'sale_id' => $sale1->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 12000.00,
+            'subtotal' => 12000.00,
+        ]);
+
+        $sale2 = Sale::create([
+            'sale_number' => 'WMC-20261012-002',
+            'customer_name' => 'Maria Santos',
+            'customer_phone' => '09192223344',
+            'product_name' => $product->name,
+            'amount' => 24000.00,
+            'amount_paid' => 5000.00,
+            'remaining_balance' => 19000.00,
+            'status' => 'layaway',
+            'sale_date' => '2026-10-12',
+            'created_by' => $this->user->id,
+        ]);
+        SaleItem::create([
+            'sale_id' => $sale2->id,
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'unit_price' => 12000.00,
+            'subtotal' => 24000.00,
+        ]);
+
+        $service = new PeriodicReportService;
+        $summary = $service->getPeriodicSummary('daily', '2026-10-01', '2026-10-31');
+
+        $this->assertEquals(2, $summary['totals']['total_transactions']);
+        $this->assertEquals(1, $summary['totals']['completed_count']);
+        $this->assertEquals(1, $summary['totals']['layaway_count']);
+        // Realized cash = 12000 (completed) + 5000 (layaway deposit) = 17000
+        $this->assertEquals(17000.00, $summary['totals']['realized_cash']);
+        $this->assertEquals(19000.00, $summary['totals']['outstanding_receivables']);
+        $this->assertCount(2, $summary['buckets']);
+    }
+
+    public function test_inventory_turnover_velocity_calculation(): void
+    {
+        $product = Product::create([
+            'name' => 'Fast Moving Bench',
+            'category' => 'Garden Set',
+            'tagged_price' => 3500.00,
+            'quantity_in_stock' => 20,
+            'low_stock_threshold' => 5,
+            'status' => 'active',
+        ]);
+
+        $sale = Sale::create([
+            'sale_number' => 'WMC-20261014-005',
+            'customer_name' => 'Elena Gomez',
+            'product_name' => $product->name,
+            'amount' => 35000.00,
+            'amount_paid' => 35000.00,
+            'remaining_balance' => 0.00,
+            'status' => 'completed',
+            'sale_date' => '2026-10-14',
+            'created_by' => $this->user->id,
+        ]);
+
+        SaleItem::create([
+            'sale_id' => $sale->id,
+            'product_id' => $product->id,
+            'quantity' => 10,
+            'unit_price' => 3500.00,
+            'subtotal' => 35000.00,
+        ]);
+
+        $service = new PeriodicReportService;
+        $movements = $service->getInventoryMovements('2026-10-01', '2026-10-31');
+
+        $this->assertEquals(10, $movements['total_units_sold']);
+        $this->assertGreaterThan(0, $movements['overall_turnover_rate']);
+
+        $item = collect($movements['items'])->firstWhere('product_id', $product->id);
+        $this->assertNotNull($item);
+        $this->assertEquals(10, $item['units_sold']);
+        $this->assertEquals('High Velocity', $item['velocity']);
+    }
+
+    public function test_reports_page_loads_with_periodic_tab(): void
+    {
+        $this->actingAs($this->user)
+            ->get(route('reports'))
+            ->assertOk()
+            ->assertSee('Periodic summaries (Obj 3)', false)
+            ->assertSee('Stock Turnover', false);
+    }
+
+    public function test_export_periodic_pdf_downloads_clean_pdf(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get(route('reports.export.periodic-pdf', [
+                'periodicity' => 'daily',
+                'start_date' => '2026-10-01',
+                'end_date' => '2026-10-31',
+            ]));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('wella-metal-periodic-daily-report-', $response->headers->get('Content-Disposition') ?? '');
+    }
+
+    public function test_export_sales_pdf_accepts_search_parameter(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->get(route('reports.export.sales-pdf', [
+                'search' => 'Carlos',
+                'status' => 'ALL',
+            ]));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+    }
+}

@@ -186,6 +186,32 @@
                         </div>
                     </a>
                 </nav>
+
+                @if(Auth::user()?->hasRole('admin'))
+                    <!-- Navigation Hierarchy: Group 3 Administration -->
+                    <div class="mt-4 mb-2">
+                        <p class="text-slate-400 text-[10px] font-semibold tracking-wider uppercase px-3">
+                            Administration
+                        </p>
+                    </div>
+
+                    <nav class="space-y-1">
+                        <!-- Backup & Recovery Link -->
+                        <a href="{{ route('backup') }}"
+                           wire:navigate
+                           class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('backup*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
+                            <div class="flex items-center gap-2.5">
+                                <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                                </svg>
+                                <span>Backup & Recovery</span>
+                            </div>
+                            <span class="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                Obj 5
+                            </span>
+                        </a>
+                    </nav>
+                @endif
             </div>
 
             <!-- Bottom Section (User Role) -->
