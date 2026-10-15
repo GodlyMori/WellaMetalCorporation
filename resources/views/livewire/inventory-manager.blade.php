@@ -1,7 +1,7 @@
 <div class="space-y-4">
 
     <!-- Toast Notification Banner -->
-    @if($successMessage)
+    @if(!empty($successMessage))
         <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4500)"
              class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 px-4 py-2.5 rounded text-xs font-medium flex items-center justify-between">
             <div class="flex items-center gap-2">
