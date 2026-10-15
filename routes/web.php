@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('secretary/workspace', 'dashboard')->name('secretary.workspace');
 
     Route::view('inventory', 'inventory')->name('inventory');
+    Route::view('inventory/add', 'inventory-add')->name('inventory.add');
     Route::post('inventory/batch', [InventoryController::class, 'storeBatch'])->name('inventory.batch');
     Route::put('inventory/products/{product}', [InventoryController::class, 'update'])->name('inventory.products.update');
     Route::view('sales', 'sales')->name('sales');

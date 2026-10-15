@@ -24,17 +24,6 @@ class InventoryManager extends Component
 
     public string $stockFilter = 'all'; // all, in_stock, low_stock, out_of_stock
 
-    // Top Section: Add Inventory Modal state & rows
-    public bool $isFormOpen = false;
-
-    public bool $showAddModal = false;
-
-    public string $product_search = ''; // Search existing products to prefill/restock
-
-    public array $entryItems = [
-        ['product_id' => null, 'name' => '', 'category' => 'Sala Set', 'description' => '', 'tagged_price' => '', 'quantity_in_stock' => '1', 'low_stock_threshold' => '5', 'is_existing' => false],
-    ];
-
     // Edit Modal state & fields
     public bool $showEditModal = false;
 
@@ -104,10 +93,6 @@ class InventoryManager extends Component
             $this->showRequestsHubModal = true;
             $this->requestsTab = 'pending';
         }
-
-        if (empty($this->entryItems)) {
-            $this->resetEntryForm();
-        }
     }
 
     public function setCategory($cat)
@@ -135,159 +120,6 @@ class InventoryManager extends Component
     public function updatedSearch()
     {
         $this->resetPage();
-    }
-
-    public function toggleForm(): void
-    {
-        $this->showAddModal = ! $this->showAddModal;
-        $this->isFormOpen = $this->showAddModal;
-    }
-
-    public function openAddModal(): void
-    {
-        $this->resetValidation();
-        $this->showAddModal = true;
-    }
-
-    public function closeAddModal(): void
-    {
-        $this->showAddModal = false;
-        $this->resetValidation();
-    }
-
-    // Quick prefill from existing catalog product
-    public function selectExistingProduct(int $productId, ?int $rowIndex = null)
-    {
-        $prod = Product::find($productId);
-        if (! $prod) {
-            return;
-        }
-
-        if ($rowIndex !== null && isset($this->entryItems[$rowIndex])) {
-            $this->entryItems[$rowIndex]['is_existing'] = true;
-            $this->entryItems[$rowIndex]['product_id'] = $prod->id;
-            $this->entryItems[$rowIndex]['name'] = $prod->name;
-            $this->entryItems[$rowIndex]['category'] = $prod->category;
-            $this->entryItems[$rowIndex]['description'] = $prod->description ?? '';
-            $this->entryItems[$rowIndex]['tagged_price'] = (string) $prod->tagged_price;
-            $this->entryItems[$rowIndex]['quantity_in_stock'] = '1';
-            $this->entryItems[$rowIndex]['low_stock_threshold'] = (string) ($prod->low_stock_threshold ?? 5);
-        } else {
-            // Find first empty row or append new row
-            $targetIndex = null;
-            foreach ($this->entryItems as $i => $item) {
-                if (empty(trim($item['name'] ?? ''))) {
-                    $targetIndex = $i;
-                    break;
-                }
-            }
-
-            if ($targetIndex !== null) {
-                $this->entryItems[$targetIndex]['is_existing'] = true;
-                $this->entryItems[$targetIndex]['product_id'] = $prod->id;
-                $this->entryItems[$targetIndex]['name'] = $prod->name;
-                $this->entryItems[$targetIndex]['category'] = $prod->category;
-                $this->entryItems[$targetIndex]['description'] = $prod->description ?? '';
-                $this->entryItems[$targetIndex]['tagged_price'] = (string) $prod->tagged_price;
-                $this->entryItems[$targetIndex]['quantity_in_stock'] = '1';
-                $this->entryItems[$targetIndex]['low_stock_threshold'] = (string) ($prod->low_stock_threshold ?? 5);
-            } else {
-                $this->entryItems[] = [
-                    'is_existing' => true,
-                    'product_id' => $prod->id,
-                    'name' => $prod->name,
-                    'category' => $prod->category,
-                    'description' => $prod->description ?? '',
-                    'tagged_price' => (string) $prod->tagged_price,
-                    'quantity_in_stock' => '1',
-                    'low_stock_threshold' => (string) ($prod->low_stock_threshold ?? 5),
-                ];
-            }
-        }
-
-        $this->product_search = '';
-        $this->resetValidation();
-    }
-
-    public function addEntryRow(): void
-    {
-        $this->entryItems[] = [
-            'product_id' => null,
-            'is_existing' => false,
-            'name' => '',
-            'category' => 'Sala Set',
-            'description' => '',
-            'tagged_price' => '',
-            'quantity_in_stock' => '1',
-            'low_stock_threshold' => '5',
-        ];
-    }
-
-    public function removeEntryRow(int $index): void
-    {
-        if (count($this->entryItems) > 1) {
-            unset($this->entryItems[$index]);
-            $this->entryItems = array_values($this->entryItems);
-        } else {
-            $this->resetEntryForm();
-        }
-        $this->resetValidation();
-    }
-
-    public function resetEntryForm(): void
-    {
-        $this->entryItems = [
-            [
-                'product_id' => null,
-                'is_existing' => false,
-                'name' => '',
-                'category' => 'Sala Set',
-                'description' => '',
-                'tagged_price' => '',
-                'quantity_in_stock' => '1',
-                'low_stock_threshold' => '5',
-            ],
-        ];
-        $this->product_search = '';
-        $this->resetValidation();
-    }
-
-    /**
-     * Real-time duplicate error messages keyed by row index.
-     *
-     * @return array<int, string>
-     */
-    public function getDuplicateErrors(): array
-    {
-        return app(InventoryService::class)->findDuplicateErrors($this->entryItems);
-    }
-
-    /**
-     * Check if duplicate or incomplete rows exist to control save state.
-     */
-    public function getHasDuplicateOrIncompleteProperty(): bool
-    {
-        return app(InventoryService::class)->hasDuplicateOrIncompleteRows($this->entryItems);
-    }
-
-    public function saveInventoryEntries(InventoryService $inventoryService): void
-    {
-        $result = $inventoryService->saveBatch($this->entryItems, Auth::user());
-
-        $this->resetEntryForm();
-        $this->showAddModal = false;
-
-        $newCount = $result['newCount'];
-        $restockedCount = $result['restockedCount'];
-        $updatedSummaries = $result['updatedSummaries'];
-
-        if ($newCount > 0 && $restockedCount > 0) {
-            $this->successMessage = "Inventory updated: {$newCount} new product(s) added, and {$restockedCount} existing item(s) restocked (".implode(', ', $updatedSummaries).').';
-        } elseif ($restockedCount > 0) {
-            $this->successMessage = "Stock added to {$restockedCount} existing product(s): ".implode(', ', $updatedSummaries).'.';
-        } else {
-            $this->successMessage = "{$newCount} new product(s) saved to inventory successfully.";
-        }
     }
 
     public function editProduct(int $id): void
@@ -628,21 +460,7 @@ class InventoryManager extends Component
             $categoryCounts[$cat] = Product::where('status', 'active')->where('category', $cat)->count();
         }
 
-        // 3. Search existing products for pre-fill / restock in Add Inventory section
-        $searchedExistingProducts = [];
-        if (strlen(trim($this->product_search)) >= 1) {
-            $ps = '%'.trim($this->product_search).'%';
-            $searchedExistingProducts = Product::where('status', 'active')
-                ->where(function ($q) use ($ps) {
-                    $q->where('name', 'like', $ps)
-                        ->orWhere('description', 'like', $ps)
-                        ->orWhere('category', 'like', $ps);
-                })
-                ->take(8)
-                ->get();
-        }
-
-        // 4. Query for main product table
+        // 3. Query for main product table
         $query = Product::query();
 
         if ($this->selectedCategory === 'ARCHIVED') {
@@ -673,7 +491,7 @@ class InventoryManager extends Component
 
         $products = $query->orderBy('id', 'asc')->paginate(15);
 
-        // 5. Stock requests data & counters
+        // 4. Stock requests data & counters
         $pendingRequestsCount = StockRequest::where('status', 'pending')->count();
         $awaitingDeliveryCount = StockRequest::where('status', 'awaiting_delivery')->count();
 
@@ -696,12 +514,9 @@ class InventoryManager extends Component
             'categoryCounts' => $categoryCounts,
             'allCount' => $allCount,
             'archivedCount' => $archivedCount,
-            'searchedExistingProducts' => $searchedExistingProducts,
             'pendingRequestsCount' => $pendingRequestsCount,
             'awaitingDeliveryCount' => $awaitingDeliveryCount,
             'hubRequests' => $hubRequests,
-            'duplicateErrors' => $this->getDuplicateErrors(),
-            'hasDuplicateOrIncomplete' => $this->hasDuplicateOrIncomplete,
         ]);
     }
 }

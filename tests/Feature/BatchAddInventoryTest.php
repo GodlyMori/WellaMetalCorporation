@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\InventoryManager;
+use App\Livewire\AddInventory;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\InventoryService;
@@ -156,8 +156,7 @@ class BatchAddInventoryTest extends TestCase
 
     public function test_livewire_component_detects_real_time_duplicate_rows_and_generates_exact_error_message(): void
     {
-        Livewire::test(InventoryManager::class)
-            ->set('showAddModal', true)
+        Livewire::test(AddInventory::class)
             ->set('entryItems', [
                 [
                     'product_id' => null,
@@ -186,8 +185,7 @@ class BatchAddInventoryTest extends TestCase
 
     public function test_livewire_component_clears_error_and_reindexes_when_duplicate_row_is_removed(): void
     {
-        $component = Livewire::test(InventoryManager::class)
-            ->set('showAddModal', true)
+        $component = Livewire::test(AddInventory::class)
             ->set('entryItems', [
                 [
                     'product_id' => null,
@@ -220,7 +218,7 @@ class BatchAddInventoryTest extends TestCase
 
     public function test_livewire_batch_save_executes_and_displays_success_message(): void
     {
-        Livewire::test(InventoryManager::class)
+        Livewire::test(AddInventory::class)
             ->set('entryItems', [
                 [
                     'product_id' => null,
@@ -235,8 +233,7 @@ class BatchAddInventoryTest extends TestCase
             ])
             ->call('saveInventoryEntries')
             ->assertHasNoErrors()
-            ->assertSet('showAddModal', false)
-            ->assertSet('successMessage', '1 new product(s) saved to inventory successfully.');
+            ->assertSet('successMessage', '1 new product(s) added successfully!');
 
         $this->assertDatabaseHas('products', [
             'name' => 'Titanium Office Desk',
@@ -277,5 +274,13 @@ class BatchAddInventoryTest extends TestCase
         $this->assertDatabaseMissing('products', [
             'name' => 'Item Alpha',
         ]);
+    }
+
+    public function test_inventory_add_page_is_accessible(): void
+    {
+        $response = $this->get(route('inventory.add'));
+
+        $response->assertStatus(200)
+            ->assertSeeLivewire(AddInventory::class);
     }
 }

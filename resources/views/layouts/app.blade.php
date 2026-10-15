@@ -14,24 +14,20 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-        <!-- Scripts -->
+        <!-- Theme Enforcement: Corporate Light Mode -->
         <script>
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            document.documentElement.classList.remove('dark');
+            localStorage.removeItem('theme');
         </script>
         <script src="{{ asset('js/apexcharts.min.js') }}"></script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
-    <body class="font-sans antialiased bg-slate-50 dark:bg-[#070d1e] text-slate-800 dark:text-slate-100 min-h-screen flex overflow-x-hidden transition-colors duration-150"
+    <body class="font-sans antialiased bg-slate-50 text-slate-800 min-h-screen flex overflow-x-hidden transition-colors duration-150"
           x-data="{ 
               sidebarOpen: false, 
               switchRoleModal: false,
-              userMenuOpen: false,
-              darkMode: localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+              userMenuOpen: false
           }">
 
         <!-- SIDEBAR -->
@@ -83,7 +79,7 @@
                     <!-- Inventory Link -->
                     <a href="{{ route('inventory') }}"
                        wire:navigate
-                       class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('inventory*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
+                       class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('inventory') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
                         <div class="flex items-center gap-2.5">
                             <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
@@ -95,6 +91,18 @@
                                 {{ $navPendingStockRequestsCount }}
                             </span>
                         @endif
+                    </a>
+
+                    <!-- Add Inventory Link -->
+                    <a href="{{ route('inventory.add') }}"
+                       wire:navigate
+                       class="flex items-center justify-between px-3 py-2 text-xs tracking-wide transition-colors {{ request()->routeIs('inventory.add*') ? 'bg-[#182a68] border-l-2 border-white text-white font-semibold' : 'text-slate-400 hover:text-white hover:bg-[#142259]/30 font-medium' }}">
+                        <div class="flex items-center gap-2.5">
+                            <svg class="w-4 h-4 flex-shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            <span>Add Inventory</span>
+                        </div>
                     </a>
 
                     <!-- Sales Link -->
@@ -292,33 +300,6 @@
 
                 <!-- Right Top Controls -->
                 <div class="flex items-center gap-2.5">
-                    <!-- Light / Dark Mode Toggle Button -->
-                    <button type="button"
-                            @click="
-                                darkMode = !darkMode;
-                                if (darkMode) {
-                                    document.documentElement.classList.add('dark');
-                                    localStorage.theme = 'dark';
-                                } else {
-                                    document.documentElement.classList.remove('dark');
-                                    localStorage.theme = 'light';
-                                }
-                                window.dispatchEvent(new CustomEvent('theme-changed', { detail: { dark: darkMode } }));
-                            "
-                            class="w-9 h-9 rounded bg-white dark:bg-[#121f4a] border border-slate-200 dark:border-slate-700/80 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400"
-                            title="Toggle Light / Dark mode"
-                            aria-label="Toggle Light / Dark mode">
-                        <!-- Sun icon for dark mode -->
-                        <svg class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <!-- Moon icon for light mode -->
-                        <svg class="w-4 h-4 block dark:hidden text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                    </button>
-
-
                     @if(auth()->user()?->hasRole('admin') || auth()->user()?->hasRole('manager'))
                         <!-- Stock Requisitions Notification Bell -->
                         <div class="relative" x-data="{ notifOpen: false }">
