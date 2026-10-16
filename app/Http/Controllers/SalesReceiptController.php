@@ -11,14 +11,18 @@ class SalesReceiptController extends Controller
     /**
      * Display a standalone, print-friendly digital receipt for a sale.
      */
-    public function show(Request $request, string $sale)
+    public function show(Request $request, ?string $sale = null)
     {
-        $saleRecord = is_numeric($sale)
-            ? Sale::withTrashed()->with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->find($sale)
-            : Sale::withTrashed()->with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->where('sale_number', $sale)->first();
+        if (empty($sale) || $sale === 'preview') {
+            $saleRecord = Sale::withTrashed()->with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->latest('id')->first();
+        } else {
+            $saleRecord = is_numeric($sale)
+                ? Sale::withTrashed()->with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->find($sale)
+                : Sale::withTrashed()->with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->where('sale_number', $sale)->first();
+        }
 
         if (! $saleRecord) {
-            return redirect()->route('sales')->with('error', "Sale order '{$sale}' was not found.");
+            return redirect()->route('sales')->with('error', 'Sale order was not found.');
         }
 
         $receiptItems = [];

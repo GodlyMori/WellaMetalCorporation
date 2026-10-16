@@ -789,8 +789,8 @@ class SalesManager extends Component
         // Dispatch digital receipt to customer's email if provided
         $this->emailSent = false;
         $this->emailDeliveryStatus = null;
-        $targetEmail = trim($this->customer_email);
-        if (! empty($targetEmail)) {
+        $targetEmail = trim((string) $this->customer_email);
+        if (! empty($targetEmail) && filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
             try {
                 Mail::to($targetEmail)
                     ->send(new SalesReceiptMail($createdSale, $this->receiptData));
@@ -799,7 +799,7 @@ class SalesManager extends Component
             } catch (\Throwable $mailError) {
                 Log::warning("Digital receipt delivery failed for {$targetEmail}: ".$mailError->getMessage());
                 $this->emailSent = false;
-                $this->emailDeliveryStatus = 'Email queued/logged, but delivery notification encountered an issue: '.$mailError->getMessage();
+                $this->emailDeliveryStatus = 'Email delivery could not be completed right now: '.$mailError->getMessage();
             }
         }
 

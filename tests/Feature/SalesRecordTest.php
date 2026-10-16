@@ -10,6 +10,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -214,5 +215,54 @@ class SalesRecordTest extends TestCase
             ->assertSee('Official Digital Receipt')
             ->assertSee('ORD-2026-888')
             ->assertSee('Grace Lim');
+    }
+
+    public function test_record_sale_succeeds_and_opens_receipt_even_if_mail_transport_fails(): void
+    {
+        Mail::shouldReceive('to')
+            ->andReturnSelf();
+        Mail::shouldReceive('send')
+            ->andThrow(new \RuntimeException('Connection timed out to mail server'));
+
+        Livewire::test(SalesManager::class)
+            ->call('addProductToCart', $this->product->id)
+            ->set('customer_first_name', 'Rolando')
+            ->set('customer_last_name', 'Mendoza')
+            ->set('customer_phone', '09123456780')
+            ->set('customer_address', 'Ecoland, Davao City')
+            ->set('customer_email', 'rolando@example.com')
+            ->set('payment_type', 'full')
+            ->set('cash_tendered', 2500.00)
+            ->call('recordSale')
+            ->assertHasNoErrors()
+            ->assertSet('showReceiptModal', true)
+            ->assertSee('Official sales receipt')
+            ->assertSee('Rolando Mendoza');
+    }
+
+    public function test_standalone_sales_receipt_route_without_parameter_loads_latest_sale(): void
+    {
+        $sale = Sale::create([
+            'customer_id' => null,
+            'sale_number' => 'ORD-2026-999',
+            'product_name' => 'Diamond Steel Chair',
+            'customer_name' => 'Henry Sy',
+            'customer_phone' => '09998887766',
+            'customer_address' => 'Lanang, Davao City',
+            'amount' => 2500.00,
+            'original_amount' => 2500.00,
+            'discount_amount' => 0,
+            'payment_type' => 'full',
+            'amount_paid' => 2500.00,
+            'remaining_balance' => 0,
+            'sale_date' => now()->toDateString(),
+            'status' => 'completed',
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->get(route('sales.receipt'));
+        $response->assertOk()
+            ->assertSee('Official Digital Receipt')
+            ->assertSee('ORD-2026-999');
     }
 }

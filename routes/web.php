@@ -23,8 +23,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('inventory/batch', [InventoryController::class, 'storeBatch'])->name('inventory.batch');
     Route::put('inventory/products/{product}', [InventoryController::class, 'update'])->name('inventory.products.update');
     Route::view('sales', 'sales')->name('sales');
-    Route::get('sales/receipt/{sale}', [SalesReceiptController::class, 'show'])->name('sales.receipt');
-    Route::get('receipt/{sale}', [SalesReceiptController::class, 'show'])->name('receipt.show');
+    Route::get('sales/receipt/{sale?}', [SalesReceiptController::class, 'show'])->name('sales.receipt');
+    Route::get('receipt/{sale?}', [SalesReceiptController::class, 'show'])->name('receipt.show');
+    Route::get('diagnostics/last-error', function () {
+        $logPath = storage_path('logs/last_500.json');
+        if (file_exists($logPath)) {
+            return response(file_get_contents($logPath), 200, ['Content-Type' => 'application/json']);
+        }
+
+        return response()->json(['status' => 'clean', 'message' => 'No 500 errors logged.']);
+    })->name('diagnostics.last-error');
     Route::view('layaways', 'layaways')->name('layaways');
     Route::view('customers', 'customers')->name('customers');
     Route::view('categories', 'categories')->name('categories');
