@@ -30,7 +30,7 @@
         </div>
     @endif
 
-    <!-- Objective 5 Preservation Banner -->
+    <!-- Data Preservation Banner -->
     <div class="p-4 rounded border border-blue-200 dark:border-[#1a2858] bg-blue-50/50 dark:bg-[#0c163b]/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div class="flex items-start gap-3">
             <div class="p-2.5 rounded bg-blue-100 dark:bg-[#142259] text-[#142259] dark:text-blue-300 mt-0.5">
@@ -41,7 +41,6 @@
             <div>
                 <h2 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     Data Preservation & Disaster Recovery
-                    <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-blue-200/60 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">Objective 5</span>
                 </h2>
                 <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
                     Safeguards retail operations by archiving transaction histories, inventory logs, and sales records. Protects core business data against accidental deletion, hardware failure, or system crashes, ensuring operational continuity for the branch.

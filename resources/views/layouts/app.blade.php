@@ -214,9 +214,6 @@
                                 </svg>
                                 <span>Backup & Recovery</span>
                             </div>
-                            <span class="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                Obj 5
-                            </span>
                         </a>
                     </nav>
                 @endif

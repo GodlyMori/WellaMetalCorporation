@@ -71,7 +71,7 @@ class BackupManagementTest extends TestCase
             ->get(route('backup'))
             ->assertOk()
             ->assertSee('Data Preservation', false)
-            ->assertSee('Objective 5');
+            ->assertSee('Disaster Recovery', false);
     }
 
     public function test_backup_service_creates_valid_json_archive(): void

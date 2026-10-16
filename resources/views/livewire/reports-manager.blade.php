@@ -18,7 +18,7 @@
     <!-- TOP HEADER: REPORT NAVIGATION TABS + EXPORT ACTIONS -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 pb-2 border-b border-slate-200 dark:border-[#1a2858]">
         <div class="inline-flex items-center gap-6 overflow-x-auto">
-            <button type="button" wire:click="setTab('periodic')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'periodic' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Periodic summaries (Obj 3)</button>
+            <button type="button" wire:click="setTab('periodic')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'periodic' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Periodic summaries</button>
             <button type="button" wire:click="setTab('sales')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'sales' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Sales & orders</button>
             <button type="button" wire:click="setTab('inventory')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'inventory' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Inventory & valuation</button>
             <button type="button" wire:click="setTab('layaways')" class="text-xs font-semibold pb-2 cursor-pointer whitespace-nowrap {{ $activeTab === 'layaways' ? 'border-b-2 border-[#142259] text-[#142259] dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400' }}">Layaway receivables</button>
@@ -79,12 +79,12 @@
     </div>
 
     <!-- =================================================== -->
-    <!-- TAB 0: PERIODIC EXECUTIVE BUSINESS SUMMARIES (OBJ 3) -->
+    <!-- TAB 0: PERIODIC EXECUTIVE BUSINESS SUMMARIES           -->
     <!-- =================================================== -->
     @if($activeTab === 'periodic')
         <div class="space-y-4">
 
-            <!-- Objective 3 Informational Banner -->
+            <!-- Informational Banner -->
             <div class="p-4 rounded border border-blue-200 dark:border-[#1a2858] bg-blue-50/50 dark:bg-[#0c163b]/60 flex items-start gap-3">
                 <div class="p-2 rounded bg-blue-100 dark:bg-[#142259] text-[#142259] dark:text-blue-300 shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +94,6 @@
                 <div>
                     <h3 class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         Automated Periodic Business Report Generation
-                        <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-blue-200/60 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">Objective 3</span>
                     </h3>
                     <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
                         Eliminates multi-day manual tallying by automatically compiling daily sales transactions and inventory movements into accurate weekly and monthly summaries. Leadership can cross-reference periodic figures directly with individual underlying sales receipts.

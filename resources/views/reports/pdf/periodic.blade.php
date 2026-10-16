@@ -205,7 +205,7 @@
             <td style="vertical-align: bottom;">
                 <div class="company-name">Wella Metal Corporation</div>
                 <div class="report-title">Executive Periodic Business & Financial Audit Report</div>
-                <div class="report-subtitle">Objective 3: Automated Periodic Reporting, Stock Turnover & Transaction Traceability</div>
+                <div class="report-subtitle">Automated Periodic Reporting, Stock Turnover & Transaction Traceability</div>
             </td>
             <td class="meta-info" style="vertical-align: bottom;">
                 <div><strong>Period:</strong> {{ $startDate }} to {{ $endDate }}</div>

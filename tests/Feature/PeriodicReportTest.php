@@ -142,7 +142,7 @@ class PeriodicReportTest extends TestCase
         $this->actingAs($this->user)
             ->get(route('reports'))
             ->assertOk()
-            ->assertSee('Periodic summaries (Obj 3)', false)
+            ->assertSee('Periodic summaries', false)
             ->assertSee('Stock Turnover', false);
     }
 
