@@ -7,7 +7,6 @@ use App\Models\InventoryAdjustment;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Services\LayawayService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,32 +18,47 @@ class LayawayManager extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = 'active'; // 'active', 'near_due', 'overdue', 'settled', 'cancelled', 'all'
 
     // Payment Modal State
     public bool $showPaymentModal = false;
+
     public ?int $payingSaleId = null;
+
     public ?Sale $payingSale = null;
+
     public string $paymentAmount = '';
+
     public string $payment_method = 'cash'; // Company policy: strictly Cash Only
+
     public string $payment_reference = '';
+
     public string $payment_notes = '';
+
     public array $paymentHistory = [];
 
     // Cancel / Restock Modal State
     public bool $showCancelModal = false;
+
     public ?int $cancellingSaleId = null;
+
     public ?Sale $cancellingSale = null;
+
     public string $cancelReason = 'Customer defaulted / Unclaimed past expiration deadline';
 
     // Receipt Modal State
     public bool $showReceiptModal = false;
+
     public ?array $receiptData = null;
+
     public bool $emailSent = false;
+
     public ?string $emailDeliveryStatus = null;
 
     // Toast Feedback
     public string $successMessage = '';
+
     public string $errorMessage = '';
 
     public function updatedSearch()
@@ -65,7 +79,7 @@ class LayawayManager extends Component
     {
         $this->payingSaleId = $saleId;
         $this->payingSale = Sale::with(['payments.recordedBy', 'customer', 'items.product'])->findOrFail($saleId);
-        $this->paymentAmount = (string)$this->payingSale->remaining_balance;
+        $this->paymentAmount = (string) $this->payingSale->remaining_balance;
         $this->payment_method = 'cash';
         $this->payment_reference = '';
         $this->payment_notes = '';
@@ -75,8 +89,9 @@ class LayawayManager extends Component
 
     public function loadPaymentHistory(): void
     {
-        if (!$this->payingSaleId) {
+        if (! $this->payingSaleId) {
             $this->paymentHistory = [];
+
             return;
         }
 
@@ -90,7 +105,7 @@ class LayawayManager extends Component
             return [
                 'id' => $p->id,
                 'date' => $p->payment_date ? $p->payment_date->format('M d, Y h:i A') : '—',
-                'amount' => (float)$p->amount,
+                'amount' => (float) $p->amount,
                 'method' => ucfirst(str_replace('_', ' ', $p->payment_method ?? 'cash')),
                 'reference' => $p->reference_number ?: '—',
                 'recorded_by' => $p->recordedBy?->name ?? 'System',
@@ -104,16 +119,16 @@ class LayawayManager extends Component
         $sale = Sale::findOrFail($this->payingSaleId);
 
         $this->validate([
-            'paymentAmount' => ['required', 'numeric', 'min:0.01', 'max:' . $sale->remaining_balance],
+            'paymentAmount' => ['required', 'numeric', 'min:0.01', 'max:'.$sale->remaining_balance],
             'payment_method' => ['required', 'in:cash'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'payment_notes' => ['nullable', 'string', 'max:255'],
         ], [
-            'paymentAmount.max' => 'Payment cannot exceed remaining balance of ₱' . number_format($sale->remaining_balance, 2),
+            'paymentAmount.max' => 'Payment cannot exceed remaining balance of ₱'.number_format($sale->remaining_balance, 2),
             'paymentAmount.min' => 'Payment amount must be greater than zero.',
         ]);
 
-        $payment = (float)$this->paymentAmount;
+        $payment = (float) $this->paymentAmount;
         $user = Auth::user();
 
         try {
@@ -128,8 +143,8 @@ class LayawayManager extends Component
                     throw new \RuntimeException('This lay-away order has already been fully settled.');
                 }
 
-                if ($payment > (float)$lockedSale->remaining_balance) {
-                    throw new \RuntimeException('Payment cannot exceed remaining balance of ₱' . number_format($lockedSale->remaining_balance, 2));
+                if ($payment > (float) $lockedSale->remaining_balance) {
+                    throw new \RuntimeException('Payment cannot exceed remaining balance of ₱'.number_format($lockedSale->remaining_balance, 2));
                 }
 
                 $newPaymentRecord = Payment::create([
@@ -142,15 +157,15 @@ class LayawayManager extends Component
                     'recorded_by' => $user?->id ?? 1,
                 ]);
 
-                $authoritativeAmountPaid = (float)Payment::where('sale_id', $lockedSale->id)->sum('amount');
-                $newRemainingBalance = max(0.0, (float)$lockedSale->amount - $authoritativeAmountPaid);
+                $authoritativeAmountPaid = (float) Payment::where('sale_id', $lockedSale->id)->sum('amount');
+                $newRemainingBalance = max(0.0, (float) $lockedSale->amount - $authoritativeAmountPaid);
                 $isFullyPaid = ($newRemainingBalance <= 0);
 
                 $newExpiry = $isFullyPaid ? null : now()->addMonths(3)->toDateString();
                 $newStatus = $isFullyPaid ? 'completed' : 'layaway';
 
-                $auditNote = "\n[" . now()->format('Y-m-d H:i') . "] Received ₱" . number_format($payment, 2) .
-                    ($isFullyPaid ? ' (Fully Settled)' : ' (Balance: ₱' . number_format($newRemainingBalance, 2) . ', Extended 3 months)');
+                $auditNote = "\n[".now()->format('Y-m-d H:i').'] Received ₱'.number_format($payment, 2).
+                    ($isFullyPaid ? ' (Fully Settled)' : ' (Balance: ₱'.number_format($newRemainingBalance, 2).', Extended 3 months)');
 
                 $lockedSale->update([
                     'amount_paid' => $authoritativeAmountPaid,
@@ -158,7 +173,7 @@ class LayawayManager extends Component
                     'layaway_expires_at' => $newExpiry,
                     'last_payment_date' => now()->toDateString(),
                     'status' => $newStatus,
-                    'notes' => ($lockedSale->notes ? $lockedSale->notes : '') . $auditNote,
+                    'notes' => ($lockedSale->notes ? $lockedSale->notes : '').$auditNote,
                 ]);
 
                 // Increment customer spend
@@ -178,55 +193,39 @@ class LayawayManager extends Component
                 'customer_phone' => $sale->customer_phone,
                 'customer_email' => $customerEmail ?: null,
                 'customer_address' => $sale->customer_address,
-                'items' => $sale->items->map(fn($it) => [
+                'items' => $sale->items->map(fn ($it) => [
                     'name' => $it->product?->name ?? 'Reserved Furniture Item',
                     'category' => $it->product?->category ?? 'Furniture',
                     'quantity' => $it->quantity,
-                    'unit_price' => (float)$it->unit_price,
-                    'subtotal' => (float)$it->subtotal,
+                    'unit_price' => (float) $it->unit_price,
+                    'subtotal' => (float) $it->subtotal,
                 ])->toArray(),
-                'total_order_amount' => (float)$sale->amount,
-                'total_amount' => (float)($sale->original_amount ?: $sale->amount),
-                'discount_amount' => (float)$sale->discount_amount,
+                'total_order_amount' => (float) $sale->amount,
+                'total_amount' => (float) ($sale->original_amount ?: $sale->amount),
+                'discount_amount' => (float) $sale->discount_amount,
                 'promo_name' => $sale->promo_name,
-                'net_amount' => (float)$sale->amount,
+                'net_amount' => (float) $sale->amount,
                 'payment_amount' => $payment,
                 'cash_tendered' => $payment,
                 'change_due' => 0.0,
-                'downpayment_amount' => (float)$sale->downpayment_amount,
+                'downpayment_amount' => (float) $sale->downpayment_amount,
                 'amount_paid' => $authoritativeAmountPaid,
                 'payment_method' => ucfirst(str_replace('_', ' ', $this->payment_method)),
                 'payment_type' => 'layaway',
                 'payment_reference' => $this->payment_reference ?: '—',
                 'remaining_balance' => $newRemainingBalance,
                 'is_fully_paid' => $isFullyPaid,
-                'expiry_date' => $newExpiry ? \Carbon\Carbon::parse($newExpiry)->format('M d, Y') : null,
+                'expiry_date' => $newExpiry ? Carbon::parse($newExpiry)->format('M d, Y') : null,
                 'payment_date' => now()->format('M d, Y h:i A'),
                 'sale_date' => now()->format('M d, Y h:i A'),
                 'cashier_name' => $user?->name ?? 'Cashier',
                 'cashier' => $user?->name ?? 'Cashier',
             ];
 
-            // Auto-send digital receipt if customer has an email address
-            $this->emailSent = false;
-            $this->emailDeliveryStatus = null;
-            if (!empty($customerEmail)) {
-                try {
-                    \Illuminate\Support\Facades\Mail::to($customerEmail)
-                        ->send(new \App\Mail\SalesReceiptMail($sale, $this->receiptData));
-                    $this->emailSent = true;
-                    $this->emailDeliveryStatus = "Digital receipt delivered to {$customerEmail}.";
-                } catch (\Throwable $mailError) {
-                    \Illuminate\Support\Facades\Log::warning("Layaway digital receipt delivery failed for {$customerEmail}: " . $mailError->getMessage());
-                    $this->emailSent = false;
-                    $this->emailDeliveryStatus = "Email queued/logged, but delivery notification encountered an issue: " . $mailError->getMessage();
-                }
-            }
-
             $this->showPaymentModal = false;
             $this->showReceiptModal = true;
-            $this->successMessage = "Installment payment of ₱" . number_format($payment, 2) . " recorded successfully." .
-                ($isFullyPaid ? " Contract is now fully settled!" : " Remaining balance: ₱" . number_format($newRemainingBalance, 2));
+            $this->successMessage = 'Installment payment of ₱'.number_format($payment, 2).' recorded successfully.'.
+                ($isFullyPaid ? ' Contract is now fully settled!' : ' Remaining balance: ₱'.number_format($newRemainingBalance, 2));
 
         } catch (\Throwable $e) {
             $this->addError('paymentAmount', $e->getMessage());
@@ -264,28 +263,28 @@ class LayawayManager extends Component
             foreach ($lockedSale->items as $item) {
                 $lockedProduct = Product::where('id', $item->product_id)->lockForUpdate()->first();
                 if ($lockedProduct) {
-                    $oldStock = (int)$lockedProduct->quantity_in_stock;
-                    $newStock = $oldStock + (int)$item->quantity;
-                    $lockedProduct->increment('quantity_in_stock', (int)$item->quantity);
+                    $oldStock = (int) $lockedProduct->quantity_in_stock;
+                    $newStock = $oldStock + (int) $item->quantity;
+                    $lockedProduct->increment('quantity_in_stock', (int) $item->quantity);
 
                     InventoryAdjustment::create([
                         'product_id' => $lockedProduct->id,
                         'user_id' => $user?->id ?? 1,
                         'old_quantity' => $oldStock,
                         'new_quantity' => $newStock,
-                        'quantity_change' => (int)$item->quantity,
+                        'quantity_change' => (int) $item->quantity,
                         'reason' => 'Lay-Away Forfeiture Restock',
                         'notes' => "Restocked {$item->quantity} unit(s) of '{$lockedProduct->name}' from cancelled layaway {$lockedSale->sale_number}. Reason: {$this->cancelReason}",
                     ]);
                 }
             }
 
-            $auditNote = "\n[" . now()->format('Y-m-d H:i') . "] Lay-away cancelled & reserved items restocked to yard by " . ($user?->name ?? 'Staff') .
-                ". Reason: {$this->cancelReason}. Retained payments: ₱" . number_format($lockedSale->amount_paid, 2);
+            $auditNote = "\n[".now()->format('Y-m-d H:i').'] Lay-away cancelled & reserved items restocked to yard by '.($user?->name ?? 'Staff').
+                ". Reason: {$this->cancelReason}. Retained payments: ₱".number_format($lockedSale->amount_paid, 2);
 
             $lockedSale->update([
                 'status' => 'cancelled',
-                'notes' => ($lockedSale->notes ? $lockedSale->notes : '') . $auditNote,
+                'notes' => ($lockedSale->notes ? $lockedSale->notes : '').$auditNote,
             ]);
         });
 
@@ -293,27 +292,9 @@ class LayawayManager extends Component
         $this->successMessage = "Lay-away order {$sale->sale_number} cancelled and reserved stock restored to inventory.";
     }
 
-    public function resendReceiptEmail()
+    public function resendReceiptEmail(): void
     {
-        if (empty($this->receiptData) || empty($this->receiptData['customer_email']) || empty($this->receiptData['order_number'])) {
-            $this->emailDeliveryStatus = 'No valid customer email address found on this contract.';
-            return;
-        }
-
-        $sale = Sale::where('sale_number', $this->receiptData['order_number'])->first();
-        if (!$sale) {
-            $this->emailDeliveryStatus = 'Associated contract record not found.';
-            return;
-        }
-
-        try {
-            \Illuminate\Support\Facades\Mail::to($this->receiptData['customer_email'])
-                ->send(new \App\Mail\SalesReceiptMail($sale, $this->receiptData));
-            $this->emailSent = true;
-            $this->emailDeliveryStatus = "Digital receipt re-sent successfully to {$this->receiptData['customer_email']}!";
-        } catch (\Throwable $e) {
-            $this->emailDeliveryStatus = "Could not re-send receipt: " . $e->getMessage();
-        }
+        // Email receipt feature has been removed
     }
 
     public function closeReceiptModal()
@@ -331,7 +312,7 @@ class LayawayManager extends Component
     {
         // 1. KPI Calculations
         $baseLayaways = Sale::where('is_archived', false)->where('status', 'layaway');
-        $totalReceivables = (float)(clone $baseLayaways)->sum('remaining_balance');
+        $totalReceivables = (float) (clone $baseLayaways)->sum('remaining_balance');
         $activeCount = (clone $baseLayaways)->count();
 
         $nearDueDate = now()->addDays(14)->toDateString();
@@ -377,16 +358,16 @@ class LayawayManager extends Component
         }
 
         // Search Filter
-        if (!empty($this->search)) {
-            $s = '%' . trim($this->search) . '%';
+        if (! empty($this->search)) {
+            $s = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($s) {
                 $q->where('sale_number', 'like', $s)
-                  ->orWhere('customer_name', 'like', $s)
-                  ->orWhere('customer_phone', 'like', $s)
-                  ->orWhere('notes', 'like', $s)
-                  ->orWhereHas('items.product', function ($iq) use ($s) {
-                      $iq->where('name', 'like', $s);
-                  });
+                    ->orWhere('customer_name', 'like', $s)
+                    ->orWhere('customer_phone', 'like', $s)
+                    ->orWhere('notes', 'like', $s)
+                    ->orWhereHas('items.product', function ($iq) use ($s) {
+                        $iq->where('name', 'like', $s);
+                    });
             });
         }
 

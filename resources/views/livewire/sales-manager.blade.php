@@ -12,7 +12,7 @@
             <div class="flex items-center gap-2 shrink-0">
                 <button type="button" wire:click="reopenReceiptModal" class="px-2.5 py-1 text-[11px] font-bold rounded bg-[#142259] text-white hover:bg-[#0e1840] transition cursor-pointer flex items-center gap-1 shadow-xs">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span>View digital receipt</span>
+                    <span>View receipt</span>
                 </button>
                 <button type="button" wire:click="$set('successMessage', '')" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -95,7 +95,7 @@
             </div>
 
             <!-- Customer Details Inline Form (3NF Normalization) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         First name <span class="text-rose-500">*</span>
@@ -127,17 +127,6 @@
                            placeholder="0917-000-0000"
                            class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
                     @error('customer_phone') <span class="text-rose-500 text-[11px] mt-0.5 block">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        Email (Digital receipt)
-                    </label>
-                    <input type="email"
-                           wire:model="customer_email"
-                           placeholder="customer@example.com"
-                           class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                    @error('customer_email') <span class="text-rose-500 text-[11px] mt-0.5 block">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
@@ -671,31 +660,6 @@
                     </div>
                 </div>
 
-                <!-- Digital Receipt Delivery Status Banner -->
-                @if(!empty($receiptData['customer_email']))
-                    <div class="px-5 py-3 border-t border-slate-200 dark:border-[#1a2858] {{ !empty($emailSent) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300' }} text-xs flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 min-w-0">
-                            @if(!empty($emailSent))
-                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                <span class="truncate">Receipt sent to <strong class="font-semibold">{{ $receiptData['customer_email'] }}</strong></span>
-                            @else
-                                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                </svg>
-                                <span class="truncate">{{ !empty($emailDeliveryStatus) ? $emailDeliveryStatus : ('Recipient: ' . ($receiptData['customer_email'] ?? '')) }}</span>
-                            @endif
-                        </div>
-                        <button type="button"
-                                wire:click="resendReceiptEmail"
-                                wire:loading.attr="disabled"
-                                class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shrink-0">
-                            <span wire:loading.remove wire:target="resendReceiptEmail">Resend</span>
-                            <span wire:loading wire:target="resendReceiptEmail">Sending...</span>
-                        </button>
-                    </div>
-                @endif
 
                 <!-- Receipt Footer & Dismissal -->
                 <div class="px-5 py-4 border-t border-slate-200 dark:border-[#1a2858] flex items-center justify-between gap-2 bg-white dark:bg-[#0c163b]">

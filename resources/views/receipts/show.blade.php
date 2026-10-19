@@ -1,4 +1,4 @@
-@section('title', 'Official Digital Receipt - ' . ($receipt['order_number'] ?? 'Receipt'))
+@section('title', 'Official Sales Receipt - ' . ($receipt['order_number'] ?? 'Receipt'))
 
 <x-app-layout>
     <div class="max-w-2xl mx-auto py-6 px-4">
@@ -24,7 +24,7 @@
                     Wella Metal Corporation
                 </h1>
                 <p class="text-xs text-slate-500 mt-0.5">Furniture & Metal Fabrications</p>
-                <p class="text-[11px] font-mono text-slate-400 mt-1 uppercase">Official Digital Receipt • Store Pickup</p>
+                <p class="text-[11px] font-mono text-slate-400 mt-1 uppercase">Official Sales Receipt • Store Pickup</p>
             </div>
 
             <!-- Receipt Metadata & Customer -->

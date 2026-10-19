@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Mail\SalesReceiptMail;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\InventoryAdjustment;
@@ -16,8 +15,6 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 
@@ -463,7 +460,6 @@ class SalesManager extends Component
             'customer_first_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
             'customer_last_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_email' => ['nullable', 'email', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9\+\-\s\(\)]+$/'],
             'customer_address' => ['required', 'string', 'max:500'],
             'payment_type' => ['required', 'in:full,layaway'],
@@ -484,7 +480,6 @@ class SalesManager extends Component
             'customer_last_name.required' => 'Customer last name is required.',
             'customer_last_name.regex' => 'Customer last name must contain letters only (numbers are not permitted).',
             'customer_name.required' => 'Customer name is required.',
-            'customer_email.email' => 'Please enter a valid email address for digital receipt delivery.',
             'customer_phone.regex' => 'Please enter a valid contact number (digits, spaces, +).',
             'customer_phone.required' => 'Customer contact number is required.',
             'customer_address.required' => 'Customer complete address is required.',
@@ -785,24 +780,6 @@ class SalesManager extends Component
             'notes' => $this->sale_notes,
         ];
         $this->showReceiptModal = true;
-
-        // Dispatch digital receipt to customer's email if provided
-        $this->emailSent = false;
-        $this->emailDeliveryStatus = null;
-        $targetEmail = trim((string) $this->customer_email);
-        if (! empty($targetEmail) && filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
-            try {
-                Mail::to($targetEmail)
-                    ->send(new SalesReceiptMail($createdSale, $this->receiptData));
-                $this->emailSent = true;
-                $this->emailDeliveryStatus = "Digital receipt delivered to {$targetEmail}.";
-            } catch (\Throwable $mailError) {
-                Log::warning("Digital receipt delivery failed for {$targetEmail}: ".$mailError->getMessage());
-                $this->emailSent = false;
-                $this->emailDeliveryStatus = 'Email delivery could not be completed right now: '.$mailError->getMessage();
-            }
-        }
-
         $this->successMessage = ($this->payment_type === 'layaway')
             ? "Order {$createdSale->sale_number} recorded! Downpayment of ₱".number_format($payable, 2).' received. Items reserved until '.now()->addMonths(3)->format('M d, Y').'.'
             : "Sale {$createdSale->sale_number} completed! Cash Tendered: ₱".number_format($tendered, 2).' (Change: ₱'.number_format($change, 2).').';
@@ -881,30 +858,9 @@ class SalesManager extends Component
         }
     }
 
-    public function resendReceiptEmail()
+    public function resendReceiptEmail(): void
     {
-        if (empty($this->receiptData) || empty($this->receiptData['customer_email']) || empty($this->receiptData['order_number'])) {
-            $this->emailDeliveryStatus = 'No valid customer email address found on this receipt.';
-
-            return;
-        }
-
-        $sale = Sale::where('sale_number', $this->receiptData['order_number'])->first();
-        if (! $sale) {
-            $this->emailDeliveryStatus = 'Associated order record not found.';
-
-            return;
-        }
-
-        try {
-            Mail::to($this->receiptData['customer_email'])
-                ->send(new SalesReceiptMail($sale, $this->receiptData));
-            $this->emailSent = true;
-            $this->emailDeliveryStatus = "Digital receipt re-sent successfully to {$this->receiptData['customer_email']}!";
-        } catch (\Throwable $e) {
-            Log::warning('Manual re-send receipt failed: '.$e->getMessage());
-            $this->emailDeliveryStatus = 'Could not re-send receipt: '.$e->getMessage();
-        }
+        // Email receipt feature has been removed
     }
 
     public function closeReceiptModal()

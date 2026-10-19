@@ -2,13 +2,10 @@
 
 namespace App\Livewire;
 
-use App\Mail\SalesReceiptMail;
 use App\Models\Customer;
 use App\Models\Sale;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -236,28 +233,7 @@ class CustomerManager extends Component
 
     public function resendReceiptEmail(): void
     {
-        if (empty($this->receiptData) || empty($this->receiptData['customer_email']) || empty($this->receiptData['order_number'])) {
-            $this->emailDeliveryStatus = 'No valid customer email address found on this receipt.';
-
-            return;
-        }
-
-        $sale = Sale::where('sale_number', $this->receiptData['order_number'])->first();
-        if (! $sale) {
-            $this->emailDeliveryStatus = 'Associated order record not found.';
-
-            return;
-        }
-
-        try {
-            Mail::to($this->receiptData['customer_email'])
-                ->send(new SalesReceiptMail($sale, $this->receiptData));
-            $this->emailSent = true;
-            $this->emailDeliveryStatus = "Digital receipt re-sent successfully to {$this->receiptData['customer_email']}!";
-        } catch (\Throwable $e) {
-            Log::warning('Manual re-send receipt from customer history failed: '.$e->getMessage());
-            $this->emailDeliveryStatus = 'Could not re-send receipt: '.$e->getMessage();
-        }
+        // Email receipt feature has been removed
     }
 
     public function render()

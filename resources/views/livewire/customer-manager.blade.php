@@ -498,31 +498,6 @@
                     </div>
                 </div>
 
-                <!-- Digital Receipt Delivery Status Banner -->
-                @if(!empty($receiptData['customer_email']))
-                    <div class="px-5 py-3 border-t border-slate-200 dark:border-[#1a2858] {{ !empty($emailSent) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300' }} text-xs flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 min-w-0">
-                            @if(!empty($emailSent))
-                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                <span class="truncate">Receipt sent to <strong class="font-semibold">{{ $receiptData['customer_email'] }}</strong></span>
-                            @else
-                                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                </svg>
-                                <span class="truncate">{{ !empty($emailDeliveryStatus) ? $emailDeliveryStatus : ('Recipient: ' . ($receiptData['customer_email'] ?? '')) }}</span>
-                            @endif
-                        </div>
-                        <button type="button"
-                                wire:click="resendReceiptEmail"
-                                wire:loading.attr="disabled"
-                                class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shrink-0">
-                            <span wire:loading.remove wire:target="resendReceiptEmail">Resend</span>
-                            <span wire:loading wire:target="resendReceiptEmail">Sending...</span>
-                        </button>
-                    </div>
-                @endif
 
                 <!-- Receipt Footer & Dismissal -->
                 <div class="px-5 py-4 border-t border-slate-200 dark:border-[#1a2858] flex items-center justify-between gap-2 bg-white dark:bg-[#0c163b]">

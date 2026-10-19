@@ -10,7 +10,6 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -212,25 +211,19 @@ class SalesRecordTest extends TestCase
 
         $response = $this->get(route('sales.receipt', $sale->sale_number));
         $response->assertOk()
-            ->assertSee('Official Digital Receipt')
+            ->assertSee('Official Sales Receipt')
             ->assertSee('ORD-2026-888')
             ->assertSee('Grace Lim');
     }
 
-    public function test_record_sale_succeeds_and_opens_receipt_even_if_mail_transport_fails(): void
+    public function test_record_sale_succeeds_and_opens_receipt_without_email(): void
     {
-        Mail::shouldReceive('to')
-            ->andReturnSelf();
-        Mail::shouldReceive('send')
-            ->andThrow(new \RuntimeException('Connection timed out to mail server'));
-
         Livewire::test(SalesManager::class)
             ->call('addProductToCart', $this->product->id)
             ->set('customer_first_name', 'Rolando')
             ->set('customer_last_name', 'Mendoza')
             ->set('customer_phone', '09123456780')
             ->set('customer_address', 'Ecoland, Davao City')
-            ->set('customer_email', 'rolando@example.com')
             ->set('payment_type', 'full')
             ->set('cash_tendered', 2500.00)
             ->call('recordSale')
@@ -262,7 +255,7 @@ class SalesRecordTest extends TestCase
 
         $response = $this->get(route('sales.receipt'));
         $response->assertOk()
-            ->assertSee('Official Digital Receipt')
+            ->assertSee('Official Sales Receipt')
             ->assertSee('ORD-2026-999');
     }
 }
