@@ -18,6 +18,9 @@ class ReportsManager extends Component
 
     public string $activeTab = 'periodic'; // 'periodic', 'sales', 'inventory', 'layaways'
 
+    // Sub-view switcher inside Periodic Summaries: 'ledger', 'turnover', 'traceability'
+    public string $periodicSubView = 'ledger';
+
     // Objective 3: Periodic Report Filters
     public string $periodicity = 'daily'; // 'daily', 'weekly', 'monthly'
 
@@ -78,6 +81,11 @@ class ReportsManager extends Component
     public function setPeriodicity(string $p)
     {
         $this->periodicity = $p;
+    }
+
+    public function setPeriodicSubView(string $subView): void
+    {
+        $this->periodicSubView = $subView;
     }
 
     public function updatedPeriodicDatePreset($preset)
@@ -351,6 +359,7 @@ class ReportsManager extends Component
 
         return view('livewire.reports-manager', [
             // Objective 3 Periodic Data
+            'periodicSubView' => $this->periodicSubView,
             'periodicSummary' => $periodicSummary,
             'inventoryMovements' => $inventoryMovements,
             'traceableSales' => $traceableSales,

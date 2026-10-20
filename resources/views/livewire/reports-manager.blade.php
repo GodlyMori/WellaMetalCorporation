@@ -84,23 +84,6 @@
     @if($activeTab === 'periodic')
         <div class="space-y-4">
 
-            <!-- Informational Banner -->
-            <div class="p-4 rounded border border-blue-200 dark:border-[#1a2858] bg-blue-50/50 dark:bg-[#0c163b]/60 flex items-start gap-3">
-                <div class="p-2 rounded bg-blue-100 dark:bg-[#142259] text-[#142259] dark:text-blue-300 shrink-0">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        Automated Periodic Business Report Generation
-                    </h3>
-                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-                        Eliminates multi-day manual tallying by automatically compiling daily sales transactions and inventory movements into accurate weekly and monthly summaries. Leadership can cross-reference periodic figures directly with individual underlying sales receipts.
-                    </p>
-                </div>
-            </div>
-
             <!-- Periodic Summary KPI Strip -->
             <div class="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b]">
                 <div class="px-4 py-3 min-w-0">
@@ -139,269 +122,309 @@
                 </div>
             </div>
 
-            <!-- Periodic Compilation Workbench & Filter Bar -->
-            <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
-                <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] space-y-3">
-                    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 text-xs">
-                        
-                        <!-- Search Box -->
-                        <div class="relative w-full lg:w-72">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </div>
-                            <input type="text"
-                                   wire:model.live.debounce.300ms="periodicSearch"
-                                   placeholder="Filter customer, order #, product..."
-                                   class="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
-                        </div>
-
-                        <!-- Cadence Switcher: Daily, Weekly, Monthly -->
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1 shrink-0 flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                Cadence:
-                            </span>
-                            <button type="button" wire:click="setPeriodicity('daily')"
-                                    class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $periodicity === 'daily' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
-                                Daily Breakdown
-                            </button>
-                            <button type="button" wire:click="setPeriodicity('weekly')"
-                                    class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $periodicity === 'weekly' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
-                                Weekly Summary
-                            </button>
-                            <button type="button" wire:click="setPeriodicity('monthly')"
-                                    class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $periodicity === 'monthly' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
-                                Monthly Summary
-                            </button>
-                        </div>
-
-                        <!-- Date Presets + Custom Range -->
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1 shrink-0">Range:</span>
-                            <div class="inline-flex items-center gap-1">
-                                <button type="button" wire:click="$set('periodicDatePreset', 'this_month')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'this_month' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Month</button>
-                                <button type="button" wire:click="$set('periodicDatePreset', 'this_week')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'this_week' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Week</button>
-                                <button type="button" wire:click="$set('periodicDatePreset', 'today')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'today' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Today</button>
-                                <button type="button" wire:click="$set('periodicDatePreset', 'last_month')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'last_month' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Last Mo</button>
-                            </div>
-
-                            <div class="flex items-center gap-1">
-                                <input type="date" wire:model.live="periodicStartDate" class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259]">
-                                <span class="text-slate-400 text-xs">to</span>
-                                <input type="date" wire:model.live="periodicEndDate" class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259]">
-                            </div>
-                        </div>
-
-                    </div>
+            <!-- Sub-view Navigation Pills: Arranges the 3 periodic tables cleanly -->
+            <div class="flex items-center justify-between flex-wrap gap-2 pt-1 pb-1">
+                <div class="inline-flex p-1 rounded-lg bg-slate-100 dark:bg-[#0f1b40] border border-slate-200 dark:border-slate-800 text-xs">
+                    <button type="button"
+                            wire:click="setPeriodicSubView('ledger')"
+                            class="px-3.5 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 cursor-pointer {{ $periodicSubView === 'ledger' ? 'bg-white dark:bg-[#142259] text-[#142259] dark:text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        <span>Periodic Sales Ledger</span>
+                    </button>
+                    <button type="button"
+                            wire:click="setPeriodicSubView('turnover')"
+                            class="px-3.5 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 cursor-pointer {{ $periodicSubView === 'turnover' ? 'bg-white dark:bg-[#142259] text-[#142259] dark:text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        <span>Stock Turnover & Velocity</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded font-mono {{ $periodicSubView === 'turnover' ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500' }}">{{ count($inventoryMovements['items']) }}</span>
+                    </button>
+                    <button type="button"
+                            wire:click="setPeriodicSubView('traceability')"
+                            class="px-3.5 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 cursor-pointer {{ $periodicSubView === 'traceability' ? 'bg-white dark:bg-[#142259] text-[#142259] dark:text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                        <span>Receipts & Traceability</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded font-mono {{ $periodicSubView === 'traceability' ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500' }}">{{ $traceableSales->count() }}</span>
+                    </button>
                 </div>
 
-                <!-- SECTION 1: PERIODIC AGGREGATED LEDGER TABLE -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Periodic Interval</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Orders</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Completed Sales</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Layaway Deposits</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Discounts</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right font-bold text-slate-700 dark:text-slate-200">Realized Cash</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Receivables Bal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($periodicSummary['buckets'] as $bucket)
-                                <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
-                                    <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                                        <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                        </svg>
-                                        <span>{{ $bucket['label'] }}</span>
+                <div class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
+                    @if($periodicSubView === 'ledger')
+                        Aggregated {{ $periodicity }} revenue ledger
+                    @elseif($periodicSubView === 'turnover')
+                        Stock movement velocity across {{ count($inventoryMovements['items']) }} products
+                    @else
+                        Receipt cross-reference audit
+                    @endif
+                </div>
+            </div>
+
+            <!-- SECTION 1: PERIODIC AGGREGATED LEDGER TABLE -->
+            @if($periodicSubView === 'ledger')
+                <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
+                    <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] space-y-3">
+                        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 text-xs">
+                            
+                            <!-- Search Box -->
+                            <div class="relative w-full lg:w-72">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <input type="text"
+                                       wire:model.live.debounce.300ms="periodicSearch"
+                                       placeholder="Filter customer, order #, product..."
+                                       class="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
+                            </div>
+
+                            <!-- Cadence Switcher: Daily, Weekly, Monthly -->
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1 shrink-0 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    Cadence:
+                                </span>
+                                <button type="button" wire:click="setPeriodicity('daily')"
+                                        class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $periodicity === 'daily' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                    Daily Breakdown
+                                </button>
+                                <button type="button" wire:click="setPeriodicity('weekly')"
+                                        class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $periodicity === 'weekly' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                    Weekly Summary
+                                </button>
+                                <button type="button" wire:click="setPeriodicity('monthly')"
+                                        class="px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer {{ $periodicity === 'monthly' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+                                    Monthly Summary
+                                </button>
+                            </div>
+
+                            <!-- Date Presets + Custom Range -->
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1 shrink-0">Range:</span>
+                                <div class="inline-flex items-center gap-1">
+                                    <button type="button" wire:click="$set('periodicDatePreset', 'this_month')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'this_month' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Month</button>
+                                    <button type="button" wire:click="$set('periodicDatePreset', 'this_week')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'this_week' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Week</button>
+                                    <button type="button" wire:click="$set('periodicDatePreset', 'today')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'today' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Today</button>
+                                    <button type="button" wire:click="$set('periodicDatePreset', 'last_month')" class="px-2 py-1 rounded text-xs font-semibold cursor-pointer transition-colors {{ $periodicDatePreset === 'last_month' ? 'bg-[#142259] text-white' : 'bg-slate-50 dark:bg-[#0f1b40] text-slate-700 dark:text-slate-300 hover:bg-slate-100' }}">Last Mo</button>
+                                </div>
+
+                                <div class="flex items-center gap-1">
+                                    <input type="date" wire:model.live="periodicStartDate" class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259]">
+                                    <span class="text-slate-400 text-xs">to</span>
+                                    <input type="date" wire:model.live="periodicEndDate" class="bg-slate-50 dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#142259]">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Periodic Aggregated Ledger Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Periodic Interval</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Orders</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Completed Sales</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Layaway Deposits</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Discounts & Adj</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right font-bold text-slate-700 dark:text-slate-200">Realized Cash</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Receivables Bal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($periodicSummary['buckets'] as $bucket)
+                                    <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
+                                        <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                            <span>{{ $bucket['label'] }}</span>
+                                        </td>
+                                        <td class="py-2.5 px-4 text-center font-mono">
+                                            <span class="font-bold text-slate-900 dark:text-white">{{ $bucket['completed_count'] + $bucket['layaway_count'] }}</span>
+                                            <span class="text-[10px] text-slate-400">({{ $bucket['total_transactions'] }} tot)</span>
+                                        </td>
+                                        <td class="py-2.5 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
+                                            ₱{{ number_format($bucket['completed_revenue'], 2) }}
+                                        </td>
+                                        <td class="py-2.5 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
+                                            ₱{{ number_format($bucket['layaway_deposits'], 2) }}
+                                        </td>
+                                        <td class="py-2.5 px-4 text-right font-mono text-slate-400">
+                                            -₱{{ number_format($bucket['total_discounts'], 2) }}
+                                        </td>
+                                        <td class="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                            ₱{{ number_format($bucket['realized_cash'], 2) }}
+                                        </td>
+                                        <td class="py-2.5 px-4 text-right font-mono text-rose-600 dark:text-rose-400">
+                                            ₱{{ number_format($bucket['outstanding_balance'], 2) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                                            No sales transactions found for the selected periodic parameters.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                            <tfoot class="bg-slate-50 dark:bg-[#0f1b40] font-bold border-t-2 border-slate-300 dark:border-slate-700">
+                                <tr>
+                                    <td class="py-2.5 px-4 text-slate-900 dark:text-white">AGGREGATE TOTALS</td>
+                                    <td class="py-2.5 px-4 text-center font-mono text-slate-900 dark:text-white">
+                                        {{ $periodicSummary['totals']['completed_count'] + $periodicSummary['totals']['layaway_count'] }}
                                     </td>
-                                    <td class="py-2.5 px-4 text-center font-mono">
-                                        <span class="font-bold text-slate-900 dark:text-white">{{ $bucket['completed_count'] + $bucket['layaway_count'] }}</span>
-                                        <span class="text-[10px] text-slate-400">({{ $bucket['total_transactions'] }} tot)</span>
+                                    <td class="py-2.5 px-4 text-right font-mono text-slate-900 dark:text-white">
+                                        ₱{{ number_format($periodicSummary['totals']['completed_revenue'], 2) }}
                                     </td>
-                                    <td class="py-2.5 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
-                                        ₱{{ number_format($bucket['completed_revenue'], 2) }}
+                                    <td class="py-2.5 px-4 text-right font-mono text-slate-900 dark:text-white">
+                                        ₱{{ number_format($periodicSummary['totals']['layaway_deposits'], 2) }}
                                     </td>
-                                    <td class="py-2.5 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
-                                        ₱{{ number_format($bucket['layaway_deposits'], 2) }}
+                                    <td class="py-2.5 px-4 text-right font-mono text-slate-500">
+                                        -₱{{ number_format($periodicSummary['totals']['total_discounts'], 2) }}
                                     </td>
-                                    <td class="py-2.5 px-4 text-right font-mono text-slate-400">
-                                        -₱{{ number_format($bucket['total_discounts'], 2) }}
-                                    </td>
-                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                        ₱{{ number_format($bucket['realized_cash'], 2) }}
+                                    <td class="py-2.5 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                                        ₱{{ number_format($periodicSummary['totals']['realized_cash'], 2) }}
                                     </td>
                                     <td class="py-2.5 px-4 text-right font-mono text-rose-600 dark:text-rose-400">
-                                        ₱{{ number_format($bucket['outstanding_balance'], 2) }}
+                                        ₱{{ number_format($periodicSummary['totals']['outstanding_receivables'], 2) }}
                                     </td>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
-                                        No sales transactions found for the selected periodic parameters.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot class="bg-slate-50 dark:bg-[#0f1b40] font-bold border-t-2 border-slate-300 dark:border-slate-700">
-                            <tr>
-                                <td class="py-2.5 px-4 text-slate-900 dark:text-white">AGGREGATE TOTALS</td>
-                                <td class="py-2.5 px-4 text-center font-mono text-slate-900 dark:text-white">
-                                    {{ $periodicSummary['totals']['completed_count'] + $periodicSummary['totals']['layaway_count'] }}
-                                </td>
-                                <td class="py-2.5 px-4 text-right font-mono text-slate-900 dark:text-white">
-                                    ₱{{ number_format($periodicSummary['totals']['completed_revenue'], 2) }}
-                                </td>
-                                <td class="py-2.5 px-4 text-right font-mono text-slate-900 dark:text-white">
-                                    ₱{{ number_format($periodicSummary['totals']['layaway_deposits'], 2) }}
-                                </td>
-                                <td class="py-2.5 px-4 text-right font-mono text-slate-500">
-                                    -₱{{ number_format($periodicSummary['totals']['total_discounts'], 2) }}
-                                </td>
-                                <td class="py-2.5 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400">
-                                    ₱{{ number_format($periodicSummary['totals']['realized_cash'], 2) }}
-                                </td>
-                                <td class="py-2.5 px-4 text-right font-mono text-rose-600 dark:text-rose-400">
-                                    ₱{{ number_format($periodicSummary['totals']['outstanding_receivables'], 2) }}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SECTION 2: STOCK TURNOVER & INVENTORY MOVEMENTS -->
-            <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
-                <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                        </svg>
-                        Stock Turnover & Inventory Movements ({{ count($inventoryMovements['items']) }} SKUs)
-                    </h3>
-                    <span class="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
-                        Overall Turnover Velocity: {{ $inventoryMovements['overall_turnover_rate'] }}%
-                    </span>
-                </div>
-
-                <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead class="sticky top-0 z-10">
-                            <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">SKU</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product Name</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Price</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Stock On Hand</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center font-bold text-slate-800 dark:text-slate-200">Units Sold</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Restocked</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Velocity</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($inventoryMovements['items'] as $it)
-                                <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
-                                    <td class="py-2 px-4 font-mono font-medium text-slate-900 dark:text-white">{{ $it['formatted_id'] }}</td>
-                                    <td class="py-2 px-4 font-semibold text-slate-900 dark:text-white">{{ $it['name'] }}</td>
-                                    <td class="py-2 px-4 text-slate-500 dark:text-slate-400">{{ $it['category'] }}</td>
-                                    <td class="py-2 px-4 text-right font-mono text-slate-700 dark:text-slate-300">₱{{ number_format($it['tagged_price'], 2) }}</td>
-                                    <td class="py-2 px-4 text-center font-mono text-slate-800 dark:text-slate-200">{{ $it['current_stock'] }}</td>
-                                    <td class="py-2 px-4 text-center font-mono font-bold text-slate-900 dark:text-white">{{ $it['units_sold'] }}</td>
-                                    <td class="py-2 px-4 text-center font-mono text-emerald-600 dark:text-emerald-400">+{{ $it['units_added'] }}</td>
-                                    <td class="py-2 px-4 text-center">
-                                        @if($it['velocity'] === 'High Velocity')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">High</span>
-                                        @elseif($it['velocity'] === 'Moderate')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900">Moderate</span>
-                                        @elseif($it['velocity'] === 'Slow-moving')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">Slow</span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Stagnant</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="py-6 text-center text-xs text-slate-400">No inventory products tracked.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SECTION 3: UNDERLYING TRANSACTION TRACEABILITY LEDGER -->
-            <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
-                <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                            </svg>
-                            Underlying Transaction Traceability Ledger
-                        </h3>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Direct cross-reference for General Manager and CEO to verify underlying receipts against periodic summary figures.</p>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Receipt #</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Customer</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Purchased Items</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Order Total</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Paid</th>
-                                <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($traceableSales as $sale)
-                                <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
-                                    <td class="py-2.5 px-4 font-mono font-medium text-slate-900 dark:text-white">{{ $sale->sale_number }}</td>
-                                    <td class="py-2.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ $sale->sale_date->format('M d, Y') }}</td>
-                                    <td class="py-2.5 px-4">
-                                        <div class="font-semibold text-slate-900 dark:text-white">{{ $sale->customer_name }}</div>
-                                        <div class="text-[11px] text-slate-500 dark:text-slate-400">{{ $sale->customer_phone ?: 'No phone' }}</div>
-                                    </td>
-                                    <td class="py-2.5 px-4">
-                                        @if($sale->items->isNotEmpty())
-                                            @foreach($sale->items as $it)
-                                                <div class="text-xs text-slate-800 dark:text-slate-200">
-                                                    <span class="font-medium">{{ $it->product?->name ?? 'Item' }}</span>
-                                                    <span class="text-slate-400 text-[11px]">&times; {{ $it->quantity }}</span>
-                                                </div>
-                                            @endforeach
-                                        @else
-                                            <span class="text-slate-400">{{ $sale->product_name ?: 'Custom order' }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-white">₱{{ number_format($sale->amount, 2) }}</td>
-                                    <td class="py-2.5 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400">₱{{ number_format($sale->amount_paid, 2) }}</td>
-                                    <td class="py-2.5 px-4 text-center">
-                                        @if($sale->status === 'completed')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">Completed</span>
-                                        @elseif($sale->status === 'layaway')
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">Lay-away</span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900">Cancelled</span>
-                                        @endif
-                                    </td>
+            <!-- SECTION 2: STOCK TURNOVER & INVENTORY MOVEMENTS -->
+            @elseif($periodicSubView === 'turnover')
+                <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
+                    <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                            Stock Turnover & Inventory Movements ({{ count($inventoryMovements['items']) }} SKUs)
+                        </h3>
+                        <span class="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                            Overall Turnover Velocity: {{ $inventoryMovements['overall_turnover_rate'] }}%
+                        </span>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="sticky top-0 z-10">
+                                <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">SKU</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product Name</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Price</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Stock On Hand</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center font-bold text-slate-800 dark:text-slate-200">Units Sold</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Restocked</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Velocity</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="py-6 text-center text-xs text-slate-400">No underlying receipts found for the current period.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @forelse($inventoryMovements['items'] as $it)
+                                    <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
+                                        <td class="py-2 px-4 font-mono font-medium text-slate-900 dark:text-white">{{ $it['formatted_id'] }}</td>
+                                        <td class="py-2 px-4 font-semibold text-slate-900 dark:text-white">{{ $it['name'] }}</td>
+                                        <td class="py-2 px-4 text-slate-500 dark:text-slate-400">{{ $it['category'] }}</td>
+                                        <td class="py-2 px-4 text-right font-mono text-slate-700 dark:text-slate-300">₱{{ number_format($it['tagged_price'], 2) }}</td>
+                                        <td class="py-2 px-4 text-center font-mono text-slate-800 dark:text-slate-200">{{ $it['current_stock'] }}</td>
+                                        <td class="py-2 px-4 text-center font-mono font-bold text-slate-900 dark:text-white">{{ $it['units_sold'] }}</td>
+                                        <td class="py-2 px-4 text-center font-mono text-emerald-600 dark:text-emerald-400">+{{ $it['units_added'] }}</td>
+                                        <td class="py-2 px-4 text-center">
+                                            @if($it['velocity'] === 'High Velocity')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">High</span>
+                                            @elseif($it['velocity'] === 'Moderate')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900">Moderate</span>
+                                            @elseif($it['velocity'] === 'Slow-moving')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">Slow</span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Stagnant</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="py-6 text-center text-xs text-slate-400">No inventory products tracked.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+
+            <!-- SECTION 3: UNDERLYING TRANSACTION TRACEABILITY LEDGER -->
+            @elseif($periodicSubView === 'traceability')
+                <div class="border border-slate-200 dark:border-[#1a2858] rounded bg-white dark:bg-[#0c163b] overflow-hidden">
+                    <div class="p-3.5 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                </svg>
+                                Underlying Transaction Traceability Ledger
+                            </h3>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Direct cross-reference for General Manager and CEO to verify underlying receipts against periodic summary figures.</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-[#0f1b40] border-b border-slate-200 dark:border-[#1a2858]">
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Receipt #</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Customer</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Purchased Items</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Order Total</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Paid</th>
+                                    <th class="py-2.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($traceableSales as $sale)
+                                    <tr class="border-b border-slate-100 dark:border-[#1a2858] hover:bg-slate-50 dark:hover:bg-[#0f1b40] transition-colors">
+                                        <td class="py-2.5 px-4 font-mono font-medium text-slate-900 dark:text-white">{{ $sale->sale_number }}</td>
+                                        <td class="py-2.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ $sale->sale_date->format('M d, Y') }}</td>
+                                        <td class="py-2.5 px-4">
+                                            <div class="font-semibold text-slate-900 dark:text-white">{{ $sale->customer_name }}</div>
+                                            <div class="text-[11px] text-slate-500 dark:text-slate-400">{{ $sale->customer_phone ?: 'No phone' }}</div>
+                                        </td>
+                                        <td class="py-2.5 px-4">
+                                            @if($sale->items->isNotEmpty())
+                                                @foreach($sale->items as $it)
+                                                    <div class="text-xs text-slate-800 dark:text-slate-200">
+                                                        <span class="font-medium">{{ $it->product?->name ?? 'Item' }}</span>
+                                                        <span class="text-slate-400 text-[11px]">&times; {{ $it->quantity }}</span>
+                                                    </div>
+                                                @endforeach
+                                            @else
+                                                <span class="text-slate-400">{{ $sale->product_name ?: 'Custom order' }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-white">₱{{ number_format($sale->amount, 2) }}</td>
+                                        <td class="py-2.5 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400">₱{{ number_format($sale->amount_paid, 2) }}</td>
+                                        <td class="py-2.5 px-4 text-center">
+                                            @if($sale->status === 'completed')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">Completed</span>
+                                            @elseif($sale->status === 'layaway')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">Lay-away</span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900">Cancelled</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="py-6 text-center text-xs text-slate-400">No underlying receipts found for the current period.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
 
         </div>
     @endif

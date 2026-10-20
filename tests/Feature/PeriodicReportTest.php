@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\ReportsManager;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
 use App\Services\PeriodicReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -143,7 +145,22 @@ class PeriodicReportTest extends TestCase
             ->get(route('reports'))
             ->assertOk()
             ->assertSee('Periodic summaries', false)
-            ->assertSee('Stock Turnover', false);
+            ->assertSee('Periodic Sales Ledger', false)
+            ->assertDontSee('Automated Periodic Business Report Generation', false);
+    }
+
+    public function test_reports_manager_switches_periodic_subviews(): void
+    {
+        Livewire::actingAs($this->user)
+            ->test(ReportsManager::class)
+            ->assertSet('periodicSubView', 'ledger')
+            ->assertSee('Cadence:')
+            ->call('setPeriodicSubView', 'turnover')
+            ->assertSet('periodicSubView', 'turnover')
+            ->assertSee('Overall Turnover Velocity')
+            ->call('setPeriodicSubView', 'traceability')
+            ->assertSet('periodicSubView', 'traceability')
+            ->assertSee('Underlying Transaction Traceability Ledger');
     }
 
     public function test_export_periodic_pdf_downloads_clean_pdf(): void
