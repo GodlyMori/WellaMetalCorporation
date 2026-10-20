@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Mail\LayawayDueReminderMail;
 use App\Models\Customer;
 use App\Models\InventoryAdjustment;
 use App\Models\Payment;
@@ -10,6 +11,7 @@ use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -46,6 +48,8 @@ class LayawayManager extends Component
     public ?Sale $cancellingSale = null;
 
     public string $cancelReason = 'Customer defaulted / Unclaimed past expiration deadline';
+
+    public string $depositDisposition = 'forfeited'; // 'forfeited', 'refunded'
 
     // Receipt Modal State
     public bool $showReceiptModal = false;
@@ -240,6 +244,7 @@ class LayawayManager extends Component
         $this->cancellingSaleId = $saleId;
         $this->cancellingSale = Sale::with(['customer', 'items.product'])->findOrFail($saleId);
         $this->cancelReason = 'Customer defaulted / Unclaimed past expiration deadline';
+        $this->depositDisposition = 'forfeited';
         $this->showCancelModal = true;
     }
 
@@ -247,6 +252,7 @@ class LayawayManager extends Component
     {
         $this->validate([
             'cancelReason' => ['required', 'string', 'max:255'],
+            'depositDisposition' => ['required', 'in:forfeited,refunded,none'],
         ]);
 
         $sale = Sale::findOrFail($this->cancellingSaleId);
@@ -279,17 +285,70 @@ class LayawayManager extends Component
                 }
             }
 
-            $auditNote = "\n[".now()->format('Y-m-d H:i').'] Lay-away cancelled & reserved items restocked to yard by '.($user?->name ?? 'Staff').
-                ". Reason: {$this->cancelReason}. Retained payments: ₱".number_format($lockedSale->amount_paid, 2);
+            $amountPaid = (float) $lockedSale->amount_paid;
+            $forfeited = ($this->depositDisposition === 'forfeited') ? $amountPaid : 0.0;
+            $refunded = ($this->depositDisposition === 'refunded') ? $amountPaid : 0.0;
+
+            $dispositionLabel = $this->depositDisposition === 'forfeited'
+                ? 'Deposit forfeited to company (₱'.number_format($forfeited, 2).')'
+                : ($this->depositDisposition === 'refunded'
+                    ? 'Deposit refunded to customer (₱'.number_format($refunded, 2).')'
+                    : 'No deposit retained');
+
+            $auditNote = "\n[".now()->format('Y-m-d H:i').'] Lay-away cancelled & stock restocked by '.($user?->name ?? 'Staff').
+                ". Reason: {$this->cancelReason}. Disposition: {$dispositionLabel}.";
 
             $lockedSale->update([
                 'status' => 'cancelled',
+                'cancelled_by' => $user?->id,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $this->cancelReason,
+                'deposit_disposition' => $this->depositDisposition,
+                'forfeited_deposit_amount' => $forfeited,
+                'refunded_deposit_amount' => $refunded,
                 'notes' => ($lockedSale->notes ? $lockedSale->notes : '').$auditNote,
             ]);
         });
 
         $this->showCancelModal = false;
-        $this->successMessage = "Lay-away order {$sale->sale_number} cancelled and reserved stock restored to inventory.";
+        $this->successMessage = "Lay-away order {$sale->sale_number} cancelled and reserved stock restored to inventory. Disposition: {$this->depositDisposition}.";
+    }
+
+    public function sendReminder(int $saleId): void
+    {
+        $sale = Sale::with(['customer', 'items.product'])->findOrFail($saleId);
+
+        if ($sale->status !== 'layaway') {
+            $this->addError('reminder', 'Reminders can only be dispatched for active lay-away contracts.');
+
+            return;
+        }
+
+        $recipientEmail = $sale->customer_email ?: $sale->customer?->email;
+
+        if (empty($recipientEmail)) {
+            $this->addError('reminder', "Cannot send reminder: Customer {$sale->customer_name} has no email address on file.");
+
+            return;
+        }
+
+        $daysRemaining = $sale->layaway_expires_at
+            ? max(0, (int) now()->startOfDay()->diffInDays($sale->layaway_expires_at->startOfDay(), false))
+            : 0;
+
+        try {
+            Mail::to($recipientEmail)->send(new LayawayDueReminderMail($sale, $daysRemaining));
+
+            $newCount = ($sale->reminder_count ?? 0) + 1;
+            $sale->forceFill([
+                'last_reminder_sent_at' => now(),
+                'reminder_count' => $newCount,
+            ])->save();
+
+            $this->successMessage = "Reminder #{$newCount} dispatched successfully to {$recipientEmail} ({$daysRemaining} days remaining).";
+        } catch (\Throwable $e) {
+            $this->addError('reminder', "Failed to dispatch reminder email: {$e->getMessage()}");
+        }
     }
 
     public function resendReceiptEmail(): void

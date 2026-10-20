@@ -55,10 +55,18 @@ class LayawayService
                 $expiryDateStr = $lockedSale->layaway_expires_at ? $lockedSale->layaway_expires_at->format('Y-m-d') : 'unknown date';
                 $paidAmountStr = number_format((float) $lockedSale->amount_paid, 2);
 
-                $auditNote = "\n[".now()->format('Y-m-d H:i')."] Lay-away expired on {$expiryDateStr}. Order cancelled and stock restored to inventory. Partial payments received (₱{$paidAmountStr}) preserved pending management disposition.";
+                $paidAmount = (float) $lockedSale->amount_paid;
+
+                $auditNote = "\n[".now()->format('Y-m-d H:i')."] Lay-away expired on {$expiryDateStr}. Order cancelled and stock restored to inventory. Partial payments received (₱{$paidAmountStr}) forfeited per company policy.";
 
                 $lockedSale->update([
                     'status' => 'cancelled',
+                    'cancelled_by' => $processedByUserId,
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => "Automatic expiration: 90-day grace period lapsed on {$expiryDateStr}",
+                    'deposit_disposition' => 'forfeited',
+                    'forfeited_deposit_amount' => $paidAmount,
+                    'refunded_deposit_amount' => 0.00,
                     'notes' => ($lockedSale->notes ?? '').$auditNote,
                 ]);
 

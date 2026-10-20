@@ -261,9 +261,25 @@
                                         Fully Settled
                                     </span>
                                 @elseif($contract->status === 'cancelled')
-                                    <span class="text-[11px] text-slate-400">
-                                        Contract Terminated
-                                    </span>
+                                    <div>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900">
+                                            Terminated
+                                        </span>
+                                        @if($contract->cancellation_reason)
+                                            <div class="text-[10px] text-slate-500 max-w-[130px] truncate mt-0.5" title="{{ $contract->cancellation_reason }}">
+                                                {{ $contract->cancellation_reason }}
+                                            </div>
+                                        @endif
+                                        @if($contract->forfeited_deposit_amount > 0)
+                                            <div class="text-[9px] text-amber-600 dark:text-amber-400 font-mono mt-0.5">
+                                                Forfeited: ₱{{ number_format($contract->forfeited_deposit_amount, 2) }}
+                                            </div>
+                                        @elseif($contract->refunded_deposit_amount > 0)
+                                            <div class="text-[9px] text-blue-600 dark:text-blue-400 font-mono mt-0.5">
+                                                Refunded: ₱{{ number_format($contract->refunded_deposit_amount, 2) }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 @elseif($expiryDate)
                                     <div class="text-xs font-medium text-slate-900 dark:text-white">
                                         {{ $expiryDate->format('M d, Y') }}
@@ -299,6 +315,17 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v2m0-10c-1.11 0-2.08.402-2.599 1M12 18c1.657 0 3-.895 3-2s-1.343-2-3-2" />
                                             </svg>
                                             <span>Pay</span>
+                                        </button>
+
+                                        <!-- Send Reminder Action (Email notice) -->
+                                        <button type="button"
+                                                wire:click="sendReminder({{ $contract->id }})"
+                                                wire:loading.attr="disabled"
+                                                class="p-1 text-amber-600 hover:text-amber-700 dark:hover:text-amber-400 rounded border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20 transition-colors cursor-pointer"
+                                                title="Send Payment Due Reminder Email (Sent: {{ $contract->reminder_count ?? 0 }}x)">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                            </svg>
                                         </button>
 
                                         <!-- Cancel & Restock Action -->
@@ -513,13 +540,25 @@
 
                 <form wire:submit.prevent="submitCancellation" class="p-5 space-y-3.5 text-xs">
                     <div class="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded text-rose-800 dark:text-rose-300 text-xs space-y-1">
-                        <div class="font-bold">Warning: Reserved furniture items will be returned to yard inventory.</div>
-                        <div class="text-[11px] opacity-90">All physical stock will be incremented with an official audit log. Retained customer payments (₱{{ number_format($cancellingSale->amount_paid, 2) }}) will be preserved in records.</div>
+                        <div class="font-bold">Warning: Reserved metalcraft items will be returned to yard inventory.</div>
+                        <div class="text-[11px] opacity-90">All physical stock will be incremented with an official audit log. Customer deposits (₱{{ number_format($cancellingSale->amount_paid, 2) }}) will be recorded in the audit trail.</div>
                     </div>
 
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            Forfeiture reason <span class="text-rose-500">*</span>
+                            Deposit disposition <span class="text-rose-500">*</span>
+                        </label>
+                        <select wire:model="depositDisposition" class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 transition-colors">
+                            <option value="forfeited">Forfeit deposit to company (₱{{ number_format($cancellingSale->amount_paid, 2) }} retained)</option>
+                            <option value="refunded">Refund deposit to customer (₱{{ number_format($cancellingSale->amount_paid, 2) }} issued back)</option>
+                            <option value="none">No deposit retained / Waived</option>
+                        </select>
+                        @error('depositDisposition') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Cancellation reason <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" wire:model="cancelReason" class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 transition-colors">
                         @error('cancelReason') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror

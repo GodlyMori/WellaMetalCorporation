@@ -40,6 +40,15 @@ class Sale extends Model
         'archived_by',
         'archive_approved_by',
         'archive_reason',
+        'customer_email',
+        'last_reminder_sent_at',
+        'reminder_count',
+        'cancelled_by',
+        'cancelled_at',
+        'cancellation_reason',
+        'deposit_disposition',
+        'forfeited_deposit_amount',
+        'refunded_deposit_amount',
     ];
 
     protected $casts = [
@@ -49,9 +58,14 @@ class Sale extends Model
         'downpayment_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'remaining_balance' => 'decimal:2',
+        'forfeited_deposit_amount' => 'decimal:2',
+        'refunded_deposit_amount' => 'decimal:2',
         'layaway_expires_at' => 'date',
         'last_payment_date' => 'date',
         'sale_date' => 'date',
+        'last_reminder_sent_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+        'reminder_count' => 'integer',
         'is_archived' => 'boolean',
     ];
 
@@ -78,6 +92,11 @@ class Sale extends Model
     public function archiveApprover()
     {
         return $this->belongsTo(User::class, 'archive_approved_by');
+    }
+
+    public function cancelledBy()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 
     public function product()
