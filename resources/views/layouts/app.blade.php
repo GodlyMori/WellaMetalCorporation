@@ -26,8 +26,7 @@
     <body class="font-sans antialiased bg-slate-50 text-slate-800 min-h-screen flex overflow-x-hidden transition-colors duration-150"
           x-data="{ 
               sidebarOpen: false, 
-              switchRoleModal: false,
-              userMenuOpen: false
+              switchRoleModal: false
           }">
 
         <!-- SIDEBAR -->
@@ -241,22 +240,38 @@
                     };
                 @endphp
 
-                <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-2.5">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
                         <div class="w-7 h-7 rounded bg-[#1a2858] text-slate-200 font-bold text-[11px] flex items-center justify-center flex-shrink-0">
                             {{ $badgeInitials }}
                         </div>
-                        <div class="min-w-0">
-                            <div class="text-white text-xs font-semibold truncate leading-tight">{{ $userTitle }}</div>
-                            <div class="text-slate-400 text-[11px] font-mono tracking-wider uppercase">{{ $roleLabel }}</div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-white text-xs font-semibold truncate leading-tight">{{ $currentUser?->name ?? $userTitle }}</div>
+                            <div class="text-slate-400 text-[10px] font-mono tracking-wider uppercase truncate">{{ $roleLabel }}</div>
                         </div>
                     </div>
-                    @if(!$currentUser?->hasRole('secretary'))
-                        <button type="button" @click="switchRoleModal = true" class="text-slate-400 hover:text-white transition-colors cursor-pointer flex-shrink-0" title="Switch workspace role">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                        </button>
-                    @endif
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                        @if(!$currentUser?->hasRole('secretary'))
+                            <button type="button"
+                                    @click="switchRoleModal = true"
+                                    class="p-1.5 text-slate-400 hover:text-white hover:bg-[#1a2858] rounded transition-colors cursor-pointer"
+                                    title="Switch workspace role"
+                                    aria-label="Switch workspace role">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                            </button>
+                        @endif
+                        <form method="POST" action="{{ route('logout') }}" class="inline m-0">
+                            @csrf
+                            <button type="submit"
+                                    class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#1a2858] rounded transition-colors cursor-pointer flex items-center justify-center"
+                                    title="Sign Out"
+                                    aria-label="Sign Out">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            </button>
+                        </form>
+                    </div>
                 </div>
+            </div>
         </aside>
 
         <!-- BACKDROP FOR MOBILE SIDEBAR -->
@@ -373,41 +388,6 @@
                             </div>
                         </div>
                     @endif
-
-                    <!-- User Profile Dropdown -->
-                    <div class="relative">
-                        <button type="button"
-                                @click="userMenuOpen = !userMenuOpen"
-                                class="w-9 h-9 rounded bg-[#142259] text-white font-bold text-xs flex items-center justify-center border border-slate-700 dark:border-[#1a2858] hover:bg-[#0e1840] transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-400"
-                                aria-label="User account menu">
-                            {{ strtoupper(substr(Auth::user()?->name ?? 'WM', 0, 2)) }}
-                        </button>
-
-                        <div x-show="userMenuOpen"
-                             @click.away="userMenuOpen = false"
-                             x-transition
-                             class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0c163b] rounded shadow-md border border-slate-200 dark:border-[#1a2858] py-1.5 z-50 text-xs">
-                            <div class="px-3.5 py-2 border-b border-slate-100 dark:border-[#1a2858]">
-                                <p class="font-semibold text-slate-900 dark:text-white">{{ Auth::user()?->name ?? 'User' }}</p>
-                                <p class="text-slate-500 dark:text-slate-400 text-[11px] truncate">{{ Auth::user()?->email ?? '' }}</p>
-                            </div>
-                            @if(!Auth::user()?->hasRole('secretary'))
-                                <button @click="switchRoleModal = true; userMenuOpen = false;"
-                                        class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#132057] text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2 cursor-pointer transition-colors">
-                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                    Switch Role
-                                </button>
-                            @endif
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit"
-                                        class="w-full text-left px-3.5 py-2 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium flex items-center gap-2 cursor-pointer transition-colors">
-                                    <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                                    Sign Out
-                                </button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
             </header>
 
