@@ -766,14 +766,19 @@ class SalesManager extends Component
                 $pId = (int) $it['product_id'];
                 $qty = (int) $it['quantity'];
 
-                SaleItem::create([
+                $itemPayload = [
                     'sale_id' => $sale->id,
                     'product_id' => $pId,
                     'quantity' => $qty,
-                    'original_price' => $it['srp'] ?? $it['unit_price'],
                     'unit_price' => $it['unit_price'],
                     'subtotal' => $it['subtotal'],
-                ]);
+                ];
+
+                if (Schema::hasColumn('sale_items', 'original_price')) {
+                    $itemPayload['original_price'] = $it['srp'] ?? $it['unit_price'];
+                }
+
+                SaleItem::create($itemPayload);
 
                 $lockedProduct = $lockedProducts[$pId];
                 $oldStock = (int) $lockedProduct->quantity_in_stock;
