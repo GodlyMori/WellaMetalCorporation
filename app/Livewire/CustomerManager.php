@@ -185,12 +185,28 @@ class CustomerManager extends Component
         }
 
         $receiptItems = [];
+        $grossSrpTotal = 0.0;
+        $negotiatedConcessionTotal = 0.0;
+        $hasNegotiatedItems = false;
         foreach ($sale->items as $it) {
+            $srp = (float) ($it->original_price ?? $it->unit_price);
+            $unitPrice = (float) $it->unit_price;
+            $isNeg = (abs($srp - $unitPrice) > 0.001);
+            if ($isNeg) {
+                $hasNegotiatedItems = true;
+            }
+            $concession = max(0.0, $srp - $unitPrice) * (int) $it->quantity;
+            $grossSrpTotal += $srp * (int) $it->quantity;
+            $negotiatedConcessionTotal += $concession;
+
             $receiptItems[] = [
                 'name' => $it->product?->name ?? 'Custom Item',
                 'quantity' => (int) $it->quantity,
-                'unit_price' => (float) $it->unit_price,
+                'srp' => $srp,
+                'unit_price' => $unitPrice,
                 'subtotal' => (float) $it->subtotal,
+                'is_negotiated' => $isNeg,
+                'concession' => $concession,
             ];
         }
 
@@ -205,6 +221,10 @@ class CustomerManager extends Component
             'customer_phone' => $sale->customer_phone ?: ($sale->customer?->phone ?? '—'),
             'customer_address' => $sale->customer_address ?: ($sale->customer?->address ?? '—'),
             'items' => $receiptItems,
+            'gross_srp_total' => $grossSrpTotal > 0 ? $grossSrpTotal : (float) ($sale->original_amount ?? $sale->amount),
+            'negotiated_concession_total' => $negotiatedConcessionTotal,
+            'has_negotiated_items' => $hasNegotiatedItems,
+            'promo_discount_amount' => max(0.0, (float) ($sale->discount_amount ?? 0) - $negotiatedConcessionTotal),
             'total_amount' => (float) ($sale->original_amount ?? $sale->amount),
             'discount_amount' => (float) ($sale->discount_amount ?? 0),
             'promo_name' => $sale->promo_name,

@@ -438,7 +438,15 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-1 pr-4">
                                 <div class="font-semibold text-slate-900 dark:text-white">{{ $item['name'] }}</div>
-                                <div class="text-[11px] text-slate-400 font-mono">{{ $item['quantity'] }} × ₱{{ number_format($item['unit_price'], 2) }}</div>
+                                @if(!empty($item['is_negotiated']) && ($item['srp'] ?? 0) > $item['unit_price'])
+                                    <div class="text-[11px] text-slate-400 font-mono">
+                                        <span class="line-through">SRP ₱{{ number_format($item['srp'], 2) }}</span>
+                                        <span class="text-amber-700 dark:text-amber-400 font-medium"> → Agreed ₱{{ number_format($item['unit_price'], 2) }}</span>
+                                        <span>({{ $item['quantity'] }} × ₱{{ number_format($item['unit_price'], 2) }})</span>
+                                    </div>
+                                @else
+                                    <div class="text-[11px] text-slate-400 font-mono">{{ $item['quantity'] }} × ₱{{ number_format($item['unit_price'], 2) }}</div>
+                                @endif
                             </div>
                             <div class="font-mono font-bold text-slate-900 dark:text-white text-right">
                                 ₱{{ number_format($item['subtotal'], 2) }}
@@ -449,12 +457,32 @@
 
                 <!-- Financial Breakdown -->
                 <div class="p-5 space-y-2 text-xs border-b border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0f1b40]">
-                    <div class="flex justify-between text-slate-500 dark:text-slate-400">
-                        <span>Items subtotal:</span>
-                        <span class="font-mono text-slate-800 dark:text-slate-200">₱{{ number_format($receiptData['total_amount'], 2) }}</span>
-                    </div>
+                    @if(!empty($receiptData['has_negotiated_items']) && ($receiptData['negotiated_concession_total'] ?? 0) > 0)
+                        <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                            <span>Gross SRP total:</span>
+                            <span class="font-mono text-slate-800 dark:text-slate-200">₱{{ number_format($receiptData['gross_srp_total'] ?? $receiptData['total_amount'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-amber-700 dark:text-amber-400">
+                            <span>Price adjustment (negotiated):</span>
+                            <span class="font-mono font-semibold">-₱{{ number_format($receiptData['negotiated_concession_total'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600 dark:text-slate-300">
+                            <span>Agreed subtotal:</span>
+                            <span class="font-mono text-slate-800 dark:text-slate-200">₱{{ number_format($receiptData['total_amount'], 2) }}</span>
+                        </div>
+                    @else
+                        <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                            <span>Items subtotal:</span>
+                            <span class="font-mono text-slate-800 dark:text-slate-200">₱{{ number_format($receiptData['total_amount'], 2) }}</span>
+                        </div>
+                    @endif
 
-                    @if(!empty($receiptData['discount_amount']) && $receiptData['discount_amount'] > 0)
+                    @if(!empty($receiptData['promo_discount_amount']) && $receiptData['promo_discount_amount'] > 0)
+                        <div class="flex justify-between text-emerald-700 dark:text-emerald-400">
+                            <span>Promo discount ({{ $receiptData['promo_name'] ?? 'Applied' }}):</span>
+                            <span class="font-mono font-semibold">-₱{{ number_format($receiptData['promo_discount_amount'], 2) }}</span>
+                        </div>
+                    @elseif(!empty($receiptData['discount_amount']) && $receiptData['discount_amount'] > 0 && empty($receiptData['has_negotiated_items']))
                         <div class="flex justify-between text-amber-700 dark:text-amber-400">
                             <span>Promo discount ({{ $receiptData['promo_name'] ?? 'Applied' }}):</span>
                             <span class="font-mono font-semibold">-₱{{ number_format($receiptData['discount_amount'], 2) }}</span>

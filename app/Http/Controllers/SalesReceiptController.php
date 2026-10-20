@@ -26,12 +26,28 @@ class SalesReceiptController extends Controller
         }
 
         $receiptItems = [];
+        $grossSrpTotal = 0.0;
+        $negotiatedConcessionTotal = 0.0;
+        $hasNegotiatedItems = false;
         foreach ($saleRecord->items as $it) {
+            $srp = (float) ($it->original_price ?? $it->unit_price);
+            $unitPrice = (float) $it->unit_price;
+            $isNeg = (abs($srp - $unitPrice) > 0.001);
+            if ($isNeg) {
+                $hasNegotiatedItems = true;
+            }
+            $concession = max(0.0, $srp - $unitPrice) * (int) $it->quantity;
+            $grossSrpTotal += $srp * (int) $it->quantity;
+            $negotiatedConcessionTotal += $concession;
+
             $receiptItems[] = [
                 'name' => $it->product?->name ?? 'Custom Item',
                 'quantity' => (int) $it->quantity,
-                'unit_price' => (float) $it->unit_price,
+                'srp' => $srp,
+                'unit_price' => $unitPrice,
                 'subtotal' => (float) $it->subtotal,
+                'is_negotiated' => $isNeg,
+                'concession' => $concession,
             ];
         }
 
@@ -46,6 +62,10 @@ class SalesReceiptController extends Controller
             'customer_phone' => $saleRecord->customer_phone ?: ($saleRecord->customer?->phone ?? '—'),
             'customer_address' => $saleRecord->customer_address ?: ($saleRecord->customer?->address ?? '—'),
             'items' => $receiptItems,
+            'gross_srp_total' => $grossSrpTotal > 0 ? $grossSrpTotal : (float) ($saleRecord->original_amount ?? $saleRecord->amount),
+            'negotiated_concession_total' => $negotiatedConcessionTotal,
+            'has_negotiated_items' => $hasNegotiatedItems,
+            'promo_discount_amount' => max(0.0, (float) ($saleRecord->discount_amount ?? 0) - $negotiatedConcessionTotal),
             'total_amount' => (float) ($saleRecord->original_amount ?? $saleRecord->amount),
             'discount_amount' => (float) ($saleRecord->discount_amount ?? 0),
             'promo_name' => $saleRecord->promo_name,

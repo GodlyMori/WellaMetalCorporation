@@ -185,15 +185,47 @@ class SalesManager extends Component
         $this->items[] = [
             'product_id' => $product->id,
             'name' => $product->name,
+            'srp' => (float) $product->tagged_price,
             'unit_price' => (float) $product->tagged_price,
             'quantity' => 1,
             'subtotal' => (float) $product->tagged_price,
             'max_stock' => $product->quantity_in_stock,
+            'is_negotiated' => false,
         ];
 
         // If layaway, auto-adjust min downpayment
         if ($this->payment_type === 'layaway') {
             $this->downpayment_amount = (string) $this->minDownpayment;
+        }
+    }
+
+    public function updateItemPrice(int $index, $newPrice): void
+    {
+        if (isset($this->items[$index])) {
+            $parsedPrice = max(0.01, round((float) $newPrice, 2));
+            $srp = (float) ($this->items[$index]['srp'] ?? $this->items[$index]['unit_price']);
+            $this->items[$index]['srp'] = $srp;
+            $this->items[$index]['unit_price'] = $parsedPrice;
+            $this->items[$index]['subtotal'] = (int) $this->items[$index]['quantity'] * $parsedPrice;
+            $this->items[$index]['is_negotiated'] = (abs($parsedPrice - $srp) > 0.001);
+
+            if ($this->payment_type === 'layaway') {
+                $this->downpayment_amount = (string) $this->minDownpayment;
+            }
+        }
+    }
+
+    public function resetItemPrice(int $index): void
+    {
+        if (isset($this->items[$index])) {
+            $srp = (float) ($this->items[$index]['srp'] ?? $this->items[$index]['unit_price']);
+            $this->items[$index]['unit_price'] = $srp;
+            $this->items[$index]['subtotal'] = (int) $this->items[$index]['quantity'] * $srp;
+            $this->items[$index]['is_negotiated'] = false;
+
+            if ($this->payment_type === 'layaway') {
+                $this->downpayment_amount = (string) $this->minDownpayment;
+            }
         }
     }
 
@@ -262,6 +294,46 @@ class SalesManager extends Component
     }
 
     // Calculations
+    public function getGrossSrpTotalProperty(): float
+    {
+        $total = 0.0;
+        foreach ($this->items as $item) {
+            $srp = (float) ($item['srp'] ?? $item['unit_price'] ?? 0);
+            $qty = (int) ($item['quantity'] ?? 1);
+            $total += $srp * $qty;
+        }
+
+        return round($total, 2);
+    }
+
+    public function getNegotiatedConcessionTotalProperty(): float
+    {
+        $concession = 0.0;
+        foreach ($this->items as $item) {
+            $srp = (float) ($item['srp'] ?? $item['unit_price'] ?? 0);
+            $unitPrice = (float) ($item['unit_price'] ?? 0);
+            $qty = (int) ($item['quantity'] ?? 1);
+            if ($srp > $unitPrice) {
+                $concession += ($srp - $unitPrice) * $qty;
+            }
+        }
+
+        return round($concession, 2);
+    }
+
+    public function getHasNegotiatedItemsProperty(): bool
+    {
+        foreach ($this->items as $item) {
+            $srp = (float) ($item['srp'] ?? $item['unit_price'] ?? 0);
+            $unitPrice = (float) ($item['unit_price'] ?? 0);
+            if (abs($srp - $unitPrice) > 0.001) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function getTotalAmountProperty(): float
     {
         $total = 0.0;
@@ -270,6 +342,16 @@ class SalesManager extends Component
         }
 
         return $total;
+    }
+
+    public function getPromoDiscountAmountProperty(): float
+    {
+        return $this->discountAmount;
+    }
+
+    public function getTotalDiscountAmountProperty(): float
+    {
+        return round($this->negotiatedConcessionTotal + $this->discountAmount, 2);
     }
 
     public function getAvailablePromotionsProperty()
@@ -623,6 +705,9 @@ class SalesManager extends Component
             }
 
             // 2. Create Sale Record
+            $grossSrpTotal = $this->grossSrpTotal;
+            $totalDiscountAmount = $this->totalDiscountAmount;
+
             $saleData = [
                 'customer_id' => $customer->id,
                 'sale_number' => null,
@@ -636,8 +721,8 @@ class SalesManager extends Component
                 'promotion_id' => $promo?->id,
                 'promo_name' => $promoName,
                 'amount' => $netAmount,
-                'original_amount' => $totalAmount,
-                'discount_amount' => $discountAmount,
+                'original_amount' => $grossSrpTotal,
+                'discount_amount' => $totalDiscountAmount,
                 'payment_type' => $this->payment_type,
                 'downpayment_amount' => $isLayaway ? $downpayment : 0,
                 'amount_paid' => $downpayment,
@@ -685,6 +770,7 @@ class SalesManager extends Component
                     'sale_id' => $sale->id,
                     'product_id' => $pId,
                     'quantity' => $qty,
+                    'original_price' => $it['srp'] ?? $it['unit_price'],
                     'unit_price' => $it['unit_price'],
                     'subtotal' => $it['subtotal'],
                 ]);
@@ -750,11 +836,19 @@ class SalesManager extends Component
         // Prepare Receipt Data (pure display, no print buttons)
         $receiptItems = [];
         foreach ($this->items as $it) {
+            $srp = (float) ($it['srp'] ?? $it['unit_price']);
+            $unitPrice = (float) $it['unit_price'];
+            $isNeg = (abs($srp - $unitPrice) > 0.001);
+            $concession = max(0.0, $srp - $unitPrice) * (int) $it['quantity'];
+
             $receiptItems[] = [
                 'name' => $it['name'],
                 'quantity' => (int) $it['quantity'],
-                'unit_price' => (float) $it['unit_price'],
+                'srp' => $srp,
+                'unit_price' => $unitPrice,
                 'subtotal' => (float) $it['subtotal'],
+                'is_negotiated' => $isNeg,
+                'concession' => $concession,
             ];
         }
 
@@ -767,8 +861,12 @@ class SalesManager extends Component
             'customer_phone' => $this->customer_phone,
             'customer_address' => $this->customer_address,
             'items' => $receiptItems,
+            'gross_srp_total' => $grossSrpTotal,
+            'negotiated_concession_total' => $this->negotiatedConcessionTotal,
+            'has_negotiated_items' => $this->hasNegotiatedItems,
+            'promo_discount_amount' => $this->promoDiscountAmount,
             'total_amount' => $this->totalAmount,
-            'discount_amount' => $this->discountAmount,
+            'discount_amount' => $totalDiscountAmount,
             'promo_name' => $createdSale->promo_name,
             'net_amount' => $this->netAmount,
             'payment_type' => $this->payment_type,
@@ -818,12 +916,28 @@ class SalesManager extends Component
             $sale = Sale::with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->find($this->lastRecordedSaleId);
             if ($sale) {
                 $receiptItems = [];
+                $grossSrpTotal = 0.0;
+                $negotiatedConcessionTotal = 0.0;
+                $hasNegotiatedItems = false;
                 foreach ($sale->items as $it) {
+                    $srp = (float) ($it->original_price ?? $it->unit_price);
+                    $unitPrice = (float) $it->unit_price;
+                    $isNeg = (abs($srp - $unitPrice) > 0.001);
+                    if ($isNeg) {
+                        $hasNegotiatedItems = true;
+                    }
+                    $concession = max(0.0, $srp - $unitPrice) * (int) $it->quantity;
+                    $grossSrpTotal += $srp * (int) $it->quantity;
+                    $negotiatedConcessionTotal += $concession;
+
                     $receiptItems[] = [
                         'name' => $it->product?->name ?? 'Custom Item',
                         'quantity' => (int) $it->quantity,
-                        'unit_price' => (float) $it->unit_price,
+                        'srp' => $srp,
+                        'unit_price' => $unitPrice,
                         'subtotal' => (float) $it->subtotal,
+                        'is_negotiated' => $isNeg,
+                        'concession' => $concession,
                     ];
                 }
 
@@ -838,6 +952,10 @@ class SalesManager extends Component
                     'customer_phone' => $sale->customer_phone ?: ($sale->customer?->phone ?? '—'),
                     'customer_address' => $sale->customer_address ?: ($sale->customer?->address ?? '—'),
                     'items' => $receiptItems,
+                    'gross_srp_total' => $grossSrpTotal > 0 ? $grossSrpTotal : (float) ($sale->original_amount ?? $sale->amount),
+                    'negotiated_concession_total' => $negotiatedConcessionTotal,
+                    'has_negotiated_items' => $hasNegotiatedItems,
+                    'promo_discount_amount' => max(0.0, (float) ($sale->discount_amount ?? 0) - $negotiatedConcessionTotal),
                     'total_amount' => (float) ($sale->original_amount ?? $sale->amount),
                     'discount_amount' => (float) ($sale->discount_amount ?? 0),
                     'promo_name' => $sale->promo_name,
@@ -957,6 +1075,11 @@ class SalesManager extends Component
             'emailDeliveryStatus' => $this->emailDeliveryStatus,
             'totalAmount' => $this->totalAmount,
             'discountAmount' => $this->discountAmount,
+            'grossSrpTotal' => $this->grossSrpTotal,
+            'negotiatedConcessionTotal' => $this->negotiatedConcessionTotal,
+            'hasNegotiatedItems' => $this->hasNegotiatedItems,
+            'promoDiscountAmount' => $this->promoDiscountAmount,
+            'totalDiscountAmount' => $this->totalDiscountAmount,
             'netAmount' => $this->netAmount,
             'availablePromotions' => $this->availablePromotions,
             'changeDue' => $this->changeDue,

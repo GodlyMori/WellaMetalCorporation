@@ -75,7 +75,15 @@
                     <div class="flex justify-between items-start">
                         <div class="flex-1 pr-4">
                             <div class="font-semibold text-slate-900">{{ $item['name'] }}</div>
-                            <div class="text-[11px] text-slate-400 font-mono">{{ $item['quantity'] }} × ₱{{ number_format($item['unit_price'], 2) }}</div>
+                            @if(!empty($item['is_negotiated']) && ($item['srp'] ?? 0) > $item['unit_price'])
+                                <div class="text-[11px] text-slate-400 font-mono">
+                                    <span class="line-through">SRP ₱{{ number_format($item['srp'], 2) }}</span>
+                                    <span class="text-amber-700 font-medium"> → Agreed ₱{{ number_format($item['unit_price'], 2) }}</span>
+                                    <span>({{ $item['quantity'] }} × ₱{{ number_format($item['unit_price'], 2) }})</span>
+                                </div>
+                            @else
+                                <div class="text-[11px] text-slate-400 font-mono">{{ $item['quantity'] }} × ₱{{ number_format($item['unit_price'], 2) }}</div>
+                            @endif
                         </div>
                         <div class="font-mono font-bold text-slate-900 text-right">
                             ₱{{ number_format($item['subtotal'], 2) }}
@@ -86,12 +94,32 @@
 
             <!-- Financial Breakdown -->
             <div class="p-5 space-y-2 text-xs border-b border-dashed border-slate-300 bg-slate-50">
-                <div class="flex justify-between text-slate-500">
-                    <span>Items subtotal:</span>
-                    <span class="font-mono text-slate-800">₱{{ number_format($receipt['total_amount'], 2) }}</span>
-                </div>
+                @if(!empty($receipt['has_negotiated_items']) && ($receipt['negotiated_concession_total'] ?? 0) > 0)
+                    <div class="flex justify-between text-slate-500">
+                        <span>Gross SRP total:</span>
+                        <span class="font-mono text-slate-800">₱{{ number_format($receipt['gross_srp_total'] ?? $receipt['total_amount'], 2) }}</span>
+                    </div>
+                    <div class="flex justify-between text-amber-700">
+                        <span>Price adjustment (negotiated):</span>
+                        <span class="font-mono font-semibold">-₱{{ number_format($receipt['negotiated_concession_total'], 2) }}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-600">
+                        <span>Agreed subtotal:</span>
+                        <span class="font-mono text-slate-800">₱{{ number_format($receipt['total_amount'], 2) }}</span>
+                    </div>
+                @else
+                    <div class="flex justify-between text-slate-500">
+                        <span>Items subtotal:</span>
+                        <span class="font-mono text-slate-800">₱{{ number_format($receipt['total_amount'], 2) }}</span>
+                    </div>
+                @endif
 
-                @if(!empty($receipt['discount_amount']) && $receipt['discount_amount'] > 0)
+                @if(!empty($receipt['promo_discount_amount']) && $receipt['promo_discount_amount'] > 0)
+                    <div class="flex justify-between text-emerald-700">
+                        <span>Promo discount ({{ $receipt['promo_name'] ?? 'Applied' }}):</span>
+                        <span class="font-mono font-semibold">-₱{{ number_format($receipt['promo_discount_amount'], 2) }}</span>
+                    </div>
+                @elseif(!empty($receipt['discount_amount']) && $receipt['discount_amount'] > 0 && empty($receipt['has_negotiated_items']))
                     <div class="flex justify-between text-amber-700">
                         <span>Promo discount ({{ $receipt['promo_name'] ?? 'Applied' }}):</span>
                         <span class="font-mono font-semibold">-₱{{ number_format($receipt['discount_amount'], 2) }}</span>

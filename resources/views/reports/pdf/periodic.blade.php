@@ -227,7 +227,13 @@
             <td class="kpi-cell" style="width: 25%;">
                 <div class="kpi-label">Gross Sales Volume</div>
                 <div class="kpi-value">₱{{ number_format($periodic['totals']['gross_sales_volume'], 2) }}</div>
-                <div class="kpi-sub">{{ $periodic['totals']['completed_count'] + $periodic['totals']['layaway_count'] }} active orders (₱{{ number_format($periodic['totals']['average_ticket'], 2) }} AOV)</div>
+                <div class="kpi-sub">
+                    @if(($periodic['totals']['gross_srp_volume'] ?? 0) > $periodic['totals']['gross_sales_volume'])
+                        Gross SRP: ₱{{ number_format($periodic['totals']['gross_srp_volume'], 2) }} (Adj: -₱{{ number_format($periodic['totals']['total_discounts'], 2) }})
+                    @else
+                        {{ $periodic['totals']['completed_count'] + $periodic['totals']['layaway_count'] }} active orders (₱{{ number_format($periodic['totals']['average_ticket'], 2) }} AOV)
+                    @endif
+                </div>
             </td>
             <td class="kpi-cell" style="width: 25%;">
                 <div class="kpi-label">Stock Turnover Volume</div>
@@ -253,7 +259,7 @@
                 <th style="width: 10%; text-align: center;">Orders</th>
                 <th style="width: 14%; text-align: right;">Completed (₱)</th>
                 <th style="width: 14%; text-align: right;">Layaway Inflow (₱)</th>
-                <th style="width: 12%; text-align: right;">Discounts (₱)</th>
+                <th style="width: 12%; text-align: right;">Discounts & Adj (₱)</th>
                 <th style="width: 14%; text-align: right;">Realized Cash (₱)</th>
                 <th style="width: 14%; text-align: right;">Receivables Bal (₱)</th>
             </tr>

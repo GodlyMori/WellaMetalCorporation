@@ -74,6 +74,7 @@ class PeriodicReportService
             $layawayDeposits = (float) $layawaySales->sum('amount_paid');
             $realizedCash = $completedRevenue + $layawayDeposits;
             $grossSalesVolume = (float) $completedSales->sum('amount') + (float) $layawaySales->sum('amount');
+            $grossSrpVolume = (float) $bucketSales->sum(fn (Sale $s) => (float) ($s->original_amount ?? $s->amount));
             $totalDiscounts = (float) $bucketSales->sum('discount_amount');
             $outstandingBalance = (float) $layawaySales->sum('remaining_balance');
 
@@ -90,6 +91,7 @@ class PeriodicReportService
                 'layaway_deposits' => $layawayDeposits,
                 'cancelled_count' => $cancelledSales->count(),
                 'gross_sales_volume' => $grossSalesVolume,
+                'gross_srp_volume' => $grossSrpVolume,
                 'realized_cash' => $realizedCash,
                 'total_discounts' => $totalDiscounts,
                 'outstanding_balance' => $outstandingBalance,
@@ -104,6 +106,7 @@ class PeriodicReportService
         $totalLayawayDeposits = (float) $allLayaways->sum('amount_paid');
         $totalRealizedCash = $totalCompletedRevenue + $totalLayawayDeposits;
         $totalGrossVolume = $totalCompletedRevenue + (float) $allLayaways->sum('amount');
+        $totalGrossSrpVolume = (float) $sales->sum(fn (Sale $s) => (float) ($s->original_amount ?? $s->amount));
         $totalDiscountsAll = (float) $sales->sum('discount_amount');
         $totalOutstandingReceivables = (float) $allLayaways->sum('remaining_balance');
 
@@ -123,6 +126,7 @@ class PeriodicReportService
                 'layaway_deposits' => $totalLayawayDeposits,
                 'realized_cash' => $totalRealizedCash,
                 'gross_sales_volume' => $totalGrossVolume,
+                'gross_srp_volume' => $totalGrossSrpVolume,
                 'total_discounts' => $totalDiscountsAll,
                 'outstanding_receivables' => $totalOutstandingReceivables,
                 'average_ticket' => $overallAverageTicket,

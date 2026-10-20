@@ -234,6 +234,9 @@
                     </td>
                     <td class="text-right mono font-bold">
                         ₱{{ number_format($sale->amount, 2) }}
+                        @if($sale->discount_amount > 0)
+                            <div style="font-size: 6.5pt; color: #b45309; font-weight: normal;">Adj/Disc: -₱{{ number_format($sale->discount_amount, 2) }}</div>
+                        @endif
                         @if($sale->status === 'layaway' && $sale->amount_paid > 0)
                             <div style="font-size: 6.5pt; color: #047857; font-weight: normal;">Paid: ₱{{ number_format($sale->amount_paid, 2) }}</div>
                         @endif
