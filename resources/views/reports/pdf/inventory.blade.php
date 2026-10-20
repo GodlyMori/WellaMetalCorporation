@@ -191,7 +191,7 @@
                 <div class="kpi-value" style="color: {{ $lowStockCount > 0 ? '#b45309' : '#0f172a' }};">
                     {{ $lowStockCount }} items
                 </div>
-                <div class="kpi-sub">&le; 4 units remaining</div>
+                <div class="kpi-sub">At or below reorder threshold</div>
             </td>
         </tr>
     </table>
@@ -223,7 +223,7 @@
                     <td class="text-center mono font-bold">
                         @if($product->quantity_in_stock <= 0)
                             <span style="color: #be123c;">0</span>
-                        @elseif($product->quantity_in_stock <= 4)
+                        @elseif($product->quantity_in_stock <= ($product->low_stock_threshold ?? 5))
                             <span style="color: #b45309;">{{ $product->quantity_in_stock }}</span>
                         @else
                             <span style="color: #047857;">{{ $product->quantity_in_stock }}</span>

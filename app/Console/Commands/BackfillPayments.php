@@ -41,20 +41,22 @@ class BackfillPayments extends Command
             $inspectedCount++;
 
             // Rule 1: Skip if amount_paid is zero or negative
-            if ((float)$sale->amount_paid <= 0) {
+            if ((float) $sale->amount_paid <= 0) {
                 $skippedZeroAmountCount++;
+
                 continue;
             }
 
             // Rule 2 & 3: Skip if payment records already exist for this sale
             if ($sale->payments()->exists()) {
                 $skippedExistingCount++;
+
                 continue;
             }
 
             // Rule 4: Create exactly ONE historical Payment record
-            $paymentDate = $sale->last_payment_date 
-                ? Carbon::parse($sale->last_payment_date)->startOfDay() 
+            $paymentDate = $sale->last_payment_date
+                ? Carbon::parse($sale->last_payment_date)->startOfDay()
                 : ($sale->sale_date ? Carbon::parse($sale->sale_date)->startOfDay() : now());
 
             Payment::create([

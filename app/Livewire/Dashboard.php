@@ -38,7 +38,7 @@ class Dashboard extends Component
         // Layaways & Receivables
         $layawaySales = Sale::where('is_archived', false)->where('status', 'layaway');
         $layawayCount = (clone $layawaySales)->count();
-        $layawayBalance = (float)(clone $layawaySales)->sum('remaining_balance');
+        $layawayBalance = (float) (clone $layawaySales)->sum('remaining_balance');
 
         // Top 5 Products - Queried dynamically from real sales records
         $salesForTop = Sale::with(['items.product', 'product'])
@@ -52,37 +52,37 @@ class Dashboard extends Component
                 foreach ($s->items as $it) {
                     $pId = $it->product_id;
                     $pName = $it->product?->name ?? $s->product_name;
-                    if (!isset($productRevenueMap[$pId])) {
+                    if (! isset($productRevenueMap[$pId])) {
                         $productRevenueMap[$pId] = [
                             'name' => $pName,
                             'amount' => 0.0,
                         ];
                     }
-                    $productRevenueMap[$pId]['amount'] += (float)$it->subtotal;
+                    $productRevenueMap[$pId]['amount'] += (float) $it->subtotal;
                 }
             } elseif ($s->product_id) {
                 $pId = $s->product_id;
                 $pName = $s->product?->name ?? $s->product_name;
-                if (!isset($productRevenueMap[$pId])) {
+                if (! isset($productRevenueMap[$pId])) {
                     $productRevenueMap[$pId] = [
                         'name' => $pName,
                         'amount' => 0.0,
                     ];
                 }
-                $productRevenueMap[$pId]['amount'] += (float)$s->amount;
+                $productRevenueMap[$pId]['amount'] += (float) $s->amount;
             }
         }
 
-        uasort($productRevenueMap, fn($a, $b) => $b['amount'] <=> $a['amount']);
+        uasort($productRevenueMap, fn ($a, $b) => $b['amount'] <=> $a['amount']);
         $topSlice = array_slice($productRevenueMap, 0, 5, true);
-        $maxAmount = !empty($topSlice) ? max(array_column($topSlice, 'amount')) : 0;
+        $maxAmount = ! empty($topSlice) ? max(array_column($topSlice, 'amount')) : 0;
 
         $topProducts = [];
         $rankIdx = 1;
         foreach ($topSlice as $p) {
-            $pct = $maxAmount > 0 ? (int)round(($p['amount'] / $maxAmount) * 100) : 0;
+            $pct = $maxAmount > 0 ? (int) round(($p['amount'] / $maxAmount) * 100) : 0;
             $topProducts[] = [
-                'rank' => '#' . $rankIdx,
+                'rank' => '#'.$rankIdx,
                 'name' => $p['name'],
                 'amount' => $p['amount'],
                 'pct' => $pct,
@@ -98,9 +98,9 @@ class Dashboard extends Component
             ->groupBy('category')
             ->orderByDesc('count')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'name' => $item->name,
-                'count' => (int)$item->count,
+                'count' => (int) $item->count,
             ])
             ->toArray();
 
@@ -133,7 +133,7 @@ class Dashboard extends Component
                 ->whereYear('sale_date', $m->year)
                 ->whereMonth('sale_date', $m->month)
                 ->sum('amount');
-            $salesChartData[] = (float)$monthSum;
+            $salesChartData[] = (float) $monthSum;
         }
 
         return view('livewire.dashboard', [

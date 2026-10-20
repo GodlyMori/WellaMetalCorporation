@@ -112,7 +112,7 @@ class ReportController extends Controller
         $products = $query->orderBy('id', 'asc')->get();
         $totalStock = (int) $products->sum('quantity_in_stock');
         $totalValuation = (float) $products->sum(fn ($p) => $p->tagged_price * $p->quantity_in_stock);
-        $lowStockCount = $products->where('quantity_in_stock', '<=', 4)->count();
+        $lowStockCount = $products->filter(fn ($p) => $p->quantity_in_stock > 0 && $p->quantity_in_stock <= ($p->low_stock_threshold ?? 5))->count();
 
         $pdf = Pdf::loadView('reports.pdf.inventory', [
             'products' => $products,
@@ -132,7 +132,9 @@ class ReportController extends Controller
     public function exportLayawaysPdf(Request $request)
     {
         $status = $request->query('status', 'active');
-        $query = Sale::with(['items.product', 'customer', 'creator'])->where('is_archived', false);
+        $query = Sale::with(['items.product', 'customer', 'creator'])
+            ->where('is_archived', false)
+            ->where('payment_type', 'layaway');
 
         if ($status === 'active') {
             $query->where('status', 'layaway');
@@ -146,11 +148,9 @@ class ReportController extends Controller
                 ->whereNotNull('layaway_expires_at')
                 ->whereDate('layaway_expires_at', '<', now());
         } elseif ($status === 'settled') {
-            $query->where('status', 'completed')
-                ->where('initial_deposit', '>', 0);
+            $query->where('status', 'completed');
         } elseif ($status === 'cancelled') {
-            $query->where('status', 'cancelled')
-                ->where('initial_deposit', '>', 0);
+            $query->where('status', 'cancelled');
         } elseif ($status !== 'all') {
             $query->where('status', $status);
         }
@@ -198,7 +198,7 @@ class ReportController extends Controller
             ->get();
         $totalStockUnits = (int) $products->sum('quantity_in_stock');
         $totalValuation = (float) $products->sum(fn ($p) => $p->tagged_price * $p->quantity_in_stock);
-        $lowStockCount = $products->where('quantity_in_stock', '<=', 4)->count();
+        $lowStockCount = $products->filter(fn ($p) => $p->quantity_in_stock > 0 && $p->quantity_in_stock <= ($p->low_stock_threshold ?? 5))->count();
 
         // 3. Layaway Receivables Data
         $layaways = Sale::with(['items.product', 'customer', 'creator'])

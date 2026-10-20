@@ -6,7 +6,6 @@ use App\Models\InventoryAdjustment;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class LayawayService
 {
@@ -28,7 +27,7 @@ class LayawayService
         foreach ($expiredSales as $sale) {
             DB::transaction(function () use ($sale, $processedByUserId, &$processedCount) {
                 $lockedSale = Sale::where('id', $sale->id)->lockForUpdate()->first();
-                if (!$lockedSale || $lockedSale->status !== 'layaway') {
+                if (! $lockedSale || $lockedSale->status !== 'layaway') {
                     return;
                 }
 
@@ -54,13 +53,13 @@ class LayawayService
                 }
 
                 $expiryDateStr = $lockedSale->layaway_expires_at ? $lockedSale->layaway_expires_at->format('Y-m-d') : 'unknown date';
-                $paidAmountStr = number_format((float)$lockedSale->amount_paid, 2);
+                $paidAmountStr = number_format((float) $lockedSale->amount_paid, 2);
 
-                $auditNote = "\n[" . now()->format('Y-m-d H:i') . "] Lay-away expired on {$expiryDateStr}. Order cancelled and stock restored to inventory. Partial payments received (₱{$paidAmountStr}) preserved pending management disposition.";
+                $auditNote = "\n[".now()->format('Y-m-d H:i')."] Lay-away expired on {$expiryDateStr}. Order cancelled and stock restored to inventory. Partial payments received (₱{$paidAmountStr}) preserved pending management disposition.";
 
                 $lockedSale->update([
                     'status' => 'cancelled',
-                    'notes' => ($lockedSale->notes ?? '') . $auditNote,
+                    'notes' => ($lockedSale->notes ?? '').$auditNote,
                 ]);
 
                 $processedCount++;

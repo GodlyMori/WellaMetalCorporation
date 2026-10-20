@@ -2,9 +2,12 @@
 
 namespace App\Livewire;
 
+use App\Models\Category;
+use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -13,22 +16,33 @@ class PromotionsManager extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = 'ALL'; // ALL, active, pending_approval, inactive
 
     // Create Modal state & fields
     public bool $showCreateModal = false;
+
     public string $name = '';
+
     public string $code = '';
+
     public string $description = '';
+
     public string $discount_type = 'percentage'; // 'percentage', 'fixed'
+
     public string $discount_value = '';
+
     public string $applicable_category = 'ALL'; // 'ALL', 'Sofa', 'Dining Table', 'Closet'
+
     public string $min_order_amount = '0';
+
     public string $starts_at = '';
+
     public string $ends_at = '';
 
     // Feedback
     public string $successMessage = '';
+
     public string $errorMessage = '';
 
     public function mount()
@@ -63,8 +77,9 @@ class PromotionsManager extends Component
         $user = Auth::user();
 
         // 1. Role verification: Only Admin and Manager can create promos
-        if (!$user || (!$user->hasRole('admin') && !$user->hasRole('manager'))) {
+        if (! $user || (! $user->hasRole('admin') && ! $user->hasRole('manager'))) {
             $this->errorMessage = 'Unauthorized: Only Admins and Managers can create event promotions.';
+
             return;
         }
 
@@ -80,8 +95,9 @@ class PromotionsManager extends Component
             'ends_at' => 'required|date|after_or_equal:starts_at',
         ]);
 
-        if ($this->discount_type === 'percentage' && (float)$this->discount_value > 100) {
+        if ($this->discount_type === 'percentage' && (float) $this->discount_value > 100) {
             $this->addError('discount_value', 'Percentage discount cannot exceed 100%.');
+
             return;
         }
 
@@ -96,9 +112,9 @@ class PromotionsManager extends Component
             'code' => $this->code ? strtoupper(trim($this->code)) : null,
             'description' => $this->description,
             'discount_type' => $this->discount_type,
-            'discount_value' => (float)$this->discount_value,
+            'discount_value' => (float) $this->discount_value,
             'applicable_category' => $this->applicable_category,
-            'min_order_amount' => (float)$this->min_order_amount,
+            'min_order_amount' => (float) $this->min_order_amount,
             'starts_at' => $this->starts_at,
             'ends_at' => $this->ends_at,
             'status' => $status,
@@ -122,8 +138,9 @@ class PromotionsManager extends Component
     public function approvePromotion(int $promoId)
     {
         $user = Auth::user();
-        if (!$user || !$user->hasRole('admin')) {
+        if (! $user || ! $user->hasRole('admin')) {
             $this->errorMessage = 'Unauthorized: Only System Administrators can approve promotions.';
+
             return;
         }
 
@@ -143,16 +160,17 @@ class PromotionsManager extends Component
     public function toggleStatus(int $promoId)
     {
         $user = Auth::user();
-        if (!$user || !$user->hasRole('admin')) {
+        if (! $user || ! $user->hasRole('admin')) {
             $this->errorMessage = 'Unauthorized: Only System Administrators can activate/deactivate promotions.';
+
             return;
         }
 
         $promo = Promotion::findOrFail($promoId);
         $newStatus = ($promo->status === 'active') ? 'inactive' : 'active';
-        
+
         $updateData = ['status' => $newStatus];
-        if ($newStatus === 'active' && !$promo->approved_by) {
+        if ($newStatus === 'active' && ! $promo->approved_by) {
             $updateData['approved_by'] = $user->id;
             $updateData['approved_at'] = now();
         }
@@ -169,8 +187,9 @@ class PromotionsManager extends Component
     public function rejectPromotion(int $promoId)
     {
         $user = Auth::user();
-        if (!$user || !$user->hasRole('admin')) {
+        if (! $user || ! $user->hasRole('admin')) {
             $this->errorMessage = 'Unauthorized: Only System Administrators can reject promotions.';
+
             return;
         }
 
@@ -182,15 +201,16 @@ class PromotionsManager extends Component
     public function generatePromoCode(): void
     {
         $prefix = 'WM-';
-        $random = strtoupper(\Illuminate\Support\Str::random(6));
-        $this->code = $prefix . $random;
+        $random = strtoupper(Str::random(6));
+        $this->code = $prefix.$random;
     }
 
     public function archivePromotion(int $promoId): void
     {
         $user = Auth::user();
-        if (!$user || !$user->hasRole('admin')) {
+        if (! $user || ! $user->hasRole('admin')) {
             $this->errorMessage = 'Unauthorized: Only System Administrators can archive promotions.';
+
             return;
         }
 
@@ -205,9 +225,9 @@ class PromotionsManager extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('code', 'like', '%' . $this->search . '%')
-                  ->orWhere('applicable_category', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('code', 'like', '%'.$this->search.'%')
+                    ->orWhere('applicable_category', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -222,8 +242,8 @@ class PromotionsManager extends Component
         $totalPending = Promotion::where('status', 'pending_approval')->count();
         $totalPromos = Promotion::count();
 
-        $activeCategories = \App\Models\Category::whereNull('deleted_at')->where('is_active', true)->orderBy('name')->pluck('name')->toArray();
-        $categories = !empty($activeCategories) ? $activeCategories : \App\Models\Product::CATEGORIES;
+        $activeCategories = Category::whereNull('deleted_at')->where('is_active', true)->orderBy('name')->pluck('name')->toArray();
+        $categories = ! empty($activeCategories) ? $activeCategories : Product::CATEGORIES;
 
         return view('livewire.promotions-manager', [
             'promotions' => $promotions,

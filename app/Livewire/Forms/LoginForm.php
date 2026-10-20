@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Forms;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -40,8 +42,8 @@ class LoginForm extends Form
                 $attempts[] = str_replace('@wellametalcorp.com', '@wellametal.test', $login);
             }
         } else {
-            $attempts[] = $login . '@wellametalcorp.com';
-            $attempts[] = $login . '@wellametal.test';
+            $attempts[] = $login.'@wellametalcorp.com';
+            $attempts[] = $login.'@wellametal.test';
         }
 
         $authenticated = false;
@@ -54,8 +56,8 @@ class LoginForm extends Form
 
         if (! $authenticated) {
             // Also attempt fallback match by name
-            $user = \App\Models\User::where('name', $login)->first();
-            if ($user && \Illuminate\Support\Facades\Hash::check($this->password, $user->password)) {
+            $user = User::where('name', $login)->first();
+            if ($user && Hash::check($this->password, $user->password)) {
                 Auth::login($user, $this->remember);
                 $authenticated = true;
             }

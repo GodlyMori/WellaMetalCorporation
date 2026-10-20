@@ -22,7 +22,7 @@ return new class extends Migration
         $customers = DB::table('customers')->get();
         foreach ($customers as $c) {
             $rawName = trim($c->name ?? '');
-            if (!empty($rawName)) {
+            if (! empty($rawName)) {
                 $parts = explode(' ', $rawName);
                 if (count($parts) > 1) {
                     $lastName = array_pop($parts);
@@ -48,7 +48,7 @@ return new class extends Migration
         $users = DB::table('users')->get();
         foreach ($users as $u) {
             $rawName = trim($u->name ?? '');
-            if (!empty($rawName)) {
+            if (! empty($rawName)) {
                 $parts = explode(' ', $rawName);
                 if (count($parts) > 1) {
                     $lastName = array_pop($parts);

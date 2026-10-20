@@ -15,7 +15,7 @@ $directories = [
 ];
 
 foreach ($directories as $dir) {
-    if (!is_dir($dir)) {
+    if (! is_dir($dir)) {
         mkdir($dir, 0755, true);
     }
 }
@@ -24,4 +24,4 @@ foreach ($directories as $dir) {
 $_SERVER['HTTPS'] = 'on';
 
 // Forward execution to Laravel's public entrypoint
-require __DIR__ . '/../public/index.php';
+require __DIR__.'/../public/index.php';

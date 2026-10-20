@@ -240,4 +240,67 @@ class PeriodicReportTest extends TestCase
             ->call('closeOrderModal')
             ->assertSet('showOrderModal', false);
     }
+
+    public function test_reports_manager_layaway_filtering_and_pdf_exports(): void
+    {
+        $product = Product::create([
+            'name' => 'Steel Dining Table',
+            'category' => 'Dining Set',
+            'tagged_price' => 20000.00,
+            'quantity_in_stock' => 2,
+            'low_stock_threshold' => 3,
+            'status' => 'active',
+        ]);
+
+        $layawayActive = Sale::create([
+            'sale_number' => 'WMC-LAY-001',
+            'customer_name' => 'Maria Clara',
+            'customer_phone' => '09191234567',
+            'product_name' => $product->name,
+            'amount' => 20000.00,
+            'downpayment_amount' => 5000.00,
+            'amount_paid' => 5000.00,
+            'remaining_balance' => 15000.00,
+            'payment_type' => 'layaway',
+            'status' => 'layaway',
+            'layaway_expires_at' => now()->addDays(30),
+            'sale_date' => now()->toDateString(),
+            'created_by' => $this->user->id,
+        ]);
+
+        $layawaySettled = Sale::create([
+            'sale_number' => 'WMC-LAY-002',
+            'customer_name' => 'Crisostomo Ibarra',
+            'customer_phone' => '09197654321',
+            'product_name' => $product->name,
+            'amount' => 20000.00,
+            'downpayment_amount' => 5000.00,
+            'amount_paid' => 20000.00,
+            'remaining_balance' => 0.00,
+            'payment_type' => 'layaway',
+            'status' => 'completed',
+            'sale_date' => now()->subDays(10)->toDateString(),
+            'created_by' => $this->user->id,
+        ]);
+
+        // Test ReportsManager layaway tabs
+        Livewire::actingAs($this->user)
+            ->test(ReportsManager::class)
+            ->set('activeTab', 'layaways')
+            ->set('layawayStatus', 'active')
+            ->assertSee('WMC-LAY-001')
+            ->assertDontSee('WMC-LAY-002')
+            ->set('layawayStatus', 'settled')
+            ->assertSee('WMC-LAY-002')
+            ->assertDontSee('WMC-LAY-001');
+
+        // Test PDF Exports
+        $responseLayawayPdf = $this->actingAs($this->user)->get(route('reports.export.layaways-pdf', ['status' => 'active']));
+        $responseLayawayPdf->assertOk();
+        $this->assertStringContainsString('application/pdf', $responseLayawayPdf->headers->get('Content-Type'));
+
+        $responseInvPdf = $this->actingAs($this->user)->get(route('reports.export.inventory-pdf'));
+        $responseInvPdf->assertOk();
+        $this->assertStringContainsString('application/pdf', $responseInvPdf->headers->get('Content-Type'));
+    }
 }

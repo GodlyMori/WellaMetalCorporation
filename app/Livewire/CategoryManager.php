@@ -14,16 +14,22 @@ class CategoryManager extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = 'all'; // 'all', 'active', 'archived'
 
     // Create / Edit modal state
     public bool $showModal = false;
+
     public ?int $editingCategoryId = null;
+
     public string $name = '';
+
     public string $description = '';
+
     public bool $is_active = true;
 
     public string $successMessage = '';
+
     public string $errorMessage = '';
 
     protected function rules(): array
@@ -33,7 +39,7 @@ class CategoryManager extends Component
                 'required',
                 'string',
                 'max:100',
-                'unique:categories,name,' . $this->editingCategoryId,
+                'unique:categories,name,'.$this->editingCategoryId,
             ],
             'description' => 'nullable|string|max:500',
             'is_active' => 'boolean',
@@ -67,7 +73,7 @@ class CategoryManager extends Component
         $this->editingCategoryId = $category->id;
         $this->name = $category->name;
         $this->description = $category->description ?? '';
-        $this->is_active = (bool)$category->is_active;
+        $this->is_active = (bool) $category->is_active;
         $this->showModal = true;
     }
 
@@ -129,7 +135,7 @@ class CategoryManager extends Component
     public function toggleActiveStatus(int $id): void
     {
         $category = Category::withTrashed()->findOrFail($id);
-        $category->is_active = !$category->is_active;
+        $category->is_active = ! $category->is_active;
         $category->save();
 
         $statusText = $category->is_active ? 'activated' : 'deactivated';
@@ -143,10 +149,10 @@ class CategoryManager extends Component
                 $q->where('status', 'active');
             }]);
 
-        if (!empty($this->search)) {
+        if (! empty($this->search)) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('description', 'like', '%'.$this->search.'%');
             });
         }
 

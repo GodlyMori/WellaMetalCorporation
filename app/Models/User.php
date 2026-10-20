@@ -16,12 +16,13 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasRoles, HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     public function getNameAttribute(): string
     {
         $fullName = trim("{$this->first_name} {$this->last_name}");
-        return !empty($fullName) ? $fullName : ($this->attributes['name'] ?? '');
+
+        return ! empty($fullName) ? $fullName : ($this->attributes['name'] ?? '');
     }
 
     /**

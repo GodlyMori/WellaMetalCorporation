@@ -10,15 +10,15 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('stock_transfer_items', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('stock_transfer_id')->constrained()->cascadeOnDelete();
-        $table->foreignId('product_id')->constrained();
-        $table->integer('quantity_received');
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('stock_transfer_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('stock_transfer_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained();
+            $table->integer('quantity_received');
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

@@ -12,7 +12,9 @@ use Livewire\Component;
 class StockTransferForm extends Component
 {
     public string $source_branch = '';
+
     public string $date_received = '';
+
     public string $notes = '';
 
     // Each line is an array like ['product_id' => '', 'quantity_received' => '']

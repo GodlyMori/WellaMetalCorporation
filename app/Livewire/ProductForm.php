@@ -8,9 +8,13 @@ use Livewire\Component;
 class ProductForm extends Component
 {
     public string $name = '';
+
     public string $category = '';
+
     public string $description = '';
+
     public string $tagged_price = '';
+
     public string $quantity_in_stock = '';
 
     protected function rules(): array

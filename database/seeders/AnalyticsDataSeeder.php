@@ -62,7 +62,7 @@ class AnalyticsDataSeeder extends Seeder
         $dates = [
             '2026-07-05', '2026-07-12', '2026-07-18', '2026-07-24', '2026-07-29',
             '2026-08-03', '2026-08-08', '2026-08-14', '2026-08-19', '2026-08-23', '2026-08-28',
-            '2026-09-02', '2026-09-06', '2026-09-10', '2026-09-14', '2026-09-17', '2026-09-21', '2026-09-24', '2026-09-25'
+            '2026-09-02', '2026-09-06', '2026-09-10', '2026-09-14', '2026-09-17', '2026-09-21', '2026-09-24', '2026-09-25',
         ];
 
         $orderIndex = Sale::count() + 1;
@@ -71,7 +71,7 @@ class AnalyticsDataSeeder extends Seeder
             $customer = $customers[$idx % count($customers)];
             $product = $products->random();
             $qty = rand(1, 2);
-            $itemTotal = (float)$product->tagged_price * $qty;
+            $itemTotal = (float) $product->tagged_price * $qty;
 
             // Decide payment type: ~35% layaway, ~65% full
             $isLayaway = ($idx % 3 === 0);
@@ -105,7 +105,7 @@ class AnalyticsDataSeeder extends Seeder
                 $expiryDate = null;
             }
 
-            $saleNumber = 'ORD-2026-' . str_pad($orderIndex++, 3, '0', STR_PAD_LEFT);
+            $saleNumber = 'ORD-2026-'.str_pad($orderIndex++, 3, '0', STR_PAD_LEFT);
             $creatorId = $staffUsers[$idx % count($staffUsers)];
             $color = $colors[$idx % count($colors)];
 
@@ -116,7 +116,7 @@ class AnalyticsDataSeeder extends Seeder
                 'customer_address' => $customer['address'],
                 'avatar_color' => $color,
                 'product_id' => $product->id,
-                'product_name' => $product->name . ($qty > 1 ? " (x{$qty})" : ''),
+                'product_name' => $product->name.($qty > 1 ? " (x{$qty})" : ''),
                 'promotion_id' => $promoId,
                 'promo_name' => $promoName,
                 'amount' => $netAmount,
@@ -133,8 +133,8 @@ class AnalyticsDataSeeder extends Seeder
                 'is_archived' => false,
                 'notes' => $isLayaway ? 'Lay-Away transaction. Initial downpayment settled.' : 'Standard retail cash sale.',
                 'created_by' => $creatorId,
-                'created_at' => Carbon::parse($dateStr . ' 10:30:00'),
-                'updated_at' => Carbon::parse($dateStr . ' 10:30:00'),
+                'created_at' => Carbon::parse($dateStr.' 10:30:00'),
+                'updated_at' => Carbon::parse($dateStr.' 10:30:00'),
             ]);
 
             // Create SaleItem
@@ -144,8 +144,8 @@ class AnalyticsDataSeeder extends Seeder
                 'quantity' => $qty,
                 'unit_price' => $product->tagged_price,
                 'subtotal' => $netAmount,
-                'created_at' => Carbon::parse($dateStr . ' 10:30:00'),
-                'updated_at' => Carbon::parse($dateStr . ' 10:30:00'),
+                'created_at' => Carbon::parse($dateStr.' 10:30:00'),
+                'updated_at' => Carbon::parse($dateStr.' 10:30:00'),
             ]);
         }
 

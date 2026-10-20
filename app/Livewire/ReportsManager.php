@@ -385,7 +385,9 @@ class ReportsManager extends Component
         $paginatedProducts = $invQuery->orderBy('id', 'asc')->paginate(10, ['*'], 'invPage');
 
         // 3. Layaway Report Query & Metrics
-        $layawayQuery = Sale::query()->with(['items.product', 'customer', 'creator'])->where('is_archived', false);
+        $layawayQuery = Sale::query()->with(['items.product', 'customer', 'creator'])
+            ->where('is_archived', false)
+            ->where('payment_type', 'layaway');
 
         if ($this->layawayStatus === 'active') {
             $layawayQuery->where('status', 'layaway');
@@ -399,11 +401,9 @@ class ReportsManager extends Component
                 ->whereNotNull('layaway_expires_at')
                 ->whereDate('layaway_expires_at', '<', now());
         } elseif ($this->layawayStatus === 'settled') {
-            $layawayQuery->where('status', 'completed')
-                ->where('initial_deposit', '>', 0);
+            $layawayQuery->where('status', 'completed');
         } elseif ($this->layawayStatus === 'cancelled') {
-            $layawayQuery->where('status', 'cancelled')
-                ->where('initial_deposit', '>', 0);
+            $layawayQuery->where('status', 'cancelled');
         } elseif ($this->layawayStatus !== 'all') {
             $layawayQuery->where('status', $this->layawayStatus);
         }
