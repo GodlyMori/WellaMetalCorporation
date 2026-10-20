@@ -188,4 +188,56 @@ class PeriodicReportTest extends TestCase
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/pdf');
     }
+
+    public function test_reports_manager_sales_status_dropdown_and_order_modal(): void
+    {
+        $product = Product::create([
+            'name' => 'Wrought Iron Gate',
+            'category' => 'Gate',
+            'tagged_price' => 17000.00,
+            'quantity_in_stock' => 5,
+            'low_stock_threshold' => 1,
+            'status' => 'active',
+        ]);
+
+        $sale = Sale::create([
+            'sale_number' => 'WMC-20261020-001',
+            'customer_name' => 'Don Juan',
+            'customer_phone' => '09171234567',
+            'product_name' => $product->name,
+            'amount' => 16000.00,
+            'amount_paid' => 16000.00,
+            'original_amount' => 17000.00,
+            'remaining_balance' => 0.00,
+            'status' => 'completed',
+            'payment_type' => 'full',
+            'sale_date' => '2026-10-20',
+            'created_by' => $this->user->id,
+        ]);
+
+        SaleItem::create([
+            'sale_id' => $sale->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'original_price' => 17000.00,
+            'unit_price' => 16000.00,
+            'subtotal' => 16000.00,
+        ]);
+
+        Livewire::actingAs($this->user)
+            ->test(ReportsManager::class)
+            ->set('activeTab', 'sales')
+            ->set('salesStatus', 'completed')
+            ->assertSet('salesStatus', 'completed')
+            ->assertSee('WMC-20261020-001')
+            ->call('openOrderModal', $sale->id)
+            ->assertSet('showOrderModal', true)
+            ->assertSee('Negotiated Pricing Details')
+            ->assertSee('Don Juan')
+            ->assertSee('SRP ₱17,000.00')
+            ->assertSee('Agreed ₱16,000.00')
+            ->assertSee('-₱1,000.00')
+            ->call('closeOrderModal')
+            ->assertSet('showOrderModal', false);
+    }
 }

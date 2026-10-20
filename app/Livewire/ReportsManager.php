@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\User;
 use App\Services\LayawayService;
 use App\Services\PeriodicReportService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -20,6 +21,11 @@ class ReportsManager extends Component
 
     // Sub-view switcher inside Periodic Summaries: 'ledger', 'turnover', 'traceability'
     public string $periodicSubView = 'ledger';
+
+    // Detailed Order View Modal
+    public bool $showOrderModal = false;
+
+    public ?array $selectedOrderData = null;
 
     // Objective 3: Periodic Report Filters
     public string $periodicity = 'daily'; // 'daily', 'weekly', 'monthly'
@@ -144,6 +150,85 @@ class ReportsManager extends Component
     {
         $this->salesStatus = $status;
         $this->resetPage('salesPage');
+    }
+
+    public function updatedSalesStatus(): void
+    {
+        $this->resetPage('salesPage');
+    }
+
+    public function openOrderModal(int $saleId): void
+    {
+        $sale = Sale::with(['customer', 'items.product', 'payments.recordedBy', 'promotion', 'creator'])->find($saleId);
+        if (! $sale) {
+            return;
+        }
+
+        $receiptItems = [];
+        $grossSrpTotal = 0.0;
+        $negotiatedConcessionTotal = 0.0;
+        $hasNegotiatedItems = false;
+        foreach ($sale->items as $it) {
+            $srp = (float) ($it->original_price ?? $it->unit_price);
+            $unitPrice = (float) $it->unit_price;
+            $isNeg = (abs($srp - $unitPrice) > 0.001);
+            if ($isNeg) {
+                $hasNegotiatedItems = true;
+            }
+            $concession = max(0.0, $srp - $unitPrice) * (int) $it->quantity;
+            $grossSrpTotal += $srp * (int) $it->quantity;
+            $negotiatedConcessionTotal += $concession;
+
+            $receiptItems[] = [
+                'name' => $it->product?->name ?? 'Custom Item',
+                'quantity' => (int) $it->quantity,
+                'srp' => $srp,
+                'unit_price' => $unitPrice,
+                'subtotal' => (float) $it->subtotal,
+                'is_negotiated' => $isNeg,
+                'concession' => $concession,
+            ];
+        }
+
+        $tendered = (float) ($sale->payments->sum('amount') ?: $sale->amount_paid);
+
+        $this->selectedOrderData = [
+            'id' => $sale->id,
+            'order_number' => $sale->sale_number ?? ('ORD-'.$sale->id),
+            'sale_date' => $sale->sale_date ? Carbon::parse($sale->sale_date)->format('M d, Y h:i A') : $sale->created_at->format('M d, Y h:i A'),
+            'cashier' => $sale->creator?->name ?? 'Staff',
+            'customer_name' => $sale->customer_name ?: ($sale->customer?->name ?? 'Valued Customer'),
+            'customer_email' => $sale->customer_email ?: ($sale->customer?->email ?? null),
+            'customer_phone' => $sale->customer_phone ?: ($sale->customer?->phone ?? '—'),
+            'customer_address' => $sale->customer_address ?: ($sale->customer?->address ?? '—'),
+            'items' => $receiptItems,
+            'gross_srp_total' => $grossSrpTotal > 0 ? $grossSrpTotal : (float) ($sale->original_amount ?? $sale->amount),
+            'negotiated_concession_total' => $negotiatedConcessionTotal,
+            'has_negotiated_items' => $hasNegotiatedItems,
+            'promo_discount_amount' => max(0.0, (float) ($sale->discount_amount ?? 0) - $negotiatedConcessionTotal),
+            'total_amount' => (float) ($sale->original_amount ?? $sale->amount),
+            'discount_amount' => (float) ($sale->discount_amount ?? 0),
+            'promo_name' => $sale->promo_name,
+            'net_amount' => (float) $sale->amount,
+            'payment_type' => $sale->payment_type,
+            'cash_tendered' => $tendered,
+            'change_due' => max(0.0, $tendered - (float) $sale->amount),
+            'downpayment_amount' => (float) $sale->downpayment_amount,
+            'amount_paid' => (float) $sale->amount_paid,
+            'remaining_balance' => (float) $sale->remaining_balance,
+            'expiry_date' => $sale->layaway_expires_at ? Carbon::parse($sale->layaway_expires_at)->format('M d, Y') : null,
+            'status' => $sale->status,
+            'is_archived' => $sale->is_archived,
+            'notes' => $sale->notes,
+        ];
+
+        $this->showOrderModal = true;
+    }
+
+    public function closeOrderModal(): void
+    {
+        $this->showOrderModal = false;
+        $this->selectedOrderData = null;
     }
 
     public function processExpiredLayaways()
