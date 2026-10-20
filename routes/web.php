@@ -5,8 +5,6 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Livewire\Actions\Logout;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -52,45 +50,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::view('backup', 'backup')->name('backup');
     Route::get('backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
-
-    Route::post('switch-role/{role}', function ($role) {
-        // 1. Strictly disabled in production
-        if (app()->environment('production')) {
-            abort(403, 'Role switching is strictly disabled in production environments.');
-        }
-
-        $currentUser = Auth::user();
-        $isOriginalAdmin = session()->has('original_admin_id') && User::find(session('original_admin_id'))?->hasRole('admin');
-        $isAdmin = $currentUser && $currentUser->hasRole('admin');
-
-        // 2. Strict authorization: Only genuine admins or an admin currently testing a subordinate role may switch
-        if (! $isAdmin && ! $isOriginalAdmin) {
-            abort(403, 'Unauthorized: Role switching is strictly restricted to System Administrators.');
-        }
-
-        $email = match ($role) {
-            'admin' => 'admin@wellametalcorp.com',
-            'manager' => 'manager@wellametalcorp.com',
-            'secretary' => 'secretary@wellametalcorp.com',
-            default => null,
-        };
-
-        if (! $email) {
-            return back()->with('error', 'Invalid role requested.');
-        }
-
-        $targetUser = User::where('email', $email)->first();
-        if ($targetUser) {
-            if ($role === 'admin') {
-                session()->forget('original_admin_id');
-            } elseif ($isAdmin && ! session()->has('original_admin_id')) {
-                session(['original_admin_id' => $currentUser->id]);
-            }
-            Auth::login($targetUser);
-        }
-
-        return back();
-    })->name('switch-role');
 
     Route::post('logout', function (Logout $logout) {
         $logout();

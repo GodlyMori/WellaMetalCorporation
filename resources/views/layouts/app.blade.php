@@ -25,8 +25,7 @@
     </head>
     <body class="font-sans antialiased bg-slate-50 text-slate-800 min-h-screen flex overflow-x-hidden transition-colors duration-150"
           x-data="{ 
-              sidebarOpen: false, 
-              switchRoleModal: false
+              sidebarOpen: false
           }">
 
         <!-- SIDEBAR -->
@@ -251,15 +250,6 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-1 flex-shrink-0">
-                        @if(!$currentUser?->hasRole('secretary'))
-                            <button type="button"
-                                    @click="switchRoleModal = true"
-                                    class="p-1.5 text-slate-400 hover:text-white hover:bg-[#1a2858] rounded transition-colors cursor-pointer"
-                                    title="Switch workspace role"
-                                    aria-label="Switch workspace role">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                            </button>
-                        @endif
                         <form method="POST" action="{{ route('logout') }}" class="inline m-0">
                             @csrf
                             <button type="submit"
@@ -396,69 +386,6 @@
                 {{ $slot }}
             </main>
         </div>
-
-        @if(!Auth::user()?->hasRole('secretary'))
-        <!-- SWITCH ROLE MODAL -->
-        <div x-show="switchRoleModal"
-             x-cloak
-             class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 flex items-center justify-center p-4">
-            <div @click.away="switchRoleModal = false"
-                 class="bg-white dark:bg-[#0c163b] rounded-md max-w-md w-full shadow-lg border border-slate-200 dark:border-[#1a2858] relative animate-in fade-in zoom-in-95 duration-150">
-                <div class="px-5 py-4 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">
-                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Switch workspace role</h3>
-                    <button @click="switchRoleModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer" aria-label="Close dialog">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="p-5 space-y-2.5">
-                    <!-- Admin -->
-                    <form method="POST" action="/switch-role/admin">
-                        @csrf
-                        <button type="submit" class="w-full flex items-center justify-between p-3 rounded border border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-[#132057] transition-colors cursor-pointer text-left">
-                            <div class="flex items-center gap-3">
-                                <span class="w-8 h-8 rounded bg-[#142259] text-white font-bold flex items-center justify-center text-xs">AD</span>
-                                <div>
-                                    <p class="font-semibold text-slate-900 dark:text-white text-xs">System Admin</p>
-                                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Full access (Users, Archive, Inventory, Sales, Reports)</p>
-                                </div>
-                            </div>
-                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Select</span>
-                        </button>
-                    </form>
-
-                    <!-- Manager -->
-                    <form method="POST" action="/switch-role/manager">
-                        @csrf
-                        <button type="submit" class="w-full flex items-center justify-between p-3 rounded border border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-[#132057] transition-colors cursor-pointer text-left">
-                            <div class="flex items-center gap-3">
-                                <span class="w-8 h-8 rounded bg-[#142259] text-white font-bold flex items-center justify-center text-xs">MG</span>
-                                <div>
-                                    <p class="font-semibold text-slate-900 dark:text-white text-xs">Operations Manager</p>
-                                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Inventory, sales, layaways & reports</p>
-                                </div>
-                            </div>
-                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Select</span>
-                        </button>
-                    </form>
-
-                    <!-- Secretary -->
-                    <form method="POST" action="/switch-role/secretary">
-                        @csrf
-                        <button type="submit" class="w-full flex items-center justify-between p-3 rounded border border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-[#132057] transition-colors cursor-pointer text-left">
-                            <div class="flex items-center gap-3">
-                                <span class="w-8 h-8 rounded bg-emerald-700 text-white font-bold flex items-center justify-center text-xs">SE</span>
-                                <div>
-                                    <p class="font-semibold text-slate-900 dark:text-white text-xs">Sales Secretary</p>
-                                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Manage inventory, record sales transactions</p>
-                                </div>
-                            </div>
-                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Select</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        @endif
 
         @livewireScripts
         @stack('scripts')
