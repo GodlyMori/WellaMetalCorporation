@@ -5,7 +5,6 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SalesReceiptController;
 use App\Livewire\Actions\Logout;
-use App\Livewire\Admin\BusinessIntelligence;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -51,10 +50,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::view('backup', 'backup')->name('backup');
     Route::get('backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
-
-    Route::middleware(['role:admin'])->group(function () {
-        Route::get('admin/business-intelligence', BusinessIntelligence::class)->name('admin.bi');
-    });
 
     Route::post('logout', function (Logout $logout) {
         $logout();
