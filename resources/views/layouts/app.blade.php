@@ -85,7 +85,7 @@
                             <span>Inventory</span>
                         </div>
                         @if(($navPendingStockRequestsCount ?? 0) > 0)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-xs" title="{{ $navPendingStockRequestsCount }} pending requisition(s)">
+                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30" title="{{ $navPendingStockRequestsCount }} pending requisition(s)">
                                 {{ $navPendingStockRequestsCount }}
                             </span>
                         @endif
@@ -129,7 +129,7 @@
                             <span>Lay-Aways</span>
                         </div>
                         @if($activeLayawaysCount > 0)
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-xs" title="{{ $activeLayawaysCount }} active layaway contract(s)">
+                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30" title="{{ $activeLayawaysCount }} active layaway contract(s)">
                                 {{ $activeLayawaysCount }}
                             </span>
                         @endif
