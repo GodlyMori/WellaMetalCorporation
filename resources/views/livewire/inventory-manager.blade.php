@@ -185,13 +185,15 @@
                                             <span>Restore</span>
                                         </button>
                                     @else
-                                        <!-- Stock Request Requisition Button (Replaces +Restock) -->
-                                        <button type="button" wire:click="openRequestModal({{ $product->id }})"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                                                title="Send stock requisition to General Manager for approval">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                            <span>Request</span>
-                                        </button>
+                                        <!-- Stock Request Requisition Button (Secretary only) -->
+                                        @if(auth()->user()?->hasRole('secretary'))
+                                            <button type="button" wire:click="openRequestModal({{ $product->id }})"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#142259] hover:bg-[#0e1840] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                                    title="Send stock requisition to General Manager for approval">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                                <span>Request</span>
+                                            </button>
+                                        @endif
 
                                         <!-- Edit Button -->
                                         <button type="button" wire:click="editProduct({{ $product->id }})"
@@ -328,7 +330,7 @@
     <!-- ============================================================== -->
     <!-- MODAL: REQUEST STOCK REQUISITION (SECRETARY / STAFF -> GM)     -->
     <!-- ============================================================== -->
-    @if ($showRequestModal)
+    @if ($showRequestModal && auth()->user()?->hasRole('secretary'))
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 flex items-center justify-center p-4">
             <div class="relative w-full max-w-md bg-white dark:bg-[#0c163b] rounded-md shadow-lg border border-slate-200 dark:border-[#1a2858] overflow-hidden" wire:click.outside="$set('showRequestModal', false)">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-[#1a2858] flex items-center justify-between">

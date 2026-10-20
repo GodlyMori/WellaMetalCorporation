@@ -201,6 +201,13 @@ class InventoryManager extends Component
     // ==============================================================
     public function openRequestModal(int $id)
     {
+        $user = Auth::user();
+        if ($user && ! $user->hasRole('secretary')) {
+            session()->flash('request_error', 'Stock requisitions can only be submitted by Secretaries. Administrators and Managers review and approve requisitions in the Requests Hub.');
+
+            return;
+        }
+
         $product = Product::findOrFail($id);
         $this->requestProductId = $product->id;
         $this->requestProductName = $product->name;
@@ -213,6 +220,13 @@ class InventoryManager extends Component
 
     public function submitStockRequest()
     {
+        $user = Auth::user();
+        if ($user && ! $user->hasRole('secretary')) {
+            session()->flash('request_error', 'Stock requisitions can only be submitted by Secretaries. Administrators and Managers review and approve requisitions in the Requests Hub.');
+
+            return;
+        }
+
         $this->validate([
             'requestQuantity' => 'required|integer|min:1',
             'requestReason' => 'required|string|max:255',
