@@ -224,7 +224,7 @@ class SalesManager extends Component
             $parsedPrice = max(0.01, round((float) $newPrice, 2));
 
             if ($parsedPrice < $minPrice) {
-                $this->addError("items.{$index}.price", 'Price cannot be less than ₱'.number_format($minPrice, 2).' (maximum 15% discount allowed for error prevention).');
+                $this->addError("items.{$index}.price", 'Price cannot be less than ₱'.number_format($minPrice, 2).' (maximum 15% discount allowed).');
                 $parsedPrice = $minPrice;
             } else {
                 $this->resetErrorBag("items.{$index}.price");

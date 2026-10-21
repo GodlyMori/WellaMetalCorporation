@@ -253,7 +253,8 @@ class NegotiatedPriceSaleTest extends TestCase
             ->call('updateItemPrice', 0, 10000.00) // 41% discount (exceeds 15%)
             ->assertHasErrors(['items.0.price'])
             ->assertSet('items.0.unit_price', 14450.00) // Clamped to floor
-            ->assertSee('maximum 15% discount allowed for error prevention');
+            ->assertSee('maximum 15% discount allowed')
+            ->assertDontSee('error prevention');
     }
 
     public function test_customer_phone_cannot_exceed_11_digits(): void
