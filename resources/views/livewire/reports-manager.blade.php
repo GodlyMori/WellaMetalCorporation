@@ -524,9 +524,9 @@
                                 <th class="py-2.5 px-4 w-32 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Order #</th>
                                 <th class="py-2.5 px-4 min-w-[160px] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Customer</th>
                                 <th class="py-2.5 px-4 min-w-[200px] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Item Summary</th>
-                                <th class="py-2.5 px-4 w-32 whitespace-nowrap text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total (Paid)</th>
+                                <th class="py-2.5 px-4 w-32 whitespace-nowrap text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Amount</th>
                                 <th class="py-2.5 px-4 w-32 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Order Date</th>
-                                <th class="py-2.5 px-4 w-28 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+                                <th class="py-2.5 px-4 w-32 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Payment Status</th>
                                 <th class="py-2.5 px-4 w-44 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
                             </tr>
                         </thead>
@@ -550,13 +550,12 @@
                                             <span class="text-slate-400">{{ $sale->product_name ?: 'Custom order' }}</span>
                                         @endif
                                     </td>
-                                    <td class="py-2.5 px-4 text-right font-mono tabular-nums">
+                                    <td class="py-2.5 px-4 text-right font-mono tabular-nums whitespace-nowrap">
                                         <div class="font-bold text-slate-900 dark:text-white">₱{{ number_format($sale->amount, 2) }}</div>
-                                        @if($sale->status === 'layaway')
-                                            <div class="text-[11px] text-emerald-600 dark:text-emerald-400">Paid: ₱{{ number_format($sale->amount_paid, 2) }}</div>
-                                            <div class="text-[10px] text-rose-500">Bal: ₱{{ number_format($sale->remaining_balance, 2) }}</div>
-                                        @elseif($sale->discount_amount > 0)
-                                            <div class="text-[11px] text-slate-400">Disc: -₱{{ number_format($sale->discount_amount, 2) }}</div>
+                                        @if($sale->discount_amount > 0)
+                                            <div class="text-[10px] text-slate-400 font-sans mt-0.5" title="Discount applied: -₱{{ number_format($sale->discount_amount, 2) }}">
+                                                (Disc. -₱{{ number_format($sale->discount_amount, 2) }})
+                                            </div>
                                         @endif
                                     </td>
                                     <td class="py-2.5 px-4 text-slate-600 dark:text-slate-300">
@@ -567,7 +566,7 @@
                                             </div>
                                         @endif
                                     </td>
-                                    <td class="py-2.5 px-4 text-center">
+                                    <td class="py-2.5 px-4 text-center whitespace-nowrap">
                                         @if($sale->is_archived)
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                                 Archived
@@ -576,10 +575,25 @@
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
                                                 Completed
                                             </span>
+                                            <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                                                Paid in Full
+                                            </div>
                                         @elseif($sale->status === 'layaway')
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">
                                                 Lay-away
                                             </span>
+                                            @if($sale->remaining_balance > 0)
+                                                <div class="text-[10px] text-rose-600 dark:text-rose-400 font-mono font-semibold mt-0.5">
+                                                    Bal: ₱{{ number_format($sale->remaining_balance, 2) }}
+                                                </div>
+                                                <div class="text-[9px] text-slate-400 font-mono">
+                                                    ₱{{ number_format($sale->amount_paid, 2) }} paid
+                                                </div>
+                                            @else
+                                                <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                                                    Settled
+                                                </div>
+                                            @endif
                                         @elseif($sale->status === 'pending')
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">
                                                 Pending

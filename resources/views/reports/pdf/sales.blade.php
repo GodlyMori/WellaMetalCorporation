@@ -235,17 +235,25 @@
                     <td class="text-right mono font-bold">
                         ₱{{ number_format($sale->amount, 2) }}
                         @if($sale->discount_amount > 0)
-                            <div style="font-size: 6.5pt; color: #b45309; font-weight: normal;">Adj/Disc: -₱{{ number_format($sale->discount_amount, 2) }}</div>
-                        @endif
-                        @if($sale->status === 'layaway' && $sale->amount_paid > 0)
-                            <div style="font-size: 6.5pt; color: #047857; font-weight: normal;">Paid: ₱{{ number_format($sale->amount_paid, 2) }}</div>
+                            <div style="font-size: 6.5pt; color: #64748b; font-weight: normal;">(Disc. -₱{{ number_format($sale->discount_amount, 2) }})</div>
                         @endif
                     </td>
                     <td class="text-center">
                         @if($sale->status === 'completed')
                             <span class="status-pill status-completed">Completed</span>
+                            <div style="font-size: 6pt; color: #047857; margin-top: 1pt;">Paid in Full</div>
                         @elseif($sale->status === 'layaway')
                             <span class="status-pill status-layaway">Layaway</span>
+                            @if($sale->remaining_balance > 0)
+                                <div style="font-size: 6pt; color: #be123c; font-family: monospace; font-weight: bold; margin-top: 1pt;">
+                                    Bal: ₱{{ number_format($sale->remaining_balance, 2) }}
+                                </div>
+                                <div style="font-size: 5.5pt; color: #64748b; font-family: monospace;">
+                                    ₱{{ number_format($sale->amount_paid, 2) }} paid
+                                </div>
+                            @else
+                                <div style="font-size: 6pt; color: #047857; margin-top: 1pt;">Settled</div>
+                            @endif
                         @elseif($sale->status === 'cancelled')
                             <span class="status-pill status-danger">Cancelled</span>
                         @else
