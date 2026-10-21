@@ -302,5 +302,17 @@ class PeriodicReportTest extends TestCase
         $responseInvPdf = $this->actingAs($this->user)->get(route('reports.export.inventory-pdf'));
         $responseInvPdf->assertOk();
         $this->assertStringContainsString('application/pdf', $responseInvPdf->headers->get('Content-Type'));
+
+        $responsePeriodicPdf = $this->actingAs($this->user)->get(route('reports.export.periodic-pdf'));
+        $responsePeriodicPdf->assertOk();
+        $this->assertStringContainsString('application/pdf', $responsePeriodicPdf->headers->get('Content-Type'));
+
+        $responseSalesPdf = $this->actingAs($this->user)->get(route('reports.export.sales-pdf'));
+        $responseSalesPdf->assertOk();
+        $this->assertStringContainsString('application/pdf', $responseSalesPdf->headers->get('Content-Type'));
+
+        $responseAllPdf = $this->actingAs($this->user)->get(route('reports.export.all-pdf'));
+        $responseAllPdf->assertOk();
+        $this->assertStringContainsString('application/pdf', $responseAllPdf->headers->get('Content-Type'));
     }
 }

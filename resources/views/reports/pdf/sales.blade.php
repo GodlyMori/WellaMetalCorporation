@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta charset="utf-8">
     <title>Wella Metal Corporation - Sales Report</title>
     <style>
@@ -8,7 +9,7 @@
             margin: 24pt 28pt 30pt 28pt;
         }
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'DejaVu Sans', sans-serif;
             color: #1e293b;
             font-size: 8.5pt;
             line-height: 1.4;
@@ -108,7 +109,7 @@
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .font-bold { font-weight: 700; }
-        .mono { font-family: 'Courier New', Courier, monospace; }
+        .mono { font-family: 'DejaVu Sans Mono', monospace; }
 
         /* Minimal Status Pills */
         .status-pill {
@@ -245,10 +246,10 @@
                         @elseif($sale->status === 'layaway')
                             <span class="status-pill status-layaway">Layaway</span>
                             @if($sale->remaining_balance > 0)
-                                <div style="font-size: 6pt; color: #be123c; font-family: monospace; font-weight: bold; margin-top: 1pt;">
+                                <div style="font-size: 6pt; color: #be123c; font-family: 'DejaVu Sans Mono', monospace; font-weight: bold; margin-top: 1pt;">
                                     Bal: ₱{{ number_format($sale->remaining_balance, 2) }}
                                 </div>
-                                <div style="font-size: 5.5pt; color: #64748b; font-family: monospace;">
+                                <div style="font-size: 5.5pt; color: #64748b; font-family: 'DejaVu Sans Mono', monospace;">
                                     ₱{{ number_format($sale->amount_paid, 2) }} paid
                                 </div>
                             @else
