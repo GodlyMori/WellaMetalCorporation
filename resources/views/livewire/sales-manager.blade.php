@@ -297,22 +297,55 @@
                                     $itemFloor = round($itemSrp * 0.85, 2);
                                 @endphp
                                 <div class="mt-1">
-                                    <div class="flex items-center gap-1 text-[11px]">
-                                        <span class="text-slate-500 dark:text-slate-400 font-medium">Price: ₱</span>
-                                        <input type="number"
-                                               step="0.01"
-                                               min="{{ $itemFloor }}"
-                                               wire:change="updateItemPrice({{ $idx }}, $event.target.value)"
-                                               value="{{ $item['unit_price'] }}"
-                                               class="w-24 px-1.5 py-0.5 text-right font-mono font-semibold text-slate-900 dark:text-white bg-slate-50 dark:bg-[#0f1b40] border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-[#142259]"
-                                               title="Customer negotiated price (Floor: ₱{{ number_format($itemFloor, 2) }} - max 15% discount)">
+                                    <div class="flex items-center gap-1.5 text-[11px] flex-wrap">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-slate-500 dark:text-slate-400 font-medium">Price: ₱</span>
+                                            <input type="number"
+                                                   step="0.01"
+                                                   min="{{ $itemFloor }}"
+                                                   max="{{ $itemSrp }}"
+                                                   wire:change="updateItemPrice({{ $idx }}, $event.target.value)"
+                                                   value="{{ $item['unit_price'] }}"
+                                                   class="w-24 px-1.5 py-0.5 text-right font-mono font-semibold text-slate-900 dark:text-white bg-slate-50 dark:bg-[#0f1b40] border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-[#142259]"
+                                                   title="Customer negotiated price (Min ₱{{ number_format($itemFloor, 2) }} - Max ₱{{ number_format($itemSrp, 2) }})">
+                                        </div>
+                                        <!-- Quick percentage concession buttons (5%, 10%, 15%) -->
+                                        <div class="inline-flex items-center gap-1">
+                                            @foreach([5, 10, 15] as $pct)
+                                                @php
+                                                    $pctPrice = round($itemSrp * (1 - $pct / 100), 2);
+                                                    $pctSaving = round($itemSrp * ($pct / 100), 2);
+                                                    $isActive = (abs($item['unit_price'] - $pctPrice) < 0.02);
+                                                @endphp
+                                                <button type="button"
+                                                        wire:click="applyNegotiatedDiscount({{ $idx }}, {{ $pct }})"
+                                                        class="px-1.5 py-0.5 text-[10px] font-bold rounded transition-colors {{ $isActive ? 'bg-[#142259] text-white ring-1 ring-[#142259]' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700' }}"
+                                                        title="Set {{ $pct }}% negotiated discount (₱{{ number_format($pctPrice, 2) }} - save ₱{{ number_format($pctSaving, 2) }})">
+                                                    -{{ $pct }}%
+                                                </button>
+                                            @endforeach
+                                        </div>
                                     </div>
-                                    <div class="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-                                        Floor: ₱{{ number_format($itemFloor, 2) }} (max -15%)
+                                    <div class="flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                                        <span>Floor: ₱{{ number_format($itemFloor, 2) }} (-15% max)</span>
+                                        <span>Max: ₱{{ number_format($itemSrp, 2) }} (SRP)</span>
                                     </div>
                                     @error("items.{$idx}.price")
-                                        <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span>
+                                        <div class="flex items-center gap-1 text-rose-500 text-[10px] font-medium mt-1">
+                                            <svg class="w-3.5 h-3.5 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            <span>{{ $message }}</span>
+                                        </div>
                                     @enderror
+                                    @if(abs($item['unit_price'] - $itemFloor) < 0.02 && $itemSrp > 0 && ($item['is_negotiated'] ?? false))
+                                        <div class="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-[9.5px] font-medium mt-0.5">
+                                            <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span>Maximum 15% negotiation limit reached.</span>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 

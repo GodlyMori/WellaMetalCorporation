@@ -253,8 +253,41 @@ class NegotiatedPriceSaleTest extends TestCase
             ->call('updateItemPrice', 0, 10000.00) // 41% discount (exceeds 15%)
             ->assertHasErrors(['items.0.price'])
             ->assertSet('items.0.unit_price', 14450.00) // Clamped to floor
+            ->assertSee('Price exceeds negotiation limit')
             ->assertSee('maximum 15% discount allowed')
             ->assertDontSee('error prevention');
+    }
+
+    public function test_negotiated_price_cannot_be_raised_above_srp(): void
+    {
+        Livewire::test(SalesManager::class)
+            ->call('addProductToCart', $this->product->id)
+            ->call('updateItemPrice', 0, 18500.00) // Above SRP of 17,000
+            ->assertHasErrors(['items.0.price'])
+            ->assertSet('items.0.unit_price', 17000.00) // Clamped to SRP
+            ->assertSee('Price cannot exceed original SRP of ₱17,000.00');
+    }
+
+    public function test_quick_discount_buttons_apply_5_10_and_15_percent_and_display_negotiated_amount(): void
+    {
+        Livewire::test(SalesManager::class)
+            ->call('addProductToCart', $this->product->id)
+            // 5% off 17,000 = -850 => 16,150
+            ->call('applyNegotiatedDiscount', 0, 5)
+            ->assertSet('items.0.unit_price', 16150.00)
+            ->assertSet('items.0.is_negotiated', true)
+            ->assertSee('Negotiated (-₱850.00)')
+            // 10% off 17,000 = -1,700 => 15,300
+            ->call('applyNegotiatedDiscount', 0, 10)
+            ->assertSet('items.0.unit_price', 15300.00)
+            ->assertSet('items.0.is_negotiated', true)
+            ->assertSee('Negotiated (-₱1,700.00)')
+            // 15% off 17,000 = -2,550 => 14,450
+            ->call('applyNegotiatedDiscount', 0, 15)
+            ->assertSet('items.0.unit_price', 14450.00)
+            ->assertSet('items.0.is_negotiated', true)
+            ->assertSee('Negotiated (-₱2,550.00)')
+            ->assertSee('Maximum 15% negotiation limit reached');
     }
 
     public function test_customer_phone_cannot_exceed_11_digits(): void

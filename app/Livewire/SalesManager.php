@@ -223,8 +223,11 @@ class SalesManager extends Component
             $minPrice = round($srp * (1 - self::MAX_NEGOTIATED_DISCOUNT_PERCENT / 100), 2);
             $parsedPrice = max(0.01, round((float) $newPrice, 2));
 
-            if ($parsedPrice < $minPrice) {
-                $this->addError("items.{$index}.price", 'Price cannot be less than ₱'.number_format($minPrice, 2).' (maximum 15% discount allowed).');
+            if ($parsedPrice > $srp) {
+                $this->addError("items.{$index}.price", 'Price cannot exceed original SRP of ₱'.number_format($srp, 2).'.');
+                $parsedPrice = $srp;
+            } elseif ($parsedPrice < $minPrice) {
+                $this->addError("items.{$index}.price", 'Price exceeds negotiation limit. Cannot be less than ₱'.number_format($minPrice, 2).' (maximum 15% discount allowed).');
                 $parsedPrice = $minPrice;
             } else {
                 $this->resetErrorBag("items.{$index}.price");
@@ -235,6 +238,28 @@ class SalesManager extends Component
             $this->items[$index]['unit_price'] = $parsedPrice;
             $this->items[$index]['subtotal'] = (int) $this->items[$index]['quantity'] * $parsedPrice;
             $this->items[$index]['is_negotiated'] = (abs($parsedPrice - $srp) > 0.001);
+
+            if ($this->payment_type === 'layaway') {
+                $this->downpayment_amount = (string) $this->minDownpayment;
+            }
+        }
+    }
+
+    public function applyNegotiatedDiscount(int $index, int $percent): void
+    {
+        if (isset($this->items[$index])) {
+            $srp = (float) ($this->items[$index]['srp'] ?? $this->items[$index]['unit_price']);
+            $percent = min(self::MAX_NEGOTIATED_DISCOUNT_PERCENT, max(0, $percent));
+            $discount = round($srp * ($percent / 100), 2);
+            $newPrice = round($srp - $discount, 2);
+            $minPrice = round($srp * (1 - self::MAX_NEGOTIATED_DISCOUNT_PERCENT / 100), 2);
+
+            $this->resetErrorBag("items.{$index}.price");
+            $this->items[$index]['srp'] = $srp;
+            $this->items[$index]['min_price'] = $minPrice;
+            $this->items[$index]['unit_price'] = $newPrice;
+            $this->items[$index]['subtotal'] = (int) $this->items[$index]['quantity'] * $newPrice;
+            $this->items[$index]['is_negotiated'] = ($percent > 0);
 
             if ($this->payment_type === 'layaway') {
                 $this->downpayment_amount = (string) $this->minDownpayment;
@@ -617,11 +642,16 @@ class SalesManager extends Component
                 : 'Cash tendered cannot be less than the payable amount of ₱'.number_format($payableToday, 2).'.',
         ]);
 
-        // Enforce maximum 15% discount floor on negotiated item prices for error prevention
+        // Enforce maximum 15% discount floor and prevent raising prices above original SRP
         foreach ($this->items as $idx => $it) {
             $srp = (float) ($it['srp'] ?? $it['unit_price']);
             $minPrice = round($srp * (1 - self::MAX_NEGOTIATED_DISCOUNT_PERCENT / 100), 2);
             $unitPrice = (float) ($it['unit_price'] ?? 0);
+            if ($unitPrice > $srp) {
+                $this->addError("items.{$idx}.price", "The price for '{$it['name']}' (₱".number_format($unitPrice, 2).') cannot exceed its original SRP of ₱'.number_format($srp, 2).'.');
+
+                return;
+            }
             if ($unitPrice < $minPrice) {
                 $this->addError("items.{$idx}.price", "The negotiated price for '{$it['name']}' (₱".number_format($unitPrice, 2).') exceeds the maximum 15% discount limit. Minimum price is ₱'.number_format($minPrice, 2).'.');
 
