@@ -236,7 +236,13 @@
                     <td class="text-right mono font-bold">
                         ₱{{ number_format($sale->amount, 2) }}
                         @if($sale->discount_amount > 0)
-                            <div style="font-size: 6.5pt; color: #64748b; font-weight: normal;">(Disc. -₱{{ number_format($sale->discount_amount, 2) }})</div>
+                            @php
+                                $isPromo = !empty($sale->promo_name);
+                                $adjustmentLabel = $isPromo ? 'Promo Discount' : 'Negotiated Amount';
+                            @endphp
+                            <div style="font-size: 6.5pt; color: #64748b; font-weight: normal;">
+                                ({{ $adjustmentLabel }}: -₱{{ number_format($sale->discount_amount, 2) }})
+                            </div>
                         @endif
                     </td>
                     <td class="text-center">

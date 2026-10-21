@@ -208,6 +208,7 @@ class PeriodicReportTest extends TestCase
             'amount' => 16000.00,
             'amount_paid' => 16000.00,
             'original_amount' => 17000.00,
+            'discount_amount' => 1000.00,
             'remaining_balance' => 0.00,
             'status' => 'completed',
             'payment_type' => 'full',
@@ -230,6 +231,7 @@ class PeriodicReportTest extends TestCase
             ->set('salesStatus', 'completed')
             ->assertSet('salesStatus', 'completed')
             ->assertSee('WMC-20261020-001')
+            ->assertSee('Negotiated Amount: -₱1,000.00')
             ->call('openOrderModal', $sale->id)
             ->assertSet('showOrderModal', true)
             ->assertSee('Negotiated Pricing Details')

@@ -553,8 +553,12 @@
                                     <td class="py-2.5 px-4 text-right font-mono tabular-nums whitespace-nowrap">
                                         <div class="font-bold text-slate-900 dark:text-white">₱{{ number_format($sale->amount, 2) }}</div>
                                         @if($sale->discount_amount > 0)
-                                            <div class="text-[10px] text-slate-400 font-sans mt-0.5" title="Discount applied: -₱{{ number_format($sale->discount_amount, 2) }}">
-                                                (Disc. -₱{{ number_format($sale->discount_amount, 2) }})
+                                            @php
+                                                $isPromo = !empty($sale->promo_name);
+                                                $adjustmentLabel = $isPromo ? 'Promo Discount' : 'Negotiated Amount';
+                                            @endphp
+                                            <div class="text-[10px] text-slate-400 font-sans mt-0.5" title="{{ $adjustmentLabel }}: -₱{{ number_format($sale->discount_amount, 2) }}">
+                                                ({{ $adjustmentLabel }}: -₱{{ number_format($sale->discount_amount, 2) }})
                                             </div>
                                         @endif
                                     </td>
