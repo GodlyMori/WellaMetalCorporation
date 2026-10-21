@@ -247,7 +247,8 @@
                             </label>
                             <input type="text"
                                    wire:model="phone"
-                                   placeholder="0917-000-0000"
+                                   maxlength="11"
+                                   placeholder="09171234567"
                                    class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
                             @error('phone') <span class="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5 block">{{ $message }}</span> @enderror
                         </div>

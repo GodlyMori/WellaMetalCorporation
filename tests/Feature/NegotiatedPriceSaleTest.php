@@ -244,4 +244,31 @@ class NegotiatedPriceSaleTest extends TestCase
         $this->assertEquals(16000.00, $summary['totals']['gross_sales_volume']);
         $this->assertEquals(16000.00, $summary['totals']['realized_cash']);
     }
+
+    public function test_negotiated_price_cannot_exceed_15_percent_discount_floor(): void
+    {
+        // Product SRP is 17,000. Max 15% discount is 2,550. Floor is 14,450.
+        Livewire::test(SalesManager::class)
+            ->call('addProductToCart', $this->product->id)
+            ->call('updateItemPrice', 0, 10000.00) // 41% discount (exceeds 15%)
+            ->assertHasErrors(['items.0.price'])
+            ->assertSet('items.0.unit_price', 14450.00) // Clamped to floor
+            ->assertSee('maximum 15% discount allowed for error prevention');
+    }
+
+    public function test_customer_phone_cannot_exceed_11_digits(): void
+    {
+        Livewire::test(SalesManager::class)
+            ->call('addProductToCart', $this->product->id)
+            ->set('customer_first_name', 'Roberto')
+            ->set('customer_last_name', 'Carlos')
+            ->set('customer_address', '123 Main St, Davao City')
+            ->set('cash_tendered', 17000.00)
+            ->set('customer_phone', '091712345678') // 12 digits
+            ->call('recordSale')
+            ->assertHasErrors(['customer_phone'])
+            ->set('customer_phone', '09171234567') // Exactly 11 digits
+            ->call('recordSale')
+            ->assertHasNoErrors(['customer_phone']);
+    }
 }

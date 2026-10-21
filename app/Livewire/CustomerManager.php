@@ -118,7 +118,15 @@ class CustomerManager extends Component
         $this->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'phone' => 'nullable|string|max:50',
+            'phone' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if ($value && strlen(preg_replace('/\D/', '', (string) $value)) > 11) {
+                        $fail('Contact phone must not exceed 11 digits.');
+                    }
+                },
+            ],
             'address' => 'nullable|string|max:500',
             'email' => 'nullable|email|max:255',
             'notes' => 'nullable|string|max:1000',

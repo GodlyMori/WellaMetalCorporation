@@ -20,6 +20,9 @@ use Livewire\Component;
 
 class SalesManager extends Component
 {
+    // Maximum allowable discount percentage for negotiated pricing (floor price safeguard)
+    public const MAX_NEGOTIATED_DISCOUNT_PERCENT = 15;
+
     // 1. Quadrant 1: Customer Info
     public ?int $selected_customer_id = null;
 
@@ -129,6 +132,16 @@ class SalesManager extends Component
         $this->customer_search = '';
     }
 
+    public function updatedCustomerPhone($value): void
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+        if (strlen($digits) > 11) {
+            $this->addError('customer_phone', 'Customer contact number must not exceed 11 digits.');
+        } else {
+            $this->resetErrorBag('customer_phone');
+        }
+    }
+
     /**
      * Resolve the current customer ID from selection or matched profile.
      */
@@ -182,13 +195,17 @@ class SalesManager extends Component
         }
 
         // Add new item to cart
+        $srp = (float) $product->tagged_price;
+        $minPrice = round($srp * (1 - self::MAX_NEGOTIATED_DISCOUNT_PERCENT / 100), 2);
+
         $this->items[] = [
             'product_id' => $product->id,
             'name' => $product->name,
-            'srp' => (float) $product->tagged_price,
-            'unit_price' => (float) $product->tagged_price,
+            'srp' => $srp,
+            'min_price' => $minPrice,
+            'unit_price' => $srp,
             'quantity' => 1,
-            'subtotal' => (float) $product->tagged_price,
+            'subtotal' => $srp,
             'max_stock' => $product->quantity_in_stock,
             'is_negotiated' => false,
         ];
@@ -202,9 +219,19 @@ class SalesManager extends Component
     public function updateItemPrice(int $index, $newPrice): void
     {
         if (isset($this->items[$index])) {
-            $parsedPrice = max(0.01, round((float) $newPrice, 2));
             $srp = (float) ($this->items[$index]['srp'] ?? $this->items[$index]['unit_price']);
+            $minPrice = round($srp * (1 - self::MAX_NEGOTIATED_DISCOUNT_PERCENT / 100), 2);
+            $parsedPrice = max(0.01, round((float) $newPrice, 2));
+
+            if ($parsedPrice < $minPrice) {
+                $this->addError("items.{$index}.price", 'Price cannot be less than ₱'.number_format($minPrice, 2).' (maximum 15% discount allowed for error prevention).');
+                $parsedPrice = $minPrice;
+            } else {
+                $this->resetErrorBag("items.{$index}.price");
+            }
+
             $this->items[$index]['srp'] = $srp;
+            $this->items[$index]['min_price'] = $minPrice;
             $this->items[$index]['unit_price'] = $parsedPrice;
             $this->items[$index]['subtotal'] = (int) $this->items[$index]['quantity'] * $parsedPrice;
             $this->items[$index]['is_negotiated'] = (abs($parsedPrice - $srp) > 0.001);
@@ -218,6 +245,7 @@ class SalesManager extends Component
     public function resetItemPrice(int $index): void
     {
         if (isset($this->items[$index])) {
+            $this->resetErrorBag("items.{$index}.price");
             $srp = (float) ($this->items[$index]['srp'] ?? $this->items[$index]['unit_price']);
             $this->items[$index]['unit_price'] = $srp;
             $this->items[$index]['subtotal'] = (int) $this->items[$index]['quantity'] * $srp;
@@ -542,7 +570,20 @@ class SalesManager extends Component
             'customer_first_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
             'customer_last_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.\'\,\&]+$/u'],
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['required', 'string', 'max:30', 'regex:/^[0-9\+\-\s\(\)]+$/'],
+            'customer_phone' => [
+                'required',
+                'string',
+                'regex:/^[0-9\+\-\s\(\)]+$/',
+                function ($attribute, $value, $fail) {
+                    $digits = preg_replace('/\D/', '', (string) $value);
+                    if (strlen($digits) > 11) {
+                        $fail('Customer contact phone must not exceed 11 digits.');
+                    }
+                    if (strlen($digits) < 7) {
+                        $fail('Customer contact phone must contain at least 7 digits.');
+                    }
+                },
+            ],
             'customer_address' => ['required', 'string', 'max:500'],
             'payment_type' => ['required', 'in:full,layaway'],
             'cash_tendered' => ['required', 'numeric', 'min:'.max(0.01, $payableToday)],
@@ -575,6 +616,18 @@ class SalesManager extends Component
                 ? 'Cash tendered cannot be less than the downpayment amount of ₱'.number_format($payableToday, 2).'.'
                 : 'Cash tendered cannot be less than the payable amount of ₱'.number_format($payableToday, 2).'.',
         ]);
+
+        // Enforce maximum 15% discount floor on negotiated item prices for error prevention
+        foreach ($this->items as $idx => $it) {
+            $srp = (float) ($it['srp'] ?? $it['unit_price']);
+            $minPrice = round($srp * (1 - self::MAX_NEGOTIATED_DISCOUNT_PERCENT / 100), 2);
+            $unitPrice = (float) ($it['unit_price'] ?? 0);
+            if ($unitPrice < $minPrice) {
+                $this->addError("items.{$idx}.price", "The negotiated price for '{$it['name']}' (₱".number_format($unitPrice, 2).') exceeds the maximum 15% discount limit. Minimum price is ₱'.number_format($minPrice, 2).'.');
+
+                return;
+            }
+        }
 
         // Preliminary stock check
         $groupedQuantities = [];

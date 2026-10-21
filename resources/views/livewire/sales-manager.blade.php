@@ -123,8 +123,9 @@
                         Contact phone <span class="text-rose-500">*</span>
                     </label>
                     <input type="text"
-                           wire:model="customer_phone"
-                           placeholder="0917-000-0000"
+                           wire:model.live="customer_phone"
+                           maxlength="11"
+                           placeholder="09171234567"
                            class="w-full bg-white dark:bg-[#0f1b40] border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#142259] dark:focus:border-slate-500 transition-colors">
                     @error('customer_phone') <span class="text-rose-500 text-[11px] mt-0.5 block">{{ $message }}</span> @enderror
                 </div>
@@ -291,15 +292,27 @@
                                     @endif
                                 </div>
                                 <!-- Inline editable Agreed Price -->
-                                <div class="flex items-center gap-1 mt-1 text-[11px]">
-                                    <span class="text-slate-500 dark:text-slate-400 font-medium">Price: ₱</span>
-                                    <input type="number"
-                                           step="0.01"
-                                           min="0.01"
-                                           wire:change="updateItemPrice({{ $idx }}, $event.target.value)"
-                                           value="{{ $item['unit_price'] }}"
-                                           class="w-24 px-1.5 py-0.5 text-right font-mono font-semibold text-slate-900 dark:text-white bg-slate-50 dark:bg-[#0f1b40] border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-[#142259]"
-                                           title="Customer negotiated price agreed by General Manager">
+                                @php
+                                    $itemSrp = (float)($item['srp'] ?? $item['unit_price']);
+                                    $itemFloor = round($itemSrp * 0.85, 2);
+                                @endphp
+                                <div class="mt-1">
+                                    <div class="flex items-center gap-1 text-[11px]">
+                                        <span class="text-slate-500 dark:text-slate-400 font-medium">Price: ₱</span>
+                                        <input type="number"
+                                               step="0.01"
+                                               min="{{ $itemFloor }}"
+                                               wire:change="updateItemPrice({{ $idx }}, $event.target.value)"
+                                               value="{{ $item['unit_price'] }}"
+                                               class="w-24 px-1.5 py-0.5 text-right font-mono font-semibold text-slate-900 dark:text-white bg-slate-50 dark:bg-[#0f1b40] border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-[#142259]"
+                                               title="Customer negotiated price (Floor: ₱{{ number_format($itemFloor, 2) }} - max 15% discount)">
+                                    </div>
+                                    <div class="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                                        Floor: ₱{{ number_format($itemFloor, 2) }} (max -15%)
+                                    </div>
+                                    @error("items.{$idx}.price")
+                                        <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span>
+                                    @enderror
                                 </div>
                             </div>
 
